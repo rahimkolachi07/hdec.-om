@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{% if is_new %}New Permit{% else %}Permit {{ permit.permit_number|default:permit.id }}{% endif %} — {{ project.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.22);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.2}
+    .wrap{position:relative;z-index:1}
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:10px}
+    .back{padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s}.back:hover{color:var(--text)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}.page-title span{color:var(--a3)}
+    .main{padding:28px 40px 60px;max-width:860px;margin:0 auto}
+
+    /* STATUS BANNER */
+    .status-banner{padding:14px 20px;border-radius:12px;border:1px solid;margin-bottom:24px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px}
+    .sb-pending_issue{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.25);color:#fbbf24}
+    .sb-pending_hse{background:rgba(249,115,22,.07);border-color:rgba(249,115,22,.25);color:#fb923c}
+    .sb-active,.sb-waiting_for_close{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.25);color:#4ade80}
+    .sb-closed{background:rgba(100,116,139,.07);border-color:rgba(100,116,139,.2);color:#94a3b8}
+
+    /* CARDS */
+    .card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:20px}
+    .card-title{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .form-grid.three{grid-template-columns:1fr 1fr 1fr}
+    .form-field{display:flex;flex-direction:column;gap:6px}
+    .form-field.full{grid-column:1/-1}
+    .form-field label{font-size:11.5px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
+    .form-field input,.form-field select,.form-field textarea{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-family:var(--fb);font-size:13.5px;outline:none;transition:border-color .2s}
+    .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:rgba(59,158,255,.4)}
+    .form-field input:disabled,.form-field select:disabled,.form-field textarea:disabled{opacity:.5;cursor:default}
+    .form-field textarea{resize:vertical;min-height:80px}
+
+    /* SIGNATURE UPLOAD */
+    .sig-wrap{border:1px dashed var(--border);border-radius:12px;padding:16px;background:rgba(255,255,255,.015);cursor:pointer;transition:all .2s;text-align:center}
+    .sig-wrap:hover{border-color:rgba(59,158,255,.4);background:rgba(59,158,255,.03)}
+    .sig-wrap input[type=file]{display:none}
+    .sig-preview{max-height:70px;max-width:100%;border-radius:6px;display:none;margin:8px auto 0}
+    .sig-preview.show{display:block}
+    .sig-label{font-size:12px;color:var(--td);margin-top:4px}
+
+    /* BUTTONS */
+    .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .btn{padding:10px 22px;border-radius:10px;font-size:13.5px;font-weight:600;font-family:var(--fb);cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+    .btn-apply{background:linear-gradient(135deg,var(--a3),#6020aa);color:#fff}.btn-apply:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(162,89,255,.35)}
+    .btn-issue{background:linear-gradient(135deg,var(--accent),#1a52cc);color:#fff}.btn-issue:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(59,158,255,.35)}
+    .btn-hse{background:linear-gradient(135deg,var(--a2),#00a896);color:#fff}.btn-hse:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,229,200,.35)}
+    .btn-close{background:linear-gradient(135deg,#4ade80,#16a34a);color:#fff}.btn-close:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(74,222,128,.35)}
+    .btn-cancel{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171}.btn-cancel:hover{background:rgba(239,68,68,.2)}
+
+    /* STATUS badge inline */
+    .st-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+
+    .toast{position:fixed;top:80px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid;display:none;animation:fadeIn .3s ease}
+    .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80}
+    .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media(max-width:768px){
+      .topbar{padding:12px 16px}
+      .page-title{font-size:14px}
+      .main{padding:16px 16px 80px}
+      .card{padding:16px}
+      .form-grid{grid-template-columns:1fr}
+      .form-grid.three{grid-template-columns:1fr}
+      .form-field.full{grid-column:unset}
+      .action-row{flex-direction:column}
+      .btn{width:100%;justify-content:center}
+    }
+    @media(max-width:480px){
+      .status-banner{font-size:12px;padding:10px 14px}
+    }
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="toast" class="toast"></div>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/permits/" class="back" onclick="return goBack(event, this.href)">← Permits</a>
+      <div class="page-title">🔐 <span>{% if is_new %}New Permit{% else %}Permit {{ permit.permit_number|default:"—" }}{% endif %}</span></div>
+    </div>
+  </header>
+
+  <div class="main">
+    {% if not is_new %}
+    <div class="status-banner sb-{{ permit.status }}">
+      {% if permit.status == 'pending_issue' %}⏳ Pending Issuance
+      {% elif permit.status == 'pending_hse' %}🔄 Pending HSE Sign-off
+      {% elif permit.status == 'active' %}✅ Active
+      {% elif permit.status == 'waiting_for_close' %}📋 Waiting for Closure
+      {% elif permit.status == 'closed' %}🔒 Closed{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- APPLICATION FORM -->
+    {% if is_new or permit.status == 'pending_issue' %}
+    <div class="card">
+      <div class="card-title">📋 Permit Application</div>
+      <div class="form-grid">
+        <div class="form-field full">
+          <label>Job Description *</label>
+          <textarea id="fJob" placeholder="Describe the work to be performed..." {% if not is_new %}disabled{% endif %}>{{ permit.job_description|default:"" }}</textarea>
+        </div>
+        <div class="form-field">
+          <label>Equipment *</label>
+          <input type="text" id="fEquip" value="{{ permit.equipment|default:'' }}" placeholder="Equipment tag / name" {% if not is_new %}disabled{% endif %}>
+        </div>
+        <div class="form-field">
+          <label>Location</label>
+          <input type="text" id="fLoc" value="{{ permit.location|default:'' }}" placeholder="Site location" {% if not is_new %}disabled{% endif %}>
+        </div>
+        <div class="form-field">
+          <label>Work Type</label>
+          <select id="fType" {% if not is_new %}disabled{% endif %}>
+            {% for key, lbl in work_types.items %}
+            <option value="{{ key }}" {% if permit.work_type == key %}selected{% endif %}>{{ lbl }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Application Date/Time</label>
+          <input type="datetime-local" id="fDateTime" value="{{ permit.application_datetime|default:''|slice:':16' }}" {% if not is_new %}disabled{% endif %}>
+        </div>
+        <div class="form-field">
+          <label>Valid From</label>
+          <input type="datetime-local" id="fFrom" value="{{ permit.valid_from|default:''|slice:':16' }}" {% if not is_new %}disabled{% endif %}>
+        </div>
+        <div class="form-field">
+          <label>Valid Until</label>
+          <input type="datetime-local" id="fUntil" value="{{ permit.valid_until|default:''|slice:':16' }}" {% if not is_new %}disabled{% endif %}>
+        </div>
+        {% if is_new %}
+        <div class="form-field full">
+          <label>Receiver Signature</label>
+          <div class="sig-wrap" onclick="document.getElementById('rcvSig').click()">
+            <div>📷 Upload signature image</div>
+            <div class="sig-label">PNG / JPG</div>
+            <img id="rcvSigPreview" class="sig-preview">
+          </div>
+          <input type="file" id="rcvSig" accept="image/*" onchange="previewSig('rcvSig','rcvSigPreview')">
+        </div>
+        {% endif %}
+      </div>
+      {% if is_new %}
+      <div class="action-row">
+        <button class="btn btn-apply" onclick="submitPermit()">🔐 Submit Application</button>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ISSUANCE -->
+    {% if not is_new and permit.status in 'pending_issue,pending_hse,active,waiting_for_close,closed' %}
+    <div class="card">
+      <div class="card-title">⚙️ Issuance{% if permit.issuer_name %} — by {{ permit.issuer_name }}{% endif %}</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Permit Number</label>
+          <input type="text" id="fPermitNo" value="{{ permit.permit_number|default:'' }}" {% if permit.status != 'pending_issue' or not can_issue %}disabled{% endif %} placeholder="e.g. PTW-2025-001">
+        </div>
+        <div class="form-field">
+          <label>Isolation Cert No.</label>
+          <input type="text" id="fIsoNo" value="{{ permit.isolation_cert_number|default:'' }}" {% if permit.status != 'pending_issue' or not can_issue %}disabled{% endif %}>
+        </div>
+        <div class="form-field">
+          <label>Valid From</label>
+          <input type="datetime-local" id="fIssueFrom" value="{{ permit.valid_from|default:''|slice:':16' }}" {% if permit.status != 'pending_issue' or not can_issue %}disabled{% endif %}>
+        </div>
+        <div class="form-field">
+          <label>Valid Until</label>
+          <input type="datetime-local" id="fIssueUntil" value="{{ permit.valid_until|default:''|slice:':16' }}" {% if permit.status != 'pending_issue' or not can_issue %}disabled{% endif %}>
+        </div>
+        {% if permit.issuer_signature %}
+        <div class="form-field full">
+          <label>Issuer Signature</label>
+          <img src="{{ permit.issuer_signature }}" style="max-height:70px;border-radius:8px;background:rgba(255,255,255,.05);padding:4px">
+        </div>
+        {% elif can_issue and permit.status == 'pending_issue' %}
+        <div class="form-field full">
+          <label>Issuer Signature *</label>
+          <div class="sig-wrap" onclick="document.getElementById('issSig').click()">
+            <div>📷 Upload signature image</div>
+            <div class="sig-label">PNG / JPG</div>
+            <img id="issSigPreview" class="sig-preview">
+          </div>
+          <input type="file" id="issSig" accept="image/*" onchange="previewSig('issSig','issSigPreview')">
+        </div>
+        {% endif %}
+      </div>
+      {% if can_issue and permit.status == 'pending_issue' %}
+      <div class="action-row">
+        <button class="btn btn-issue" onclick="issuePermit()">⚙️ Issue Permit</button>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- HSE SIGN-OFF -->
+    {% if not is_new and permit.status in 'pending_hse,active,waiting_for_close,closed' %}
+    <div class="card">
+      <div class="card-title">🦺 HSE Sign-off{% if permit.hse_name %} — by {{ permit.hse_name }}{% endif %}</div>
+      {% if permit.hse_signature %}
+      <img src="{{ permit.hse_signature }}" style="max-height:70px;border-radius:8px;background:rgba(255,255,255,.05);padding:4px">
+      {% elif can_hse and permit.status == 'pending_hse' %}
+      <div class="form-field" style="max-width:300px;margin-bottom:14px">
+        <label>HSE Signature *</label>
+        <div class="sig-wrap" onclick="document.getElementById('hseSig').click()">
+          <div>📷 Upload signature</div>
+          <img id="hseSigPreview" class="sig-preview">
+        </div>
+        <input type="file" id="hseSig" accept="image/*" onchange="previewSig('hseSig','hseSigPreview')">
+      </div>
+      <div class="action-row">
+        <button class="btn btn-hse" onclick="hseSign()">🦺 HSE Sign-off</button>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- CLOSURE -->
+    {% if not is_new and permit.status == 'waiting_for_close' and can_close %}
+    <div class="card">
+      <div class="card-title">🔒 Close Permit</div>
+      <div style="font-size:13px;color:var(--tm);margin-bottom:14px">Upload closure signatures from all three parties to close this permit.</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Receiver Closure Signature *</label>
+          <div class="sig-wrap" onclick="document.getElementById('clRcv').click()">
+            <div>📷 Upload signature</div><img id="clRcvPreview" class="sig-preview">
+          </div>
+          <input type="file" id="clRcv" accept="image/*" onchange="previewSig('clRcv','clRcvPreview')">
+        </div>
+        <div class="form-field">
+          <label>Issuer Closure Signature *</label>
+          <div class="sig-wrap" onclick="document.getElementById('clIss').click()">
+            <div>📷 Upload signature</div><img id="clIssPreview" class="sig-preview">
+          </div>
+          <input type="file" id="clIss" accept="image/*" onchange="previewSig('clIss','clIssPreview')">
+        </div>
+        <div class="form-field">
+          <label>HSE Closure Signature *</label>
+          <div class="sig-wrap" onclick="document.getElementById('clHse').click()">
+            <div>📷 Upload signature</div><img id="clHsePreview" class="sig-preview">
+          </div>
+          <input type="file" id="clHse" accept="image/*" onchange="previewSig('clHse','clHsePreview')">
+        </div>
+      </div>
+      <div class="action-row" style="margin-top:16px">
+        <button class="btn btn-close" onclick="closePermit()">🔒 Close Permit</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- SUMMARY (closed) -->
+    {% if not is_new and permit.status == 'closed' %}
+    <div class="card">
+      <div class="card-title">📊 Summary</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+        <div><span style="color:var(--tm)">Closed by:</span> {{ permit.closed_by_name|default:"—" }}</div>
+        <div><span style="color:var(--tm)">Closed at:</span> {{ permit.closed_at|default:"—"|slice:":16" }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const CID='{{ country_id }}', PID='{{ project_id }}', CAT='{{ category }}';
+const PERMIT_ID='{{ permit.id|default:"" }}';
+const API=`/api/p/${CID}/${PID}/${CAT}/permits/`;
+
+const canvas=document.getElementById('cv'),c=canvas.getContext('2d');let W,H;
+const DOTS=Array.from({length:35},()=>({x:Math.random()*2000,y:Math.random()*1200,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:Math.random()*1.2+.3,a:Math.random()*.12+.03}));
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}resize();window.addEventListener('resize',resize);
+(function draw(){c.clearRect(0,0,W,H);DOTS.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle=`rgba(162,89,255,${p.a})`;c.fill()});requestAnimationFrame(draw)})();
+
+function toast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3600)}
+
+function previewSig(inputId, previewId){
+  const f=document.getElementById(inputId).files[0];if(!f)return;
+  const reader=new FileReader();reader.onload=e=>{const img=document.getElementById(previewId);img.src=e.target.result;img.classList.add('show')};reader.readAsDataURL(f);
+}
+
+async function readSig(inputId){
+  const f=document.getElementById(inputId)?.files[0];if(!f)return null;
+  return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(f)});
+}
+
+function g(id){return document.getElementById(id)?.value?.trim()||''}
+
+async function submitPermit(){
+  const job=g('fJob');if(!job){toast('Job description required','error');return}
+  const sig=await readSig('rcvSig');
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body:JSON.stringify({action:'create',job_description:job,equipment:g('fEquip'),location:g('fLoc'),
+      work_type:document.getElementById('fType')?.value||'general',
+      application_datetime:g('fDateTime'),valid_from:g('fFrom'),valid_until:g('fUntil'),
+      receiver_signature:sig})});
+  const d=await r.json();
+  if(d.ok){toast('Permit submitted');setTimeout(()=>window.location=`/p/${CID}/${PID}/${CAT}/cmms/permits/${d.permit.id}/`,800)}
+  else toast(d.error||'Error','error');
+}
+
+async function issuePermit(){
+  const sig=await readSig('issSig');
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body:JSON.stringify({action:'issue',permit_id:PERMIT_ID,permit_number:g('fPermitNo'),
+      isolation_cert_number:g('fIsoNo'),valid_from:g('fIssueFrom'),valid_until:g('fIssueUntil'),issuer_signature:sig})});
+  const d=await r.json();
+  if(d.ok){toast('Permit issued');setTimeout(()=>location.reload(),800)}
+  else toast(d.error||'Error','error');
+}
+
+async function hseSign(){
+  const sig=await readSig('hseSig');if(!sig){toast('HSE signature required','error');return}
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body:JSON.stringify({action:'hse_sign',permit_id:PERMIT_ID,hse_signature:sig})});
+  const d=await r.json();
+  if(d.ok){toast('HSE signed off');setTimeout(()=>location.reload(),800)}
+  else toast(d.error||'Error','error');
+}
+
+async function closePermit(){
+  const [r1,r2,r3]=[await readSig('clRcv'),await readSig('clIss'),await readSig('clHse')];
+  if(!r1||!r2||!r3){toast('All three closure signatures required','error');return}
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body:JSON.stringify({action:'close',permit_id:PERMIT_ID,closure_receiver_signature:r1,closure_issuer_signature:r2,closure_hse_signature:r3})});
+  const d=await r.json();
+  if(d.ok){toast('Permit closed');setTimeout(()=>location.reload(),800)}
+  else toast(d.error||'Error','error');
+}
+
+function csrf(){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1]||''}
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+
+// Set default datetime
+const now=new Date();const pad=n=>String(n).padStart(2,'0');
+const dt=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+const dtEl=document.getElementById('fDateTime');if(dtEl&&!dtEl.value)dtEl.value=dt;
+</script>
+</body>
+</html>

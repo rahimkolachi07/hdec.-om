@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python manage.py check)",
+      "Bash(python -c \"import reportlab; import PIL; print\\('reportlab', reportlab.Version, '| Pillow OK'\\)\")",
+      "Bash(python -c ':*)"
+    ]
+  }
+}

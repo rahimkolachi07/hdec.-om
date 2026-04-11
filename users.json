@@ -1,0 +1,28 @@
+{
+  "admin": {
+    "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "role": "admin",
+    "name": "Administrator"
+  },
+  "tech": {
+    "password": "fe9bbd400bb6cb314531e3462507661401959afc69aae96bc6aec2c213b83bc1",
+    "role": "viewer",
+    "name": "tech"
+  },
+  "o&m team": {
+    "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "role": "maintenance_engineer",
+    "name": "O&M Team",
+    "email": "",
+    "permissions": {
+      "activities": "edit",
+      "permits": "edit",
+      "handover": "edit",
+      "manpower": "view",
+      "tracing": "edit",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view"
+    }
+  }
+}

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Activities — {{ project.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.22);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.25}
+    .wrap{position:relative;z-index:1}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:10px}
+    .back{padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}.page-title span{color:var(--accent)}
+    .topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .act-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:30px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .2s;border:1px solid}
+    .btn-new{background:linear-gradient(135deg,var(--accent),#1a52cc);color:#fff;border-color:transparent}
+    .btn-new:hover{box-shadow:0 4px 16px rgba(59,158,255,.35);transform:translateY(-1px)}
+    .btn-import{background:rgba(0,229,200,.08);border-color:rgba(0,229,200,.3);color:#2dd4bf}
+    .btn-import:hover{background:rgba(0,229,200,.16)}
+    .btn-export{background:rgba(240,192,64,.08);border-color:rgba(240,192,64,.3);color:#fbbf24}
+    .btn-export:hover{background:rgba(240,192,64,.16)}
+    .btn-template{background:rgba(162,89,255,.08);border-color:rgba(162,89,255,.3);color:#c084fc}
+    .btn-template:hover{background:rgba(162,89,255,.16)}
+
+    .main{padding:28px 40px 60px;max-width:1200px;margin:0 auto}
+
+    /* FILTER BAR */
+    .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+    .filter-pill{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--fb)}
+    .filter-pill.active{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.3);color:var(--accent)}
+    .search-inp{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-family:var(--fb);font-size:13px;outline:none;min-width:200px;margin-left:auto}
+    .search-inp:focus{border-color:rgba(59,158,255,.4)}
+
+    /* TABLE */
+    .table-wrap{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px}
+    .acts-table{width:100%;border-collapse:collapse}
+    .acts-table thead th{padding:11px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--border);background:rgba(255,255,255,.025);white-space:nowrap}
+    .acts-table tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+    .acts-table tbody tr:hover{background:rgba(59,158,255,.04)}
+    .acts-table td{padding:13px 16px;font-size:13px;vertical-align:middle}
+    .act-name{font-weight:600;margin-bottom:2px}
+    .act-equip{font-size:11.5px;color:var(--tm)}
+    .type-badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+    .type-PM{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.2);color:#7ec3ff}
+    .type-CM{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.2);color:#f87171}
+    .type-Inspection{background:rgba(0,229,200,.1);border-color:rgba(0,229,200,.2);color:#2dd4bf}
+    .freq-badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(162,89,255,.08);border:1px solid rgba(162,89,255,.2);color:#c084fc}
+    .row-actions{display:flex;gap:6px;opacity:0;transition:opacity .15s}
+    .acts-table tbody tr:hover .row-actions{opacity:1}
+    .row-btn{padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid;cursor:pointer;font-family:var(--fb);transition:all .15s}
+    .row-edit{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.25);color:#7ec3ff}
+    .row-edit:hover{background:rgba(59,158,255,.22)}
+    .row-del{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#f87171}
+    .row-del:hover{background:rgba(239,68,68,.2)}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--td)}
+    .empty-state .ico{font-size:52px;margin-bottom:14px}
+    .empty-state p{font-size:14px;color:var(--tm);margin-bottom:18px}
+
+    /* MODAL */
+    .modal-bg{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.82);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal-bg.open{display:flex}
+    .modal{background:#0c1120;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:32px;width:100%;max-width:560px;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.6);max-height:90vh;overflow-y:auto}
+    .modal h2{font-family:var(--fd);font-size:18px;font-weight:700;margin-bottom:5px}
+    .modal .sub{font-size:13px;color:var(--tm);margin-bottom:22px}
+    .modal-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:8px;border:none;background:var(--s);color:var(--tm);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .modal-close:hover{color:#f87171;background:rgba(239,68,68,.15)}
+    .form-field{margin-bottom:16px}
+    .form-field label{display:block;font-size:11.5px;font-weight:600;color:var(--tm);margin-bottom:7px;text-transform:uppercase;letter-spacing:.6px}
+    .form-field input,.form-field select,.form-field textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13.5px;font-family:var(--fb);outline:none;transition:border-color .2s}
+    .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:rgba(59,158,255,.4)}
+    .form-field textarea{resize:vertical;min-height:80px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .checklist-area{border:1px solid var(--border);border-radius:10px;padding:14px;background:rgba(255,255,255,.02)}
+    .cl-item{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .cl-item input[type=text]{flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-family:var(--fb);font-size:13px;outline:none}
+    .cl-item input:focus{border-color:rgba(59,158,255,.4)}
+    .cl-del{width:24px;height:24px;border-radius:6px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08);color:#f87171;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .add-cl-btn{padding:6px 12px;border-radius:8px;background:rgba(59,158,255,.08);border:1px solid rgba(59,158,255,.2);color:#7ec3ff;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fb);margin-top:6px}
+    .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+    .btn-cancel{padding:8px 16px;border-radius:10px;background:var(--s);border:1px solid var(--border);color:var(--tm);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fb)}
+    .btn-save-modal{padding:8px 20px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#1a52cc);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fb)}
+    .btn-save-modal:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(59,158,255,.3)}
+
+    /* IMPORT MODAL */
+    .drop-zone{border:2px dashed rgba(0,229,200,.3);border-radius:14px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .22s;background:rgba(0,229,200,.03)}
+    .drop-zone:hover,.drop-zone.over{border-color:#2dd4bf;background:rgba(0,229,200,.08)}
+    .dz-ico{font-size:38px;margin-bottom:10px}
+    .dz-title{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:5px}
+    .dz-sub{font-size:12.5px;color:var(--tm)}
+    .dz-file{margin-top:12px;padding:8px 14px;border-radius:10px;background:rgba(0,229,200,.08);border:1px solid rgba(0,229,200,.2);color:#2dd4bf;font-size:12.5px;display:none;align-items:center;gap:8px}
+    .dz-file.show{display:flex}
+    .import-result{margin-top:14px;padding:12px 15px;border-radius:12px;font-size:13px;display:none;line-height:1.55}
+    .import-result.ok{display:block;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#4ade80}
+    .import-result.err{display:block;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171}
+
+    .toast{position:fixed;top:80px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid;display:none;animation:fadeIn .3s ease}
+    .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80}
+    .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media(max-width:768px){
+      .topbar{padding:12px 16px}
+      .page-title{font-size:14px}
+      .topbar-actions{gap:6px}
+      .act-btn{padding:6px 10px;font-size:11px}
+      .main{padding:16px 16px 60px}
+      .filter-bar{gap:6px}
+      .search-inp{min-width:100%;margin-left:0;margin-top:4px}
+      .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+      .acts-table{min-width:640px}
+      .modal{padding:20px;border-radius:14px}
+      .form-row{grid-template-columns:1fr}
+    }
+    @media(max-width:480px){
+      .filter-pill{padding:5px 10px;font-size:11.5px}
+      .act-btn span{display:none}
+      .row-actions{opacity:1}
+    }
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="toast" class="toast"></div>
+
+<!-- ACTIVITY MODAL -->
+<div id="actModal" class="modal-bg">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('actModal')">✕</button>
+    <h2 id="actModalTitle">Add Activity</h2>
+    <p class="sub">Define the maintenance activity, equipment, and checklist steps.</p>
+    <input type="hidden" id="editId">
+    <div class="form-row">
+      <div class="form-field">
+        <label>Activity Name *</label>
+        <input type="text" id="fName" placeholder="e.g. PV Module Inspection">
+      </div>
+      <div class="form-field">
+        <label>Equipment</label>
+        <input type="text" id="fEquip" placeholder="e.g. PV Strings Zone A">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Location</label>
+        <input type="text" id="fLoc" placeholder="e.g. Zone A, Bay 3">
+      </div>
+      <div class="form-field">
+        <label>Type</label>
+        <select id="fType">
+          <option value="PM">PM — Preventive Maintenance</option>
+          <option value="CM">CM — Corrective Maintenance</option>
+          <option value="Inspection">Inspection</option>
+          <option value="Calibration">Calibration</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Frequency</label>
+        <select id="fFreq">
+          <option>Daily</option><option>Weekly</option><option selected>Monthly</option>
+          <option>Quarterly</option><option>Semi-Annually</option><option>Annually</option>
+          <option>As Required</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Status</label>
+        <select id="fStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>Description / Remarks</label>
+      <textarea id="fDesc" placeholder="Describe the scope of this activity..."></textarea>
+    </div>
+    <div class="form-field">
+      <label>Checklist Steps</label>
+      <div class="checklist-area">
+        <div id="clItems"></div>
+        <button class="add-cl-btn" onclick="addClItem()">+ Add Step</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('actModal')">Cancel</button>
+      <button class="btn-save-modal" onclick="saveActivity()">Save Activity</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div id="importModal" class="modal-bg">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeModal('importModal')">✕</button>
+    <h2>📥 Import Activities</h2>
+    <p class="sub">Upload an Excel file with columns:<br><strong>Name · Equipment · Location · Type · Frequency · Description</strong></p>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('xlsFile').click()">
+      <div class="dz-ico">📊</div>
+      <div class="dz-title">Drop Excel file or click to browse</div>
+      <div class="dz-sub">.xlsx format</div>
+    </div>
+    <input type="file" id="xlsFile" accept=".xlsx,.xls" style="display:none" onchange="onFile(this)">
+    <div class="dz-file" id="dzFile"><span>📄</span><span id="dzName"></span></div>
+    <div id="importResult" class="import-result"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn-save-modal" id="doImportBtn" onclick="doImport()" disabled style="background:linear-gradient(135deg,#2dd4bf,var(--accent))">Import</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/" class="back" onclick="return goBack(event, this.href)">← CMMS</a>
+      <div class="page-title">📋 <span>Activities</span> — {{ project.name }}</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="act-btn btn-template" onclick="window.location=API+'?action=template'">⬇ Template</button>
+      <button class="act-btn btn-import" onclick="openModal('importModal')">📥 Import</button>
+      <button class="act-btn btn-export" onclick="window.location=API+'?action=export'">📤 Export</button>
+      <button class="act-btn btn-new" onclick="openNew()">+ New Activity</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="filter-bar">
+      <button class="filter-pill active" onclick="setFilter('')" id="f-all">All</button>
+      <button class="filter-pill" onclick="setFilter('PM')" id="f-PM">PM</button>
+      <button class="filter-pill" onclick="setFilter('CM')" id="f-CM">CM</button>
+      <button class="filter-pill" onclick="setFilter('Inspection')" id="f-Inspection">Inspection</button>
+      <input type="text" class="search-inp" id="searchInp" placeholder="🔍 Search activities..." oninput="renderTable()">
+    </div>
+
+    <div class="table-wrap">
+      <table class="acts-table">
+        <thead>
+          <tr>
+            <th>Activity</th><th>Type</th><th>Frequency</th><th>Location</th><th>Checklist</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="actBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const CID='{{ country_id }}', PID='{{ project_id }}', CAT='{{ category }}';
+const API=`/api/p/${CID}/${PID}/${CAT}/activities/`;
+let activities = {{ activities_json|safe }};
+let filterType = '';
+
+/* Canvas */
+const canvas=document.getElementById('cv'),c=canvas.getContext('2d');let W,H;
+const DOTS=Array.from({length:35},()=>({x:Math.random()*2000,y:Math.random()*1200,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:Math.random()*1.2+.3,a:Math.random()*.12+.03}));
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}resize();window.addEventListener('resize',resize);
+(function draw(){c.clearRect(0,0,W,H);DOTS.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle=`rgba(59,158,255,${p.a})`;c.fill()});requestAnimationFrame(draw)})();
+
+function toast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3400)}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+/* Filter */
+function setFilter(t){
+  filterType=t;
+  document.querySelectorAll('.filter-pill').forEach(el=>el.classList.remove('active'));
+  document.getElementById('f-'+(t||'all')).classList.add('active');
+  renderTable();
+}
+
+/* Render */
+function renderTable(){
+  const body=document.getElementById('actBody');
+  const q=document.getElementById('searchInp').value.toLowerCase();
+  let list=activities.filter(a=>{
+    if(filterType&&a.type!==filterType)return false;
+    if(q&&!((a.name||'').toLowerCase().includes(q)||(a.equipment||'').toLowerCase().includes(q)||(a.location||'').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  body.innerHTML='';
+  if(!list.length){
+    body.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="ico">📋</div><p>No activities yet. Add one or import from Excel.</p></div></td></tr>`;
+    return;
+  }
+  list.forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="act-name">${esc(a.name)}</div><div class="act-equip">${esc(a.equipment||'')} ${a.location?'· '+esc(a.location):''}</div></td>
+      <td><span class="type-badge type-${esc(a.type)}">${esc(a.type)}</span></td>
+      <td><span class="freq-badge">${esc(a.frequency)}</span></td>
+      <td style="font-size:12.5px;color:var(--tm)">${esc(a.location||'—')}</td>
+      <td style="font-size:12.5px;color:var(--tm)">${(a.checklist||[]).length} step${(a.checklist||[]).length!==1?'s':''}</td>
+      <td><span style="font-size:11.5px;padding:3px 9px;border-radius:20px;background:${a.status==='active'?'rgba(34,197,94,.1)':'rgba(100,116,139,.1)'};color:${a.status==='active'?'#4ade80':'#94a3b8'};border:1px solid ${a.status==='active'?'rgba(34,197,94,.2)':'rgba(100,116,139,.2)'}">${a.status||'active'}</span></td>
+      <td><div class="row-actions">
+        <button class="row-btn row-edit" onclick="openEdit('${a.id}')">Edit</button>
+        <button class="row-btn row-del" onclick="deleteActivity('${a.id}')">Delete</button>
+      </div></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+/* Checklist helpers */
+function addClItem(text=''){
+  const wrap=document.getElementById('clItems');
+  const div=document.createElement('div');div.className='cl-item';
+  div.innerHTML=`<input type="text" placeholder="Checklist step..." value="${esc(text)}"><button class="cl-del" onclick="this.parentElement.remove()">✕</button>`;
+  wrap.appendChild(div);
+}
+function getChecklist(){return [...document.querySelectorAll('#clItems input')].map(i=>i.value.trim()).filter(Boolean)}
+
+/* Open new */
+function openNew(){
+  document.getElementById('actModalTitle').textContent='Add Activity';
+  document.getElementById('editId').value='';
+  ['fName','fEquip','fLoc','fDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fType').value='PM';
+  document.getElementById('fFreq').value='Monthly';
+  document.getElementById('fStatus').value='active';
+  document.getElementById('clItems').innerHTML='';
+  openModal('actModal');
+}
+
+function openEdit(id){
+  const a=activities.find(x=>x.id===id);if(!a)return;
+  document.getElementById('actModalTitle').textContent='Edit Activity';
+  document.getElementById('editId').value=id;
+  document.getElementById('fName').value=a.name||'';
+  document.getElementById('fEquip').value=a.equipment||'';
+  document.getElementById('fLoc').value=a.location||'';
+  document.getElementById('fType').value=a.type||'PM';
+  document.getElementById('fFreq').value=a.frequency||'Monthly';
+  document.getElementById('fStatus').value=a.status||'active';
+  document.getElementById('fDesc').value=a.description||'';
+  document.getElementById('clItems').innerHTML='';
+  (a.checklist||[]).forEach(t=>addClItem(t));
+  openModal('actModal');
+}
+
+async function saveActivity(){
+  const id=document.getElementById('editId').value;
+  const name=document.getElementById('fName').value.trim();
+  if(!name){toast('Activity name is required','error');return}
+  const payload={
+    action:id?'update':'create',id,
+    name,equipment:document.getElementById('fEquip').value.trim(),
+    location:document.getElementById('fLoc').value.trim(),
+    type:document.getElementById('fType').value,
+    frequency:document.getElementById('fFreq').value,
+    status:document.getElementById('fStatus').value,
+    description:document.getElementById('fDesc').value.trim(),
+    checklist:getChecklist(),
+  };
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify(payload)});
+  const d=await r.json();
+  if(d.ok){
+    if(id){const i=activities.findIndex(x=>x.id===id);if(i>=0)activities[i]=d.activity}
+    else activities.unshift(d.activity);
+    renderTable();closeModal('actModal');toast(id?'Updated':'Activity added');
+  }else toast(d.error||'Error','error');
+}
+
+async function deleteActivity(id){
+  if(!confirm('Delete this activity?'))return;
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify({action:'delete',id})});
+  const d=await r.json();
+  if(d.ok){activities=activities.filter(a=>a.id!==id);renderTable();toast('Deleted')}
+  else toast(d.error||'Error','error');
+}
+
+/* Import */
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');const f=e.dataTransfer.files[0];if(f){applyFile(f)}});
+function onFile(inp){if(inp.files[0])applyFile(inp.files[0])}
+function applyFile(f){document.getElementById('dzName').textContent=f.name;document.getElementById('dzFile').classList.add('show');document.getElementById('doImportBtn').disabled=false}
+async function doImport(){
+  const f=document.getElementById('xlsFile').files[0];if(!f){return}
+  const btn=document.getElementById('doImportBtn');btn.disabled=true;btn.textContent='Importing...';
+  const fd=new FormData();fd.append('file',f);
+  const r=await fetch(API,{method:'POST',headers:{'X-CSRFToken':csrf()},body:fd});
+  const d=await r.json();
+  const res=document.getElementById('importResult');
+  if(d.ok){res.className='import-result ok';res.textContent=d.msg;setTimeout(()=>location.reload(),1200)}
+  else{res.className='import-result err';res.textContent=d.error||'Import failed';btn.disabled=false;btn.textContent='Import'}
+}
+
+
+function csrf(){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1]||''}
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+
+renderTable();
+</script>
+</body>
+</html>

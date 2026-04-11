@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Man Power — HDEC 1100MW Al Henakiya</title>
+  <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#030711;--bg2:#060d1a;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.07);--text:#e2e8f5;--tm:rgba(226,232,245,.45);--td:rgba(226,232,245,.2);
+      --accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--a4:#f0c040;
+      --day:#3b9eff;--night:#a259ff;--rest:#374151;--general:#00e5c8;
+      --off:#ef4444;--leave:#f0c040;--eid:#fb923c;
+      --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+      --px:40px; /* page horizontal padding */
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.3}
+    .wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+
+    /* ─── TOPBAR ─── */
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+      padding:12px var(--px);border-bottom:1px solid var(--border);
+      background:rgba(3,7,17,.9);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200}
+    .tl{display:flex;align-items:center;gap:10px;min-width:0}
+    .back{padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--s);
+      color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s;white-space:nowrap}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .page-title span{color:var(--accent)}
+    .topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .save-btn{display:flex;align-items:center;gap:6px;padding:7px 15px;border-radius:30px;border:none;
+      background:linear-gradient(135deg,var(--accent),#2060d0);color:#fff;font-size:12.5px;
+      font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .2s}
+    .save-btn:hover{transform:scale(1.03);box-shadow:0 4px 18px rgba(59,158,255,.35)}
+    .save-toast{padding:6px 14px;border-radius:20px;border:1px solid rgba(34,197,94,.3);
+      background:rgba(34,197,94,.1);color:#4ade80;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s}
+    .save-toast.show{opacity:1}
+    .imp-btn,.exp-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:30px;
+      font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .2s}
+    .imp-btn{border:1px solid rgba(0,229,200,.3);background:rgba(0,229,200,.08);color:#2dd4bf}
+    .imp-btn:hover{background:rgba(0,229,200,.16)}
+    .exp-btn{border:1px solid rgba(240,192,64,.3);background:rgba(240,192,64,.08);color:#fbbf24}
+    .exp-btn:hover{background:rgba(240,192,64,.16)}
+
+    /* ─── IMPORT MODAL ─── */
+    .modal-bg{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);
+      display:flex;align-items:center;justify-content:center;padding:16px;
+      opacity:0;pointer-events:none;transition:opacity .25s}
+    .modal-bg.open{opacity:1;pointer-events:all}
+    .modal{background:#0a1322;border:1px solid rgba(255,255,255,.1);border-radius:22px;
+      padding:28px 26px;width:100%;max-width:480px;animation:popIn .25s ease both;position:relative}
+    @keyframes popIn{from{opacity:0;transform:scale(.93) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    .modal h2{font-family:var(--fd);font-size:19px;font-weight:800;letter-spacing:-.4px;margin-bottom:6px}
+    .modal .sub{font-size:13px;color:var(--tm);margin-bottom:22px}
+    .modal-close{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:8px;
+      background:var(--s2);border:none;color:var(--tm);font-size:15px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .modal-close:hover{color:#f87171;background:rgba(239,68,68,.15)}
+    .drop-zone{border:2px dashed rgba(0,229,200,.3);border-radius:16px;padding:30px 20px;
+      text-align:center;cursor:pointer;transition:all .25s;background:rgba(0,229,200,.03)}
+    .drop-zone.dragover{border-color:#2dd4bf;background:rgba(0,229,200,.08);transform:scale(1.01)}
+    .drop-zone .dz-icon{font-size:36px;margin-bottom:10px;display:block}
+    .drop-zone .dz-title{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:5px}
+    .drop-zone .dz-sub{font-size:12px;color:var(--tm)}
+    .drop-zone .dz-hint{font-size:11px;color:var(--td);margin-top:7px}
+    input[type=file]#fileInput{display:none}
+    .file-chosen{margin-top:12px;padding:9px 14px;border-radius:10px;background:rgba(0,229,200,.08);
+      border:1px solid rgba(0,229,200,.2);color:#2dd4bf;font-size:12.5px;display:none;align-items:center;gap:8px}
+    .file-chosen.show{display:flex}
+    .prog-wrap{margin-top:14px;display:none}.prog-wrap.show{display:block}
+    .prog-bar-bg{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+    .prog-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#2dd4bf,#3b9eff);width:0%;transition:width .3s}
+    .prog-label{font-size:11.5px;color:var(--tm);margin-top:5px}
+    .import-result{margin-top:14px;padding:12px 15px;border-radius:12px;display:none}
+    .import-result.success.show{display:block;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:#4ade80}
+    .import-result.error.show{display:block;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171}
+    .ir-title{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:5px}
+    .ir-detail{font-size:12px;opacity:.8;line-height:1.5}
+    .modal-actions{display:flex;gap:10px;margin-top:20px}
+    .modal-btn{padding:10px 18px;border-radius:12px;border:none;font-size:13px;font-weight:600;
+      font-family:var(--fb);cursor:pointer;transition:all .2s;flex:1}
+    .modal-btn.primary{background:linear-gradient(135deg,#2dd4bf,#0891b2);color:#fff}
+    .modal-btn.primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(45,212,191,.3)}
+    .modal-btn.primary:disabled{opacity:.4;cursor:default;transform:none}
+    .modal-btn.cancel{background:var(--s2);color:var(--tm);border:1px solid var(--border)}
+    .modal-btn.cancel:hover{color:var(--text)}
+
+    /* ─── TABS ─── */
+    .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);
+      padding:0 var(--px);background:rgba(3,7,17,.5);overflow-x:auto;
+      scrollbar-width:none;-ms-overflow-style:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tab{padding:12px 18px;font-size:13.5px;font-weight:500;color:var(--tm);cursor:pointer;
+      border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;
+      font-family:var(--fb);display:flex;align-items:center;gap:7px;white-space:nowrap}
+    .tab:hover{color:var(--text)}
+    .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+    .tab-badge{padding:2px 7px;border-radius:20px;font-size:10.5px;
+      background:rgba(59,158,255,.12);color:var(--accent);border:1px solid rgba(59,158,255,.2)}
+
+    /* ─── MAIN ─── */
+    .main{padding:20px var(--px) 60px;flex:1}
+    .panel{display:none}.panel.active{display:block}
+
+    /* ─── KPI ROW ─── */
+    .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+    .kpi{padding:18px 20px;border-radius:16px;border:1px solid var(--border);background:var(--s);
+      position:relative;overflow:hidden;cursor:default}
+    .kpi::after{content:'';position:absolute;top:-20px;right:-20px;width:60px;height:60px;
+      border-radius:50%;filter:blur(24px);background:var(--kc,var(--accent));opacity:.18}
+    .kpi-l{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--tm);font-weight:600;margin-bottom:6px}
+    .kpi-v{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:-1.5px;
+      color:var(--kc,var(--accent));line-height:1}
+    .kpi-s{font-size:10.5px;color:var(--td);margin-top:4px}
+    .kpi-i{position:absolute;bottom:12px;right:16px;font-size:20px;opacity:.15}
+
+    /* ─── CHARTS ─── */
+    .charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+    .cc{border-radius:16px;border:1px solid var(--border);background:var(--s);padding:18px 20px}
+    .cc h3{font-family:var(--fd);font-size:13px;font-weight:700;margin-bottom:12px;letter-spacing:-.2px}
+    .cw{position:relative;height:180px}
+
+    /* ─── SCHEDULE TABLE ─── */
+    .sched-wrap{border-radius:16px;border:1px solid var(--border);background:var(--s);overflow:hidden}
+    .sched-head{display:flex;align-items:center;justify-content:space-between;
+      padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+    .sched-head h3{font-family:var(--fd);font-size:14px;font-weight:700}
+    .sched-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .srch{padding:6px 12px;border-radius:10px;border:1px solid var(--border);background:var(--s2);
+      color:var(--text);font-size:12px;font-family:var(--fb);outline:none;width:160px;transition:all .2s}
+    .srch:focus{border-color:rgba(59,158,255,.35);background:rgba(59,158,255,.04)}
+    .srch::placeholder{color:var(--td)}
+    .filter-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--s);
+      color:var(--tm);font-size:11.5px;cursor:pointer;font-family:var(--fb);transition:all .2s;white-space:nowrap}
+    .filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(59,158,255,.1)}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;padding:8px 18px;border-bottom:1px solid var(--border)}
+    .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tm)}
+    .leg-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+    .tbl-scroll{overflow-x:auto;max-height:440px;overflow-y:auto}
+    .tbl-scroll::-webkit-scrollbar{width:4px;height:4px}
+    .tbl-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+    table{width:100%;border-collapse:collapse;min-width:700px}
+    thead th{padding:8px 8px;text-align:center;font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;
+      color:var(--tm);font-weight:600;background:rgba(255,255,255,.025);
+      border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5;white-space:nowrap}
+    thead th.col-name{text-align:left;min-width:110px;padding-left:14px}
+    thead th.col-role{text-align:left;min-width:130px}
+    thead th.date-th{min-width:48px;cursor:pointer}
+    .date-day{font-size:8.5px;color:var(--td);display:block;font-weight:400}
+    .date-peek{font-size:7.5px;display:block;opacity:0;transition:opacity .2s}
+    .date-th:hover .date-peek{opacity:1}
+    .date-th:hover{background:rgba(59,158,255,.07)!important;color:var(--accent)!important}
+    tbody tr{border-bottom:1px solid rgba(255,255,255,.03)}
+    tbody tr:hover{background:rgba(59,158,255,.03)}
+    tbody td{padding:6px 4px;text-align:center;font-size:11.5px}
+    tbody td.td-name{text-align:left;padding-left:14px;font-weight:500;white-space:nowrap;font-size:12.5px}
+    tbody td.td-role{text-align:left;padding-left:5px;font-size:10.5px;color:var(--tm);white-space:nowrap}
+
+    /* ─── CHIPS ─── */
+    .chip{display:inline-block;padding:3px 6px;border-radius:6px;font-size:10.5px;font-weight:600;
+      cursor:pointer;transition:all .15s;min-width:38px;text-align:center;border:1px solid transparent;user-select:none}
+    .chip:hover{transform:scale(1.08);filter:brightness(1.15)}
+    .chip-day{background:rgba(59,158,255,.15);color:#60b0ff;border-color:rgba(59,158,255,.25)}
+    .chip-night{background:rgba(162,89,255,.15);color:#c084fc;border-color:rgba(162,89,255,.25)}
+    .chip-rest{background:rgba(55,65,81,.4);color:#9ca3af;border-color:rgba(107,114,128,.25)}
+    .chip-general{background:rgba(0,229,200,.1);color:#2dd4bf;border-color:rgba(0,229,200,.2)}
+    .chip-off{background:rgba(239,68,68,.12);color:#f87171;border-color:rgba(239,68,68,.2)}
+    .chip-leave,.chip-eid,.chip-on{background:rgba(240,192,64,.1);color:#fbbf24;border-color:rgba(240,192,64,.2)}
+    .chip-empty{background:transparent;color:var(--td);border-color:rgba(255,255,255,.06);font-size:9.5px}
+    .chip-empty:hover{border-color:rgba(59,158,255,.3);color:var(--accent)}
+
+    /* ─── EDIT DROPDOWN ─── */
+    .edit-dropdown{position:fixed;z-index:9999;background:#0f1827;
+      border:1px solid rgba(59,158,255,.3);border-radius:12px;padding:6px;min-width:125px;
+      box-shadow:0 8px 32px rgba(0,0,0,.6);animation:popIn .15s ease both}
+    .edit-option{padding:7px 11px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;
+      display:flex;align-items:center;gap:8px;transition:background .15s}
+    .edit-option:hover{background:rgba(59,158,255,.1)}
+    .edit-option .dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+    .edit-divider{height:1px;background:var(--border);margin:4px 0}
+
+    /* ─── STATS MINI ─── */
+    .stats-mini{display:flex;flex-wrap:wrap;gap:4px;padding:10px 18px;
+      border-top:1px solid var(--border);background:rgba(0,0,0,.15)}
+    .sm-item{flex:1;min-width:70px;text-align:center;padding:4px}
+    .sm-n{font-family:var(--fd);font-size:17px;font-weight:800;color:var(--accent)}
+    .sm-l{font-size:9.5px;color:var(--td);text-transform:uppercase;letter-spacing:.5px}
+
+    /* ─── ATTENDANCE ─── */
+    .att-tab{padding:8px 15px;border-radius:22px;border:1px solid var(--border);background:var(--s);
+      color:var(--tm);font-size:12.5px;font-weight:500;cursor:pointer;font-family:var(--fb);
+      transition:all .2s;white-space:nowrap}
+    .att-tab:hover{color:var(--text)}
+    .att-tab.active{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80;font-weight:600}
+    .att-panel{display:none}.att-panel.active{display:block}
+    .att-card{background:var(--s);border:1px solid var(--border);border-radius:16px;padding:18px}
+    .att-card-title{font-family:var(--fd);font-size:14.5px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px}
+    .att-row{display:flex;align-items:center;flex-wrap:wrap;padding:8px 10px;border-radius:10px;
+      background:rgba(255,255,255,.025);margin-bottom:5px;gap:6px}
+    .att-row:hover{background:rgba(59,158,255,.04)}
+    .att-name{font-size:12.5px;font-weight:500;flex:1;min-width:80px}
+    .att-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+    .att-present{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .att-absent{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+    .att-time{font-size:11px;color:rgba(226,232,245,.45);font-family:monospace}
+
+    /* ─── RESPONSIVE ─── */
+    /* Laptop (≤1280px) */
+    @media(max-width:1280px){
+      :root{--px:28px}
+      .kpi-row{grid-template-columns:repeat(3,1fr)}
+      .charts-row{grid-template-columns:1fr 1fr}
+    }
+    /* Tablet (≤900px) */
+    @media(max-width:900px){
+      :root{--px:18px}
+      .page-title{font-size:14px}
+      .kpi-row{grid-template-columns:repeat(2,1fr);gap:10px}
+      .kpi-v{font-size:24px}
+      .charts-row{grid-template-columns:1fr}
+      .cw{height:160px}
+      .att-card{padding:14px}
+      #panel-attend .att-mark-grid,
+      #panel-attend .att-train-grid,
+      #panel-attend .att-people-grid{grid-template-columns:1fr!important}
+    }
+    /* Mobile (≤600px) */
+    @media(max-width:600px){
+      :root{--px:12px}
+      .topbar{padding:10px var(--px)}
+      .page-title{font-size:13px;max-width:160px}
+      .tl .back{display:none} /* hide back on very small screens, save space */
+      .imp-btn span,.exp-btn span,.save-btn span{display:none} /* icon only */
+      .kpi-row{grid-template-columns:1fr 1fr;gap:8px}
+      .kpi{padding:12px 14px}
+      .kpi-v{font-size:22px}
+      .kpi-i{display:none}
+      .charts-row{grid-template-columns:1fr;gap:10px}
+      .cw{height:150px}
+      .sched-head{padding:12px var(--px)}
+      .sched-controls{gap:6px}
+      .srch{width:120px}
+      .filter-btn{padding:4px 9px;font-size:11px}
+      table{min-width:560px}
+      .att-tab{padding:7px 11px;font-size:11.5px}
+      .att-card{padding:12px}
+      #todayBar{flex-direction:column;align-items:flex-start;gap:10px}
+      #todayBar #todayKpiRow{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+    }
+    /* Very small (≤400px) */
+    @media(max-width:400px){
+      :root{--px:10px}
+      .kpi-row{grid-template-columns:1fr}
+      .tab{padding:10px 12px;font-size:12px}
+    }
+    /* ── DAY MODE ── */
+    html[data-theme="light"]{--bg:#030711;--bg2:#edf0fb;--s:rgba(0,0,0,.028);--s2:rgba(0,0,0,.055);--border:rgba(0,0,0,.09);--text:#0d1728;--tm:rgba(13,23,40,.5);--td:rgba(13,23,40,.28);}
+    html[data-theme="light"]{--bg:#f4f6fd}
+    html[data-theme="light"] body{background:#f4f6fd}
+    html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important;border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] canvas{opacity:.05!important}
+    html[data-theme="light"] .kpi{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .cc{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .sched-wrap{background:#fff;border-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] table{border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] thead tr{background:rgba(0,0,0,.04)!important}
+    html[data-theme="light"] tbody tr{border-bottom-color:rgba(0,0,0,.06)}
+    html[data-theme="light"] tbody tr:hover{background:rgba(59,158,255,.04)}
+    html[data-theme="light"] .tabs{background:rgba(244,246,253,.92);border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] .modal{background:#fff;border-color:rgba(0,0,0,.1)}
+    html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
+    html[data-theme="light"] .edit-dropdown{background:#fff;border-color:rgba(0,0,0,.12);box-shadow:0 8px 32px rgba(0,0,0,.15)}
+    html[data-theme="light"] .edit-option:hover{background:rgba(59,158,255,.08)}
+    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
+    .tt-label{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
+    .theme-toggle:hover .tt-label{color:var(--text)}
+    .tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
+    html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
+    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
+    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="tl">
+      <a href="/" class="back" onclick="return goBack(event, this.href)">← Dashboard</a>
+      <div class="page-title">👥 <span>Man Power</span> · HDEC 1100MW Al Henakiya</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="save-toast" id="saveToast">✓ Saved</span>
+      <button class="imp-btn" onclick="openImport()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import Excel
+      </button>
+      <button class="exp-btn" onclick="exportExcel()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Excel
+      </button>
+      {% if is_admin %}
+      <button class="save-btn" onclick="saveChanges()" id="saveBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        Save Changes
+      </button>
+      {% endif %}
+      <div style="padding:7px 13px;border-radius:30px;font-size:12px;font-weight:600;{% if is_admin %}border:1px solid rgba(162,89,255,.3);background:rgba(162,89,255,.08);color:#c084fc{% else %}border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.07);color:#60b0ff{% endif %}">
+        {% if is_admin %}👑{% else %}👁{% endif %} {{ current_user.name }}
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="tt-label" id="tt-label">Night</span>
+        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
+      </button>
+      <a href="/logout/" style="padding:7px 13px;border-radius:30px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.07);color:#f87171;font-size:12px;text-decoration:none">Sign Out</a>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs">
+    <div class="tab active" onclick="switchTab('eng',this)">🔧 Maintenance Engineers <span class="tab-badge" id="engTabBadge">—</span></div>
+    <div class="tab" onclick="switchTab('tech',this)">⚙️ Technicians <span class="tab-badge" id="techTabBadge">—</span></div>
+    <div class="tab" onclick="switchTab('attend',this)">📸 Attendance <span class="tab-badge" style="background:rgba(34,197,94,.12);color:#4ade80;border-color:rgba(34,197,94,.2)">Face ID</span></div>
+    {% if data_source == 'imported' %}
+    <div style="margin-left:auto;display:flex;align-items:center;padding:0 16px;gap:10px">
+      <span style="font-size:12px;color:rgba(34,197,94,.8);display:flex;align-items:center;gap:6px">
+        <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block"></span>
+        Imported: <strong>{{ source_file }}</strong> · {{ imported_at }}
+      </span>
+    </div>
+    {% else %}
+    <div style="margin-left:auto;display:flex;align-items:center;padding:0 16px">
+      <span style="font-size:12px;color:rgba(240,192,64,.7);display:flex;align-items:center;gap:6px">
+        <span style="width:7px;height:7px;border-radius:50%;background:#f0c040;display:inline-block"></span>
+        Default data · Import your Excel to update
+      </span>
+    </div>
+    {% endif %}
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- SHARED TODAY BAR (above both panels) -->
+    <div id="todayBar" style="
+      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+      padding:14px 20px;border-radius:16px;margin-bottom:18px;
+      background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:13px;color:rgba(226,232,245,.45);font-weight:500">📅 Viewing:</span>
+        <input type="date" id="datePickerInput"
+          style="padding:6px 12px;border-radius:10px;border:1px solid rgba(59,158,255,.3);
+                 background:rgba(59,158,255,.08);color:#e2e8f5;font-size:13px;
+                 font-family:var(--fb);outline:none;cursor:pointer"
+          onchange="onDateChange(this.value)">
+        <button onclick="onDateChange(new Date().toISOString().split('T')[0])"
+          style="padding:5px 12px;border-radius:10px;border:1px solid rgba(0,229,200,.25);
+                 background:rgba(0,229,200,.08);color:#2dd4bf;font-size:12px;
+                 font-weight:600;cursor:pointer;font-family:var(--fb)">Today</button>
+      </div>
+      <div id="todayKpiRow" style="display:flex;gap:10px;flex-wrap:wrap;flex:1"></div>
+    </div>
+
+    <!-- ENGINEERS PANEL -->
+    <div class="panel active" id="panel-eng">
+      <div class="kpi-row" id="eng-kpis"></div>
+      <div class="charts-row">
+        <div class="cc"><h3>Shift Distribution</h3><div class="cw"><canvas id="engPie"></canvas></div></div>
+        <div class="cc"><h3>Staff Per Shift Today</h3><div class="cw"><canvas id="engBar"></canvas></div></div>
+        <div class="cc"><h3>Daily Day vs Night</h3><div class="cw"><canvas id="engLine"></canvas></div></div>
+      </div>
+      <div class="sched-wrap">
+        <div class="sched-head">
+          <h3>Engineer Schedule — Mar 19 → Apr 30, 2026</h3>
+          <div class="sched-controls">
+            <input class="srch" type="text" id="engSearch" placeholder="Search name…" oninput="filterEng()">
+            <button class="filter-btn active" onclick="toggleFilter(this,'eng','all')">All</button>
+            <button class="filter-btn" onclick="toggleFilter(this,'eng','Day')">Day</button>
+            <button class="filter-btn" onclick="toggleFilter(this,'eng','Night')">Night</button>
+            <button class="filter-btn" onclick="toggleFilter(this,'eng','Rest')">Rest</button>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:#60b0ff"></div>Day</div>
+          <div class="leg"><div class="leg-dot" style="background:#c084fc"></div>Night</div>
+          <div class="leg"><div class="leg-dot" style="background:#374151"></div>Rest</div>
+          <div class="leg"><div class="leg-dot" style="background:#2dd4bf"></div>General</div>
+          <div class="leg"><div class="leg-dot" style="background:#f87171"></div>OFF</div>
+          <div class="leg"><div class="leg-dot" style="background:#fbbf24"></div>Leave</div>
+        </div>
+        <div class="tbl-scroll"><table id="engTable"></table></div>
+        <div class="stats-mini" id="engStats"></div>
+      </div>
+    </div>
+
+    <!-- TECHNICIANS PANEL -->
+    <div class="panel" id="panel-tech">
+      <div class="kpi-row" id="tech-kpis"></div>
+      <div class="charts-row">
+        <div class="cc"><h3>Shift Distribution</h3><div class="cw"><canvas id="techPie"></canvas></div></div>
+        <div class="cc"><h3>Technicians Available Today</h3><div class="cw"><canvas id="techBar"></canvas></div></div>
+        <div class="cc"><h3>Daily Day vs Night Count</h3><div class="cw"><canvas id="techLine"></canvas></div></div>
+      </div>
+      <div class="sched-wrap">
+        <div class="sched-head">
+          <h3>Technician Schedule — Mar 18 → Apr 20, 2026</h3>
+          <div class="sched-controls">
+            <input class="srch" type="text" id="techSearch" placeholder="Search name…" oninput="filterTech()">
+            <button class="filter-btn active" onclick="toggleFilter(this,'tech','all')">All</button>
+            <button class="filter-btn" onclick="toggleFilter(this,'tech','Day')">Day</button>
+            <button class="filter-btn" onclick="toggleFilter(this,'tech','Night')">Night</button>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="leg"><div class="leg-dot" style="background:#60b0ff"></div>Day</div>
+          <div class="leg"><div class="leg-dot" style="background:#c084fc"></div>Night</div>
+          <div class="leg"><div class="leg-dot" style="background:#fbbf24"></div>Eid Leave</div>
+          <div class="leg"><div class="leg-dot" style="background:#374151"></div>Rest/Off</div>
+        </div>
+        <div class="tbl-scroll"><table id="techTable"></table></div>
+        <div class="stats-mini" id="techStats"></div>
+      </div>
+    </div>
+
+    <!-- ══ ATTENDANCE PANEL ══ -->
+    <div class="panel" id="panel-attend">
+
+      <!-- SUB TABS -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="att-tab active" id="att-tab-mark"    onclick="switchAttTab('mark',this)">📸 Mark Attendance</button>
+        {% if is_admin %}
+        <button class="att-tab" id="att-tab-people"  onclick="switchAttTab('people',this)">👥 Manage People</button>
+        <button class="att-tab" id="att-tab-train"   onclick="switchAttTab('train',this)">🎓 Face Training</button>
+        {% endif %}
+        <button class="att-tab" id="att-tab-records" onclick="switchAttTab('records',this)">📋 Records &amp; Export</button>
+      </div>
+
+      <!-- ─── MARK ATTENDANCE ─── -->
+      <div class="att-panel active" id="att-mark">
+        <div class="att-mark-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="att-card">
+            <h3 class="att-card-title">📷 Face Recognition Camera</h3>
+            <div style="position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3">
+              <video id="markVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
+              <canvas id="markCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
+              <div id="markOverlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);flex-direction:column;gap:12px">
+                <span style="font-size:36px">📷</span>
+                <span style="color:#e2e8f5;font-size:14px">Camera not started</span>
+                <button onclick="startMarkCamera()" style="padding:8px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#3b9eff,#1a52cc);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fb)">Start Camera</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button onclick="recognizeFace()" id="recognizeBtn"
+                style="flex:1;padding:11px;border-radius:11px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--fb)" disabled>🔍 Recognize &amp; Mark</button>
+              <button onclick="stopMarkCamera()" style="padding:11px 14px;border-radius:11px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08);color:#f87171;font-size:13px;cursor:pointer;font-family:var(--fb)">■ Stop</button>
+            </div>
+            <div id="markStatus" style="margin-top:10px;padding:10px 14px;border-radius:10px;display:none;font-size:13px;font-weight:500"></div>
+          </div>
+
+          <div class="att-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3 class="att-card-title" style="margin:0">📋 Today's Attendance</h3>
+              <button onclick="loadTodayAttendance()" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(59,158,255,.25);background:rgba(59,158,255,.08);color:#60b0ff;font-size:11.5px;cursor:pointer;font-family:var(--fb)">⟳ Refresh</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+              <div style="padding:10px;border-radius:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);text-align:center">
+                <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#4ade80" id="att-present">0</div>
+                <div style="font-size:10px;color:rgba(226,232,245,.4);text-transform:uppercase;letter-spacing:.6px">Present</div>
+              </div>
+              <div style="padding:10px;border-radius:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);text-align:center">
+                <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#f87171" id="att-absent">0</div>
+                <div style="font-size:10px;color:rgba(226,232,245,.4);text-transform:uppercase;letter-spacing:.6px">Absent</div>
+              </div>
+              <div style="padding:10px;border-radius:10px;background:rgba(59,158,255,.08);border:1px solid rgba(59,158,255,.2);text-align:center">
+                <div style="font-family:var(--fd);font-size:22px;font-weight:800;color:#60b0ff" id="att-total">0</div>
+                <div style="font-size:10px;color:rgba(226,232,245,.4);text-transform:uppercase;letter-spacing:.6px">Total</div>
+              </div>
+            </div>
+            <div id="todayAttList" style="max-height:300px;overflow-y:auto;padding-right:2px">
+              <div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── MANAGE PEOPLE (admin) ─── -->
+      {% if is_admin %}
+      <div class="att-panel" id="att-people">
+        <div class="att-people-grid" style="display:grid;grid-template-columns:380px 1fr;gap:18px">
+          <!-- Add person form -->
+          <div class="att-card">
+            <h3 class="att-card-title">➕ Add Person</h3>
+            <div style="margin-bottom:12px">
+              <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:rgba(226,232,245,.4);display:block;margin-bottom:6px">Full Name</label>
+              <input id="newPersonName" type="text" placeholder="e.g. Muhammad Ali"
+                style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e2e8f5;font-size:13.5px;font-family:var(--fb);outline:none">
+            </div>
+            <div style="margin-bottom:16px">
+              <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:rgba(226,232,245,.4);display:block;margin-bottom:6px">Role</label>
+              <input id="newPersonRole" type="text" placeholder="e.g. Technician / Helper"
+                style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e2e8f5;font-size:13.5px;font-family:var(--fb);outline:none"
+                value="Technician">
+            </div>
+            <button onclick="addPerson()"
+              style="width:100%;padding:11px;border-radius:11px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--fb)">
+              ➕ Add to Attendance Roster
+            </button>
+            <div id="addPersonStatus" style="margin-top:10px;padding:9px 13px;border-radius:10px;display:none;font-size:13px;font-weight:500"></div>
+
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)">
+              <div style="font-size:12px;color:rgba(226,232,245,.4);margin-bottom:10px">Or sync directly from imported schedule:</div>
+              <button onclick="syncPeopleFromSchedule()"
+                style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(59,158,255,.25);background:rgba(59,158,255,.07);color:#60b0ff;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb)">
+                🔄 Sync from Technician Schedule
+              </button>
+            </div>
+          </div>
+
+          <!-- People list -->
+          <div class="att-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <h3 class="att-card-title" style="margin:0">👥 Attendance Roster</h3>
+              <span id="peopleCount" style="font-size:12px;color:rgba(226,232,245,.35)">0 people</span>
+            </div>
+            <div style="margin-bottom:12px">
+              <input id="peopleSearch" type="text" placeholder="Search by name…"
+                style="width:100%;padding:8px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#e2e8f5;font-size:13px;font-family:var(--fb);outline:none"
+                oninput="renderPeopleList()">
+            </div>
+            <div id="peopleList" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;padding-right:2px">
+              <div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── FACE TRAINING (admin) ─── -->
+      <div class="att-panel" id="att-train">
+        <div class="att-train-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="att-card">
+            <h3 class="att-card-title">🎓 Train New Face</h3>
+            <div style="margin-bottom:14px">
+              <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:rgba(226,232,245,.4);display:block;margin-bottom:6px">Select Person</label>
+              <select id="trainNameSelect" style="width:100%;padding:10px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e2e8f5;font-size:13.5px;font-family:var(--fb);outline:none">
+                <option value="">— Choose person —</option>
+              </select>
+            </div>
+            <div style="position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:4/3">
+              <video id="trainVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
+              <canvas id="trainCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
+              <div id="trainOverlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);flex-direction:column;gap:12px">
+                <span style="font-size:36px">🎓</span>
+                <span style="color:#e2e8f5;font-size:14px">Camera not started</span>
+                <button onclick="startTrainCamera()" style="padding:8px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#a259ff,#7c3aed);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fb)">Start Camera</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button onclick="captureTrainSample()" id="captureBtn" disabled
+                style="flex:1;padding:11px;border-radius:11px;border:none;background:linear-gradient(135deg,#a259ff,#7c3aed);color:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--fb)">📸 Capture Sample</button>
+            </div>
+            <div id="trainSampleCount" style="margin-top:8px;font-size:12.5px;color:rgba(226,232,245,.45);text-align:center"></div>
+            <div id="trainStatus" style="margin-top:8px;padding:10px 14px;border-radius:10px;display:none;font-size:13px;font-weight:500"></div>
+          </div>
+
+          <div class="att-card">
+            <h3 class="att-card-title">👤 Trained Faces</h3>
+            <div id="trainedFacesList" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto">
+              <div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ─── RECORDS & EXPORT ─── -->
+      <div class="att-panel" id="att-records">
+        <div class="att-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+            <h3 class="att-card-title" style="margin:0">📋 Attendance Records</h3>
+          </div>
+
+          <!-- Controls row -->
+          <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.025)">
+            <div>
+              <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:rgba(226,232,245,.4);margin-bottom:5px">📅 Single Date</div>
+              <div style="display:flex;gap:6px">
+                <input type="date" id="recordDateInput" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e2e8f5;font-size:12.5px;font-family:var(--fb);outline:none">
+                <button onclick="loadRecords('day')" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(59,158,255,.25);background:rgba(59,158,255,.09);color:#60b0ff;font-size:12px;cursor:pointer;font-family:var(--fb);font-weight:600">View</button>
+                <button onclick="exportAttendance('day')" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(240,192,64,.25);background:rgba(240,192,64,.08);color:#fbbf24;font-size:12px;cursor:pointer;font-family:var(--fb);font-weight:600">⬇ Excel</button>
+              </div>
+            </div>
+            <div style="width:1px;height:36px;background:rgba(255,255,255,.07)"></div>
+            <div>
+              <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:rgba(226,232,245,.4);margin-bottom:5px">📆 Full Month</div>
+              <div style="display:flex;gap:6px">
+                <input type="month" id="recordMonthInput" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e2e8f5;font-size:12.5px;font-family:var(--fb);outline:none">
+                <button onclick="loadRecords('month')" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(162,89,255,.25);background:rgba(162,89,255,.08);color:#c084fc;font-size:12px;cursor:pointer;font-family:var(--fb);font-weight:600">View</button>
+                <button onclick="exportAttendance('month')" style="padding:7px 14px;border-radius:9px;border:1px solid rgba(34,197,94,.25);background:rgba(34,197,94,.08);color:#4ade80;font-size:12px;cursor:pointer;font-family:var(--fb);font-weight:600">⬇ Excel</button>
+              </div>
+            </div>
+            <div style="margin-left:auto;font-size:11px;color:rgba(226,232,245,.3);align-self:center">
+              ℹ Missing dates show as <span style="color:rgba(226,232,245,.5);font-weight:600">Unknown</span>
+            </div>
+          </div>
+
+          <div id="recordsTable">
+            <div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:30px">Select a date or month to view records</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EDIT DROPDOWN (shared) -->
+<div class="edit-dropdown" id="editDropdown" style="display:none"></div>
+
+<script>
+/* ── ROLE ── */
+const IS_ADMIN = {% if is_admin %}true{% else %}false{% endif %};
+
+/* ── BACKGROUND ── */
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');let W,H;
+const dots=Array.from({length:40},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.25,dy:(Math.random()-.5)*.25,r:Math.random()*1.2+.3,a:Math.random()*.4+.07}));
+function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}rs();addEventListener('resize',rs);
+function drawBg(){cx.clearRect(0,0,W,H);cx.strokeStyle='rgba(59,158,255,0.02)';cx.lineWidth=1;for(let x=0;x<W;x+=90){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke()}for(let y=0;y<H;y+=90){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}dots.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);cx.fillStyle=`rgba(59,158,255,${d.a})`;cx.fill()});requestAnimationFrame(drawBg)}
+drawBg();
+
+/* ── DATA ── */
+/* Data comes from server (imported file or default hardcoded) */
+const ENGINEERS   = {{ engineers_json|default:"[]"|safe }};
+const TECHNICIANS = {{ technicians_json|default:"[]"|safe }};
+const ENG_DATES   = {{ eng_dates_json|default:"[]"|safe }};
+const TECH_DATES  = {{ tech_dates_json|default:"[]"|safe }};
+
+/* Data source badge */
+const DATA_SOURCE = "{{ data_source|default:'default' }}";
+const SOURCE_FILE = "{{ source_file|default:'' }}";
+const IMPORTED_AT = "{{ imported_at|default:'' }}";
+
+let engData  = JSON.parse(JSON.stringify(ENGINEERS));
+let techData = JSON.parse(JSON.stringify(TECHNICIANS));
+
+/* ── SHIFT CONFIG ── */
+const SHIFTS = ['Day','Night','Rest','General','OFF','ON leave','EID leave','Eid Leave'];
+const SHIFT_COLORS = {
+  'Day':    {bg:'rgba(59,158,255,.15)',  color:'#60b0ff',  dot:'#3b9eff'},
+  'Night':  {bg:'rgba(162,89,255,.15)', color:'#c084fc',  dot:'#a259ff'},
+  'Rest':   {bg:'rgba(55,65,81,.4)',    color:'#9ca3af',  dot:'#6b7280'},
+  'General':{bg:'rgba(0,229,200,.1)',   color:'#2dd4bf',  dot:'#00e5c8'},
+  'OFF':    {bg:'rgba(239,68,68,.12)',  color:'#f87171',  dot:'#ef4444'},
+  'ON leave':{bg:'rgba(240,192,64,.1)',color:'#fbbf24',   dot:'#f0c040'},
+  'EID leave':{bg:'rgba(251,146,60,.1)',color:'#fb923c',  dot:'#f97316'},
+  'Eid Leave':{bg:'rgba(251,146,60,.1)',color:'#fb923c',  dot:'#f97316'},
+};
+
+function getChipClass(val){
+  if(!val||val==='')return'chip-empty';
+  const v=val.toLowerCase();
+  if(v==='day')return'chip-day';
+  if(v==='night')return'chip-night';
+  if(v==='rest')return'chip-rest';
+  if(v==='general')return'chip-general';
+  if(v==='off')return'chip-off';
+  if(v.includes('leave'))return'chip-leave';
+  return'chip-leave';
+}
+
+/* ── TABS ── */
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+/* ── BUILD ENG TABLE ── */
+let engFilter = {search:'', shift:'all'};
+let techFilter = {search:'', shift:'all'};
+
+function filterEng(){
+  engFilter.search=document.getElementById('engSearch').value.toLowerCase();
+  buildEngTable();
+}
+function filterTech(){
+  techFilter.search=document.getElementById('techSearch').value.toLowerCase();
+  buildTechTable();
+}
+function toggleFilter(btn,type,shift){
+  const container=btn.parentElement;
+  container.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(type==='eng'){engFilter.shift=shift;buildEngTable();}
+  else{techFilter.shift=shift;buildTechTable();}
+}
+
+function buildTable(tableId, people, dates, filterObj) {
+  const tbl = document.getElementById(tableId);
+  const filtered = people.filter(p => {
+    if(filterObj.search && !p.name.toLowerCase().includes(filterObj.search)) return false;
+    if(filterObj.shift !== 'all') {
+      const hasShift = dates.some(d => (p.schedule[d]||'').toLowerCase() === filterObj.shift.toLowerCase());
+      if(!hasShift) return false;
+    }
+    return true;
+  });
+
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = '<thead><tr>';
+  html += '<th class="col-name">Name</th>';
+  if(tableId==='engTable') html += '<th class="col-role">Role</th>';
+  dates.forEach(d => {
+    const dt = new Date(d+'T00:00:00');
+    const dayName = DAYS[dt.getDay()];
+    const isWeekend = dt.getDay()===5||dt.getDay()===6;
+    const type = tableId==='engTable' ? 'eng' : 'tech';
+    html += `<th class="date-th" onclick="openDayPanel('${d}','${type}')"
+      style="${isWeekend?'color:#f0c040;opacity:.85':''}"
+      title="Click to see ${d} manpower">
+      ${dt.getDate()}<br>
+      <span class="date-day">${dayName}</span>
+      <span class="date-peek" style="color:${isWeekend?'#f0c040':'#3b9eff'}">▼</span>
+    </th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  filtered.forEach((p,pi) => {
+    const pidx = people.indexOf(p);
+    html += '<tr>';
+    html += `<td class="td-name">${p.name}</td>`;
+    if(tableId==='engTable') html += `<td class="td-role">${(p.role||'').replace('Maintenance ','')}</td>`;
+    dates.forEach(d => {
+      const val = p.schedule[d] || '';
+      const cls = getChipClass(val);
+      html += `<td onclick="openEdit(event,${pidx},'${d}','${tableId==='engTable'?'eng':'tech'}')" title="${p.name} · ${d}">`;
+      if(val) html += `<span class="chip ${cls}">${val}</span>`;
+      else html += `<span class="chip chip-empty">+</span>`;
+      html += '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+function buildEngTable(){ buildTable('engTable', engData, ENG_DATES, engFilter); buildEngStats(); }
+function buildTechTable(){ buildTable('techTable', techData, TECH_DATES, techFilter); buildTechStats(); }
+
+/* ── TODAY DATE (shared across both panels) ── */
+let selectedDate = new Date().toISOString().split('T')[0];
+
+function onDateChange(date){
+  selectedDate = date;
+  document.getElementById('datePickerInput').value = date;
+  buildTodayBar();
+  buildEngKPIs();
+  buildTechKPIs();
+  buildEngStats();
+  buildTechStats();
+}
+
+/* ── TODAY COMBINED KPI BAR ── */
+function buildTodayBar(){
+  const d = selectedDate;
+  const dt = new Date(d + 'T00:00:00');
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateLabel = DAYS[dt.getDay()] + ' ' + dt.getDate() + ' ' + MONTHS[dt.getMonth()] + ' ' + dt.getFullYear();
+
+  // Count engineers today
+  let engDay=0, engNight=0, engLeave=0, engOff=0, engRest=0, engGen=0;
+  engData.forEach(p=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')engDay++;
+    else if(v==='night')engNight++;
+    else if(v.includes('leave'))engLeave++;
+    else if(v==='off')engOff++;
+    else if(v==='rest')engRest++;
+    else if(v==='general')engGen++;
+  });
+  const engActive = engDay + engNight + engGen;
+
+  // Count technicians today
+  let techDay=0, techNight=0, techLeave=0, techOff=0;
+  techData.forEach(p=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')techDay++;
+    else if(v==='night')techNight++;
+    else if(v.includes('leave'))techLeave++;
+    else if(v==='off')techOff++;
+  });
+  const techActive = techDay + techNight;
+
+  const totalDay   = engDay   + techDay;
+  const totalNight = engNight + techNight;
+  const totalActive= engActive + techActive;
+  const totalStaff = engData.length + techData.length;
+
+  const pills = [
+    {label:'Total On Site',  val:totalActive, color:'#3b9eff', bg:'rgba(59,158,255,.12)',  b:'rgba(59,158,255,.25)',  icon:'👥'},
+    {label:'Day Shift',      val:totalDay,    color:'#f0c040', bg:'rgba(240,192,64,.1)',   b:'rgba(240,192,64,.25)',  icon:'☀️'},
+    {label:'Night Shift',    val:totalNight,  color:'#c084fc', bg:'rgba(162,89,255,.12)',  b:'rgba(162,89,255,.25)',  icon:'🌙'},
+    {label:'Engineers',      val:engActive,   color:'#2dd4bf', bg:'rgba(0,229,200,.08)',   b:'rgba(0,229,200,.2)',    icon:'🔧'},
+    {label:'Technicians',    val:techActive,  color:'#4ade80', bg:'rgba(34,197,94,.08)',   b:'rgba(34,197,94,.2)',    icon:'⚙️'},
+    {label:'On Leave / OFF', val:engLeave+techLeave+engOff+techOff, color:'#fb923c', bg:'rgba(251,146,60,.08)', b:'rgba(251,146,60,.2)', icon:'✈️'},
+  ];
+
+  document.getElementById('todayKpiRow').innerHTML = pills.map(p=>`
+    <div style="display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:12px;
+                background:${p.bg};border:1px solid ${p.b};cursor:default;flex-shrink:0">
+      <span style="font-size:16px">${p.icon}</span>
+      <div>
+        <div style="font-family:var(--fd);font-size:20px;font-weight:800;color:${p.color};
+                    line-height:1;letter-spacing:-1px">${p.val}</div>
+        <div style="font-size:10px;color:rgba(226,232,245,.45);text-transform:uppercase;
+                    letter-spacing:.6px;margin-top:2px;white-space:nowrap">${p.label}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── ENGINEER KPIs (today-specific) ── */
+function buildEngKPIs(){
+  const d = selectedDate;
+  let day=0,night=0,general=0,rest=0,leave=0,off=0,nodata=0;
+  engData.forEach(p=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')day++;
+    else if(v==='night')night++;
+    else if(v==='general')general++;
+    else if(v==='rest')rest++;
+    else if(v.includes('leave'))leave++;
+    else if(v==='off')off++;
+    else nodata++;
+  });
+  const kpis=[
+    {l:'Day Shift Today',  v:day,          s:'On day duty',      i:'☀️', c:'#3b9eff'},
+    {l:'Night Shift Today',v:night,        s:'On night duty',    i:'🌙', c:'#a259ff'},
+    {l:'General Duty',     v:general,      s:'General rotation', i:'⚙️', c:'#00e5c8'},
+    {l:'On Leave / OFF',   v:leave+off,    s:'Not on site',      i:'✈️', c:'#f0c040'},
+    {l:'Total Engineers',  v:engData.length,s:'All engineers',   i:'👥', c:'#e2e8f5'},
+  ];
+  document.getElementById('eng-kpis').innerHTML=kpis.map((k,i)=>`
+    <div class="kpi" style="--kc:${k.c};animation-delay:${i*50}ms">
+      <div class="kpi-l">${k.l}</div>
+      <div class="kpi-v">${k.v}</div>
+      <div class="kpi-s">${k.s}</div>
+      <div class="kpi-i">${k.i}</div>
+    </div>`).join('');
+}
+
+/* ── TECHNICIAN KPIs (today-specific) ── */
+function buildTechKPIs(){
+  const d = selectedDate;
+  let day=0,night=0,leave=0,off=0,nodata=0;
+  // Separate helpers vs named technicians
+  let helperDay=0,helperNight=0,techNamedDay=0,techNamedNight=0;
+  techData.forEach(p=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    const isHelper = p.name.toLowerCase().includes('helper');
+    if(v==='day'){    day++;   isHelper?helperDay++:techNamedDay++;   }
+    else if(v==='night'){night++;isHelper?helperNight++:techNamedNight++;}
+    else if(v.includes('leave'))leave++;
+    else if(v==='off')off++;
+    else nodata++;
+  });
+  const kpis=[
+    {l:'Day Shift Today',     v:day,            s:'On day duty',       i:'☀️', c:'#3b9eff'},
+    {l:'Night Shift Today',   v:night,          s:'On night duty',     i:'🌙', c:'#a259ff'},
+    {l:'Technicians (Day)',   v:techNamedDay,   s:'Named tech · day',  i:'🔧', c:'#00e5c8'},
+    {l:'Helpers (Night)',     v:helperNight,    s:'Helpers · night',   i:'👷', c:'#fb923c'},
+    {l:'Total Technicians',   v:techData.length,s:'All technicians',   i:'👥', c:'#e2e8f5'},
+  ];
+  document.getElementById('tech-kpis').innerHTML=kpis.map((k,i)=>`
+    <div class="kpi" style="--kc:${k.c};animation-delay:${i*50}ms">
+      <div class="kpi-l">${k.l}</div>
+      <div class="kpi-v">${k.v}</div>
+      <div class="kpi-s">${k.s}</div>
+      <div class="kpi-i">${k.i}</div>
+    </div>`).join('');
+}
+
+/* ── STATS MINI ── */
+function buildEngStats(){
+  const d = selectedDate;
+  let dy=0,n=0,r=0,g=0,l=0;
+  engData.forEach(p=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')dy++;else if(v==='night')n++;
+    else if(v==='rest')r++;else if(v==='general')g++;
+    else if(v.includes('leave'))l++;
+  });
+  document.getElementById('engStats').innerHTML=`
+    <div class="sm-item"><div class="sm-n" style="color:#60b0ff">${dy}</div><div class="sm-l">Day</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#c084fc">${n}</div><div class="sm-l">Night</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#9ca3af">${r}</div><div class="sm-l">Rest</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#2dd4bf">${g}</div><div class="sm-l">General</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#fbbf24">${l}</div><div class="sm-l">Leave</div></div>`;
+}
+function buildTechStats(){
+  const d = selectedDate;
+  let dy=0,n=0,l=0,o=0;
+  techData.forEach(p=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')dy++;else if(v==='night')n++;
+    else if(v.includes('leave'))l++;
+    else if(v==='off')o++;
+  });
+  document.getElementById('techStats').innerHTML=`
+    <div class="sm-item"><div class="sm-n" style="color:#60b0ff">${dy}</div><div class="sm-l">Day</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#c084fc">${n}</div><div class="sm-l">Night</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#fbbf24">${l}</div><div class="sm-l">Leave</div></div>
+    <div class="sm-item"><div class="sm-n" style="color:#f87171">${o}</div><div class="sm-l">OFF</div></div>`;
+}
+
+/* ── CHARTS ── */
+Chart.defaults.color='rgba(226,232,245,0.4)';Chart.defaults.borderColor='rgba(255,255,255,0.06)';Chart.defaults.font.family="'DM Sans',sans-serif";
+let chs={};
+function mk(id,type,labels,datasets,opts={}){
+  if(chs[id])chs[id].destroy();
+  chs[id]=new Chart(document.getElementById(id).getContext('2d'),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:700},plugins:{legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:10,font:{size:11}}},tooltip:{backgroundColor:'rgba(6,13,26,.95)',borderColor:'rgba(59,158,255,.2)',borderWidth:1,padding:10}},scales:opts.sc||undefined,...(opts.ex||{})}});
+}
+
+function buildEngCharts(){
+  let day=0,night=0,rest=0,general=0,leave=0;
+  engData.forEach(p=>ENG_DATES.forEach(d=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')day++;else if(v==='night')night++;
+    else if(v==='rest')rest++;else if(v==='general')general++;
+    else if(v.includes('leave'))leave++;
+  }));
+  mk('engPie','doughnut',['Day','Night','Rest','General','Leave'],[{data:[day,night,rest,general,leave],backgroundColor:['rgba(59,158,255,.7)','rgba(162,89,255,.7)','rgba(107,114,128,.5)','rgba(0,229,200,.6)','rgba(240,192,64,.6)'],borderWidth:2,borderColor:'#060d1a',hoverOffset:5}],{lp:'bottom',ex:{cutout:'60%'}});
+
+  // Today bar — use selectedDate
+  const names=engData.map(p=>p.name.split(' ')[0]);
+  const vals=engData.map(p=>{const v=(p.schedule[selectedDate]||'').toLowerCase();return v==='day'?1:v==='night'?2:v.includes('leave')?3:0;});
+  const colors=engData.map(p=>{const v=(p.schedule[selectedDate]||'').toLowerCase();return v==='day'?'rgba(59,158,255,.7)':v==='night'?'rgba(162,89,255,.7)':v.includes('leave')?'rgba(240,192,64,.6)':'rgba(107,114,128,.4)';});
+  mk('engBar','bar',names,[{label:'Shift',data:vals.map(v=>v||0.2),backgroundColor:colors,borderWidth:0,borderRadius:4}],{lp:false,sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{display:false}},ex:{indexAxis:'y'}});
+
+  // Line chart: day vs night per date sample (every 3rd)
+  const sampledDates=ENG_DATES.filter((_,i)=>i%3===0);
+  const dayLine=sampledDates.map(d=>engData.filter(p=>(p.schedule[d]||'').toLowerCase()==='day').length);
+  const nightLine=sampledDates.map(d=>engData.filter(p=>(p.schedule[d]||'').toLowerCase()==='night').length);
+  const labels2=sampledDates.map(d=>{const dt=new Date(d+'T00:00:00');return`${dt.getDate()}/${dt.getMonth()+1}`;});
+  mk('engLine','line',labels2,[
+    {label:'Day',data:dayLine,borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
+    {label:'Night',data:nightLine,borderColor:'#a259ff',backgroundColor:'rgba(162,89,255,.06)',fill:true,tension:.4,pointRadius:3,borderWidth:2}
+  ],{lp:'bottom',sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:10},stepSize:1}}}});
+}
+
+function buildTechCharts(){
+  let day=0,night=0,leave=0,other=0;
+  techData.forEach(p=>TECH_DATES.forEach(d=>{
+    const v=(p.schedule[d]||'').toLowerCase();
+    if(v==='day')day++;else if(v==='night')night++;
+    else if(v.includes('leave'))leave++;else if(v)other++;
+  }));
+  mk('techPie','doughnut',['Day','Night','Leave','Other'],[{data:[day,night,leave,other],backgroundColor:['rgba(59,158,255,.7)','rgba(162,89,255,.7)','rgba(240,192,64,.6)','rgba(107,114,128,.5)'],borderWidth:2,borderColor:'#060d1a',hoverOffset:5}],{lp:'bottom',ex:{cutout:'60%'}});
+
+  const names=techData.map(p=>p.name);
+  const today=new Date().toISOString().split('T')[0];
+  const dayC=techData.map(p=>TECH_DATES.filter(d=>(p.schedule[d]||'').toLowerCase()==='day').length);
+  const nightC=techData.map(p=>TECH_DATES.filter(d=>(p.schedule[d]||'').toLowerCase()==='night').length);
+  mk('techBar','bar',names,[
+    {label:'Day Shifts',data:dayC,backgroundColor:'rgba(59,158,255,.6)',borderRadius:4,borderWidth:0},
+    {label:'Night Shifts',data:nightC,backgroundColor:'rgba(162,89,255,.6)',borderRadius:4,borderWidth:0}
+  ],{lp:'bottom',sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:10}}}}});
+
+  const dayLine2=TECH_DATES.map(d=>techData.filter(p=>(p.schedule[d]||'').toLowerCase()==='day').length);
+  const nightLine2=TECH_DATES.map(d=>techData.filter(p=>(p.schedule[d]||'').toLowerCase()==='night').length);
+  const labels3=TECH_DATES.map(d=>{const dt=new Date(d+'T00:00:00');return`${dt.getDate()}/${dt.getMonth()+1}`;});
+  mk('techLine','line',labels3,[
+    {label:'Day',data:dayLine2,borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,.07)',fill:true,tension:.4,pointRadius:2,borderWidth:2},
+    {label:'Night',data:nightLine2,borderColor:'#a259ff',backgroundColor:'rgba(162,89,255,.06)',fill:true,tension:.4,pointRadius:2,borderWidth:2}
+  ],{lp:'bottom',sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:10},stepSize:1}}}});
+}
+
+/* ── INLINE EDIT ── */
+let activeCell = null;
+
+function openEdit(e, personIdx, date, type){
+  if(!IS_ADMIN){
+    // Viewers see a read-only tooltip
+    const dd=document.getElementById('editDropdown');
+    const people=type==='eng'?engData:techData;
+    const val=people[personIdx].schedule[date]||'—';
+    dd.innerHTML=`<div style="padding:10px 14px;font-size:12.5px;color:rgba(226,232,245,.6)">👁 <strong>${people[personIdx].name}</strong><br><span style="font-size:11px;color:rgba(226,232,245,.35)">${date}</span><br><br>Shift: <strong style="color:#60b0ff">${val}</strong><br><br><span style="font-size:11px;color:rgba(226,232,245,.3)">View only — contact admin to edit</span></div>`;
+    dd.style.display='block';
+    const rect=e.currentTarget.getBoundingClientRect();
+    dd.style.top=Math.min(rect.bottom+4,innerHeight-120)+'px';
+    dd.style.left=Math.min(rect.left,innerWidth-180)+'px';
+    return;
+  }
+  e.stopPropagation();
+  closeDropdown();
+  const people = type==='eng' ? engData : techData;
+  const person = people[personIdx];
+  const current = person.schedule[date] || '';
+  const dd = document.getElementById('editDropdown');
+  const options = ['Day','Night','Rest','General','OFF','ON leave','EID leave','Eid Leave'];
+  const colors = {Day:'#3b9eff',Night:'#a259ff',Rest:'#6b7280',General:'#00e5c8',OFF:'#ef4444','ON leave':'#f0c040','EID leave':'#fb923c','Eid Leave':'#fb923c'};
+  dd.innerHTML = `
+    <div style="padding:6px 10px 8px;font-size:11px;color:rgba(226,232,245,.4);font-weight:600;text-transform:uppercase;letter-spacing:.7px">${person.name} · ${date}</div>
+    <div class="edit-divider"></div>
+    ${options.map(o=>`<div class="edit-option ${o===current?'':''}" style="${o===current?'background:rgba(59,158,255,.12)':''}" onclick="setShift(${personIdx},'${date}','${type}','${o}')">
+      <div class="dot" style="background:${colors[o]||'#6b7280'}"></div>${o}${o===current?' ✓':''}
+    </div>`).join('')}
+    <div class="edit-divider"></div>
+    <div class="edit-option" onclick="setShift(${personIdx},'${date}','${type}','')">
+      <div class="dot" style="background:rgba(255,255,255,.15)"></div>Clear
+    </div>`;
+  const rect = e.currentTarget.getBoundingClientRect();
+  dd.style.display = 'block';
+  const top = Math.min(rect.bottom + 4, window.innerHeight - 280);
+  const left = Math.min(rect.left, window.innerWidth - 150);
+  dd.style.top = top + 'px';
+  dd.style.left = left + 'px';
+  activeCell = {personIdx, date, type};
+}
+
+function setShift(personIdx, date, type, val){
+  const people = type==='eng' ? engData : techData;
+  if(val==='') delete people[personIdx].schedule[date];
+  else people[personIdx].schedule[date] = val;
+  closeDropdown();
+  if(type==='eng'){buildEngTable();buildEngCharts();buildKPIs(engData,ENG_DATES,'eng-kpis');}
+  else{buildTechTable();buildTechCharts();buildKPIs(techData,TECH_DATES,'tech-kpis');}
+  markUnsaved();
+}
+
+function closeDropdown(){
+  document.getElementById('editDropdown').style.display='none';
+  activeCell=null;
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#editDropdown')&&!e.target.closest('td')) closeDropdown();
+});
+
+/* ── SAVE ── */
+let unsaved = false;
+function markUnsaved(){
+  unsaved = true;
+  const sb = document.querySelector('.save-btn');
+  if(sb) sb.textContent = '💾 Save Changes*';
+}
+function saveChanges(){
+  // Save only in-session edits (not used to restore on reload — server is source of truth)
+  unsaved = false;
+  const btn = document.querySelector('.save-btn');
+  if(btn) btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d=\"M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z\"/><polyline points=\"17,21 17,13 7,13 7,21\"/><polyline points=\"7,3 7,8 15,8\"/></svg> Save Changes';
+  const toast = document.getElementById('saveToast');
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 2500);
+}
+
+/* ── INIT ── */
+document.getElementById('engTabBadge').textContent  = engData.length;
+document.getElementById('techTabBadge').textContent = techData.length;
+// Set date picker to today
+document.getElementById('datePickerInput').value = selectedDate;
+// Build everything with today's date
+buildTodayBar();
+buildEngKPIs();
+buildTechKPIs();
+buildEngTable();
+buildTechTable();
+buildEngCharts();
+buildTechCharts();
+buildEngStats();
+buildTechStats();
+</script>
+
+<!-- ════════════════════════════════════
+     DAY PANEL MODAL
+════════════════════════════════════ -->
+<div class="modal-bg" id="dayPanel">
+  <div class="modal" style="max-width:620px;width:min(620px,96vw);max-height:90vh;overflow-y:auto">
+    <button class="modal-close" onclick="closeDayPanel()">&#x2715;</button>
+    <div id="dayPanelContent"></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   DAY PANEL
+════════════════════════════════════ */
+const DAYS_FULL  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS_ARR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SHIFT_CFG  = {
+  'Day':       {bg:'rgba(59,158,255,.12)',  color:'#60b0ff',  icon:'\u2600\ufe0f'},
+  'Night':     {bg:'rgba(162,89,255,.12)', color:'#c084fc',  icon:'\ud83c\udf19'},
+  'General':   {bg:'rgba(0,229,200,.1)',   color:'#2dd4bf',  icon:'\u2699\ufe0f'},
+  'Rest':      {bg:'rgba(107,114,128,.15)',color:'#9ca3af',  icon:'\ud83d\udca4'},
+  'OFF':       {bg:'rgba(239,68,68,.1)',   color:'#f87171',  icon:'\ud83d\udd34'},
+  'ON leave':  {bg:'rgba(240,192,64,.1)',  color:'#fbbf24',  icon:'\u2708\ufe0f'},
+  'EID leave': {bg:'rgba(251,146,60,.1)',  color:'#fb923c',  icon:'\ud83c\udf19'},
+  'Eid Leave': {bg:'rgba(251,146,60,.1)',  color:'#fb923c',  icon:'\ud83c\udf19'},
+};
+
+function openDayPanel(date, type){
+  const people  = type === 'eng' ? engData : techData;
+  const label   = type === 'eng' ? 'Engineers' : 'Technicians';
+  const panelIcon = type === 'eng' ? '&#x1F527;' : '&#x2699;&#xFE0F;';
+
+  const dt = new Date(date + 'T00:00:00');
+  const dateLabel = DAYS_FULL[dt.getDay()] + ', ' + dt.getDate() + ' ' + MONTHS_ARR[dt.getMonth()] + ' ' + dt.getFullYear();
+
+  // Group people by their shift on this date
+  const groups = {};
+  people.forEach(p => {
+    const shift = (p.schedule[date] || '').trim() || 'No Data';
+    if(!groups[shift]) groups[shift] = [];
+    groups[shift].push(p);
+  });
+
+  // Count for KPIs
+  function gc(key){ return (groups[key]||[]).length; }
+  const leaveCount = ['ON leave','EID leave','Eid Leave'].reduce((s,k)=>s+gc(k),0);
+
+  const kpiHtml = [
+    {n: gc('Day'),    c:'#60b0ff', bg:'rgba(59,158,255,.1)',  b:'rgba(59,158,255,.2)',  icon:'&#x2600;&#xFE0F;', l:'Day'},
+    {n: gc('Night'),  c:'#c084fc', bg:'rgba(162,89,255,.1)',  b:'rgba(162,89,255,.2)',  icon:'&#x1F319;',        l:'Night'},
+    {n: gc('General'),c:'#2dd4bf', bg:'rgba(0,229,200,.08)',  b:'rgba(0,229,200,.18)',  icon:'&#x2699;&#xFE0F;', l:'General'},
+    {n: gc('Rest'),   c:'#9ca3af', bg:'rgba(107,114,128,.1)', b:'rgba(107,114,128,.2)', icon:'&#x1F4A4;',        l:'Rest'},
+    {n: leaveCount,   c:'#fbbf24', bg:'rgba(240,192,64,.08)', b:'rgba(240,192,64,.18)', icon:'&#x2708;&#xFE0F;', l:'Leave'},
+    {n: gc('OFF'),    c:'#f87171', bg:'rgba(239,68,68,.08)',  b:'rgba(239,68,68,.18)',  icon:'&#x1F534;',        l:'OFF'},
+  ].map(k => '<div style="padding:13px 14px;border-radius:12px;background:'+k.bg+';border:1px solid '+k.b+';text-align:center">' +
+    '<div style="font-size:20px;font-weight:800;color:'+k.c+';font-family:var(--fd);letter-spacing:-1px">'+k.n+'</div>' +
+    '<div style="font-size:10.5px;color:rgba(226,232,245,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.7px">'+k.icon+' '+k.l+'</div>' +
+  '</div>').join('');
+
+  // Shift group detail
+  const ORDER = ['Day','Night','General','Rest','OFF','ON leave','EID leave','Eid Leave','No Data'];
+  const groupsHtml = ORDER.filter(s => groups[s] && groups[s].length).map(shift => {
+    const cfg = SHIFT_CFG[shift] || {bg:'rgba(255,255,255,.03)',color:'#4b5563',icon:'?'};
+    const names = groups[shift].map(p => {
+      const role = (p.role || '').replace('Maintenance ','');
+      return '<div style="display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;background:rgba(255,255,255,.03);margin-bottom:4px">' +
+        '<span style="width:7px;height:7px;border-radius:50%;background:'+cfg.color+';flex-shrink:0;display:inline-block"></span>' +
+        '<span style="font-weight:500;font-size:13px;color:var(--text)">'+p.name+'</span>' +
+        (role ? '<span style="font-size:11px;color:rgba(226,232,245,.32);margin-left:auto">'+role+'</span>' : '') +
+      '</div>';
+    }).join('');
+    return '<div style="margin-bottom:14px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">' +
+        '<span style="font-family:var(--fd);font-size:14px;font-weight:700;color:'+cfg.color+'">'+shift+'</span>' +
+        '<span style="margin-left:auto;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;background:'+cfg.bg+';color:'+cfg.color+'">'+groups[shift].length+' '+(groups[shift].length===1?'person':'people')+'</span>' +
+      '</div>' +
+      '<div style="padding:2px 0 2px 10px;border-left:2px solid '+cfg.color+'44">'+names+'</div>' +
+    '</div>';
+  }).join('') || '<p style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px 0">No shift data for this date</p>';
+
+  document.getElementById('dayPanelContent').innerHTML =
+    '<div style="margin-bottom:18px">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">' +
+        '<span style="font-size:30px">' + panelIcon + '</span>' +
+        '<div>' +
+          '<div style="font-family:var(--fd);font-size:19px;font-weight:800;letter-spacing:-.5px">' + dateLabel + '</div>' +
+          '<div style="font-size:12.5px;color:rgba(226,232,245,.45);margin-top:2px">' + label + ' &mdash; ' + people.length + ' total</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px">' + kpiHtml + '</div>' +
+    '<div style="border-top:1px solid rgba(255,255,255,.07);padding-top:16px">' + groupsHtml + '</div>';
+
+  document.getElementById('dayPanel').classList.add('open');
+}
+
+function closeDayPanel(){
+  document.getElementById('dayPanel').classList.remove('open');
+}
+document.getElementById('dayPanel').addEventListener('click', function(e){
+  if(e.target === this) closeDayPanel();
+});
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     IMPORT MODAL
+════════════════════════════════════════════════ -->
+<div class="modal-bg" id="importModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeImport()">✕</button>
+    <h2>📥 Import Excel Schedule</h2>
+    <p class="sub">Upload a .xlsx file with "Maintenance Engineer" and "Technician" sheets.<br>Schedule loads automatically on success.</p>
+
+    <div class="drop-zone" id="dropZone"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('dragover')"
+         ondragleave="this.classList.remove('dragover')"
+         ondrop="handleDrop(event)">
+      <span class="dz-icon">📊</span>
+      <div class="dz-title">Drop your Excel file here</div>
+      <div class="dz-sub">or click to browse files</div>
+      <div class="dz-hint">Supports .xlsx · .xlsm</div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls" onchange="fileChosen(this.files[0])">
+
+    <div class="file-chosen" id="fileChosen">
+      <span>📄</span><span id="fileChosenName"></span>
+    </div>
+
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-bar-bg"><div class="prog-bar" id="progBar"></div></div>
+      <div class="prog-label" id="progLabel">Uploading…</div>
+    </div>
+
+    <div class="import-result" id="importResult">
+      <div class="ir-title" id="irTitle"></div>
+      <div class="ir-detail" id="irDetail"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeImport()">Cancel</button>
+      <button class="modal-btn primary" id="importBtn" onclick="doImport()" disabled>Import Schedule</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   IMPORT / EXPORT
+════════════════════════════════════════════════ */
+
+/* Safe CSRF cookie reader */
+function getCsrf(){
+  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+/* ── IMPORT ── */
+let chosenFile = null;
+
+function openImport(){
+  document.getElementById('importModal').classList.add('open');
+  resetImport();
+}
+function closeImport(){
+  document.getElementById('importModal').classList.remove('open');
+}
+document.getElementById('importModal').addEventListener('click', function(e){
+  if(e.target === this) closeImport();
+});
+function resetImport(){
+  chosenFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileChosen').classList.remove('show');
+  document.getElementById('progWrap').classList.remove('show');
+  document.getElementById('importResult').className = 'import-result';
+  document.getElementById('importBtn').disabled = true;
+  document.getElementById('dropZone').classList.remove('dragover');
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('progBar').style.background = '';
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if(file) fileChosen(file);
+}
+function fileChosen(file){
+  if(!file) return;
+  if(!file.name.match(/\.(xlsx|xlsm|xls)$/i)){
+    showImportResult('error','❌ Wrong file type','Please upload a .xlsx or .xlsm Excel file.');
+    return;
+  }
+  chosenFile = file;
+  document.getElementById('fileChosenName').textContent =
+    file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  document.getElementById('fileChosen').classList.add('show');
+  document.getElementById('importResult').className = 'import-result';
+  document.getElementById('importBtn').disabled = false;
+}
+
+async function doImport(){
+  if(!chosenFile) return;
+  const btn = document.getElementById('importBtn');
+  btn.disabled = true;
+  btn.textContent = 'Importing…';
+
+  const progWrap = document.getElementById('progWrap');
+  const bar      = document.getElementById('progBar');
+  const lbl      = document.getElementById('progLabel');
+  progWrap.classList.add('show');
+  bar.style.width = '15%';
+  lbl.textContent = 'Uploading file…';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', chosenFile);
+
+    bar.style.width = '50%';
+    lbl.textContent = 'Parsing Excel…';
+
+    const csrf = getCsrf();
+    const headers = {};
+    if(csrf) headers['X-CSRFToken'] = csrf;
+
+    const res = await fetch('/api/manpower/import/', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: fd
+    });
+
+    bar.style.width = '85%';
+    lbl.textContent = 'Processing response…';
+
+    /* Always read as text first to avoid JSON parse crash on error pages */
+    const text = await res.text();
+    let d;
+    try { d = JSON.parse(text); }
+    catch(_) {
+      throw new Error(
+        res.status === 401 ? 'Session expired — please refresh and log in again.' :
+        res.status === 403 ? 'Access denied. Log in as Admin to import.' :
+        res.status === 405 ? 'Method not allowed (check server route).' :
+        `Server returned HTTP ${res.status} — not JSON.`
+      );
+    }
+
+    bar.style.width = '100%';
+
+    if(d.ok){
+      lbl.textContent = '✓ Done';
+      showImportResult('success',
+        '✅ Imported successfully',
+        'Engineers: ' + d.engineers + ' · Technicians: ' + d.technicians +
+        '\nFile: ' + d.source_file + '\nAt: ' + d.imported_at +
+        '\n\nPage reloading…'
+      );
+      setTimeout(function(){ closeImport(); location.reload(); }, 2000);
+    } else {
+      bar.style.background = '#ef4444';
+      lbl.textContent = 'Failed';
+      showImportResult('error', '❌ Import failed', d.error || 'Unknown error');
+      btn.disabled = false;
+      btn.textContent = 'Import Schedule';
+    }
+  } catch(e) {
+    bar.style.width = '100%';
+    bar.style.background = '#ef4444';
+    lbl.textContent = 'Error';
+    showImportResult('error', '❌ Error', e.message);
+    btn.disabled = false;
+    btn.textContent = 'Import Schedule';
+  }
+}
+
+function showImportResult(type, title, detail){
+  const el = document.getElementById('importResult');
+  el.className = 'import-result ' + type + ' show';
+  document.getElementById('irTitle').textContent = title;
+  document.getElementById('irDetail').textContent = detail;
+}
+
+/* ── EXPORT ── */
+async function exportExcel(){
+  const btn = document.querySelector('.exp-btn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ Building Excel…';
+  btn.disabled = true;
+
+  try {
+    /* Send live in-memory schedule data as JSON */
+    const csrf = getCsrf();
+    const headers = { 'Content-Type': 'application/json' };
+    if(csrf) headers['X-CSRFToken'] = csrf;
+
+    const res = await fetch('/api/manpower/export/', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify({ engineers: engData, technicians: techData })
+    });
+
+    if(!res.ok){
+      let msg = 'Server error ' + res.status;
+      try { const j = await res.json(); msg = j.error || msg; } catch(_){}
+      throw new Error(msg);
+    }
+
+    /* Trigger browser download */
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'HDEC_ManPower_' + new Date().toISOString().slice(0,10) + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+
+    /* Flash green */
+    btn.innerHTML = '✅ Downloaded!';
+    btn.style.cssText = 'background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.35);color:#4ade80;padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb)';
+    setTimeout(function(){
+      btn.innerHTML = orig;
+      btn.style.cssText = '';
+      btn.disabled = false;
+    }, 2500);
+
+  } catch(e) {
+    btn.innerHTML = '❌ ' + e.message;
+    btn.style.cssText = 'background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#f87171;padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--fb)';
+    setTimeout(function(){
+      btn.innerHTML = orig;
+      btn.style.cssText = '';
+      btn.disabled = false;
+    }, 3500);
+  }
+}
+</script>
+
+<script>
+/* ════════════════════════════════════════════════
+   ATTENDANCE — Core JS (no face-api dependency)
+   All tab switching, people management, records
+════════════════════════════════════════════════ */
+const CSRF=()=>{const m=document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);return m?decodeURIComponent(m[1]):'';};
+
+/* ─── Face Photos cache (shared with face-api block below) ─── */
+let facePhotos = {};
+
+/* ─── People Roster ─── */
+let attendancePeople = [];
+async function loadPeopleRoster(){
+  try{
+    const r=await fetch('/api/attendance/people/',{credentials:'same-origin'});
+    const d=await r.json();
+    attendancePeople=(d.people||[]).map(p=>typeof p==='string'?{name:p,role:''}:p);
+  }catch(e){attendancePeople=techData.map(p=>({name:p.name,role:p.role||'Technician'}));}
+}
+
+/* ─── Sub-tab switch ─── */
+function switchAttTab(id, btn){
+  document.querySelectorAll('.att-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.att-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = document.getElementById('att-'+id);
+  if(panel) panel.classList.add('active');
+  if(id==='records') loadRecords('day');
+  if(id==='train')  { loadTrainedFaces(); populateTrainSelect(); }
+  if(id==='mark')   loadTodayAttendance();
+  if(id==='people') loadPeopleList();
+}
+
+/* ─── Today Attendance ─── */
+async function loadTodayAttendance(){
+  await loadPeopleRoster();
+  const date = new Date().toISOString().split('T')[0];
+  let recs = {};
+  try{
+    const r=await fetch('/api/attendance/?date='+date,{credentials:'same-origin'});
+    const d=await r.json();
+    recs = d.records||{};
+  }catch(e){}
+  const people = attendancePeople.length ? attendancePeople : techData.map(p=>({name:p.name,role:''}));
+  let present=0, absent=0;
+  const rows = people.map(p=>{
+    const rec  = recs[p.name]||{};
+    const isP  = !!rec.time_in;
+    const photo= facePhotos[p.name];
+    if(isP) present++; else absent++;
+    const avatar = photo
+      ? `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid ${isP?'rgba(34,197,94,.5)':'rgba(239,68,68,.3)'};flex-shrink:0">`
+      : `<span style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${isP?'#22c55e,#16a34a':'#374151,#1f2937'});display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:#fff;font-weight:700;font-family:var(--fd)">${p.name.charAt(0).toUpperCase()}</span>`;
+    // Build location tooltip string
+    const locIn  = rec.location_in;
+    const locOut = rec.location_out;
+    const locTag = locIn
+      ? `<span title="In: ${locIn.name||''}\nLat: ${locIn.lat}, Lng: ${locIn.lng}\nAccuracy: ${locIn.accuracy||'?'}m"
+             style="font-size:10px;color:#fbbf24;cursor:default">📍${locIn.name?locIn.name.split(',')[0]:locIn.lat.toFixed(3)+','+locIn.lng.toFixed(3)}</span>`
+      : '';
+    return '<div class="att-row" style="gap:10px;flex-wrap:wrap">'+
+      avatar+
+      '<span class="att-name">'+p.name+'</span>'+
+      '<span style="font-size:10.5px;color:rgba(226,232,245,.3)">'+( p.role||'')+'</span>'+
+      '<span class="att-badge '+(isP?'att-present':'att-absent')+'">'+(isP?'Present':'Absent')+'</span>'+
+      '<span class="att-time" style="color:#60b0ff">'+(rec.time_in?'In '+rec.time_in.slice(0,5):'')+'</span>'+
+      '<span class="att-time" style="color:#c084fc">'+(rec.time_out?'Out '+rec.time_out.slice(0,5):'')+'</span>'+
+      '<span class="att-time" style="color:#4ade80">'+(rec.hours?rec.hours+'h':'')+'</span>'+
+      locTag+
+    '</div>';
+  }).join('');
+  document.getElementById('att-present').textContent = present;
+  document.getElementById('att-absent').textContent  = absent;
+  document.getElementById('att-total').textContent   = people.length;
+  document.getElementById('todayAttList').innerHTML  = rows || '<div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px">No people in roster yet</div>';
+}
+
+/* ─── Manage People ─── */
+async function loadPeopleList(){
+  await loadPeopleRoster();
+  renderPeopleList();
+  const el = document.getElementById('peopleCount');
+  if(el) el.textContent = attendancePeople.length+' people';
+}
+
+function renderPeopleList(){
+  const q = (document.getElementById('peopleSearch')?.value||'').toLowerCase();
+  const el = document.getElementById('peopleList');
+  if(!el) return;
+  const filtered = attendancePeople.filter(p=>!q||p.name.toLowerCase().includes(q));
+  const countEl = document.getElementById('peopleCount');
+  if(countEl) countEl.textContent = attendancePeople.length+' people';
+  if(!filtered.length){
+    el.innerHTML='<div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px">'+(attendancePeople.length?'No results':'No people yet — add someone above')+'</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(p=>{
+    const safeName = p.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const initial  = p.name.charAt(0).toUpperCase();
+    const photo    = facePhotos[p.name];
+    const avatar   = photo
+      ? `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(34,197,94,.35);flex-shrink:0">`
+      : `<span style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-family:var(--fd);font-weight:700;color:#fff">${initial}</span>`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.025)">
+      ${avatar}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${p.name}</div>
+        <div style="font-size:11px;color:rgba(226,232,245,.35)">${p.role||'Technician'}${photo?' · <span style="color:rgba(34,197,94,.6)">📷 Photo</span>':''}</div>
+      </div>
+      <button class="remove-person-btn" data-name="${safeName}"
+        style="padding:5px 12px;border-radius:8px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.08);color:#f87171;font-size:11.5px;cursor:pointer;font-family:var(--fb);font-weight:600;transition:all .15s"
+        onmouseover="this.style.background='rgba(239,68,68,.18)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">
+        Remove
+      </button>
+    </div>`;
+  }).join('');
+
+  // Attach click handlers via event delegation (no inline JS, no quote issues)
+  el.querySelectorAll('.remove-person-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> removePerson(btn.dataset.name));
+  });
+}
+
+async function addPerson(){
+  const name = (document.getElementById('newPersonName')?.value||'').trim();
+  const role = (document.getElementById('newPersonRole')?.value||'Technician').trim();
+  if(!name){ showAddStatus('error','Name is required'); return; }
+  try{
+    const r=await fetch('/api/attendance/people/',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+      body:JSON.stringify({action:'add',name,role})});
+    const d=await r.json();
+    if(d.ok){
+      attendancePeople=d.people||[];
+      renderPeopleList();
+      document.getElementById('newPersonName').value='';
+      showAddStatus('success','✓ '+name+' added');
+      populateTrainSelect();
+    }else showAddStatus('error','✗ '+(d.error||'Failed'));
+  }catch(e){showAddStatus('error','✗ '+e.message);}
+}
+
+async function removePerson(name){
+  if(!confirm('Remove "'+name+'" from roster?')) return;
+  try{
+    const r=await fetch('/api/attendance/people/',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+      body:JSON.stringify({action:'delete',name})});
+    const d=await r.json();
+    if(d.ok){attendancePeople=d.people||[];renderPeopleList();}
+  }catch(e){}
+}
+
+async function syncPeopleFromSchedule(){
+  try{
+    const r=await fetch('/api/attendance/people/',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+      body:JSON.stringify({action:'sync_from_schedule'})});
+    const d=await r.json();
+    if(d.ok){
+      attendancePeople=d.people||[];renderPeopleList();
+      showAddStatus('success','✓ Synced '+d.count+' people');
+    }else showAddStatus('error','✗ '+(d.error||'Sync failed'));
+  }catch(e){showAddStatus('error','✗ '+e.message);}
+}
+
+function showAddStatus(type,msg){
+  const el=document.getElementById('addPersonStatus');
+  if(!el) return;
+  el.style.display='block';
+  el.style.background=type==='success'?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)';
+  el.style.border='1px solid rgba('+(type==='success'?'34,197,94':'239,68,68')+',.25)';
+  el.style.color=type==='success'?'#4ade80':'#f87171';
+  el.textContent=msg;
+  setTimeout(()=>{el.style.display='none';},3500);
+}
+
+/* ─── Records & Export ─── */
+async function loadRecords(mode){
+  await loadPeopleRoster();
+  const date  = document.getElementById('recordDateInput')?.value  || new Date().toISOString().split('T')[0];
+  const month = document.getElementById('recordMonthInput')?.value || new Date().toISOString().slice(0,7);
+  const url   = mode==='day' ? '/api/attendance/?date='+date : '/api/attendance/?month='+month;
+  const container = document.getElementById('recordsTable');
+  if(!container) return;
+  container.innerHTML='<div style="color:rgba(226,232,245,.4);font-size:13px;text-align:center;padding:20px">Loading…</div>';
+  let recs={};
+  try{
+    const r=await fetch(url,{credentials:'same-origin'});
+    const d=await r.json();
+    recs = mode==='day' ? (d.records||{}) : (d.records||{});
+  }catch(e){container.innerHTML='<div style="color:#f87171;font-size:13px;padding:20px">Error loading records</div>';return;}
+  const people = attendancePeople.length ? attendancePeople : techData.map(p=>({name:p.name,role:''}));
+  if(mode==='day'){
+    const rows = people.map((p,i)=>{
+      const rec     = recs[p.name];
+      const unknown = rec===undefined;
+      const present = rec&&!!rec.time_in;
+      const label   = unknown?'Unknown':present?'Present':'Absent';
+      const sc      = unknown
+        ?'background:rgba(30,41,59,.5);color:rgba(226,232,245,.35);border:1px solid rgba(255,255,255,.08)'
+        :present
+          ?'background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)'
+          :'background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)';
+      const photo = facePhotos[p.name];
+      const avatar = photo
+        ? `<img src="${photo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid ${present?'rgba(34,197,94,.4)':'rgba(255,255,255,.1)'}">`
+        : `<span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#a259ff);display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700;vertical-align:middle">${p.name.charAt(0).toUpperCase()}</span>`;
+      // Location cells
+      function locCell(locObj) {
+        if(!locObj) return '<td style="padding:9px 12px;font-size:11.5px;color:rgba(226,232,245,.25)">—</td>';
+        const coordStr = locObj.lat.toFixed(4)+', '+locObj.lng.toFixed(4);
+        const displayName = locObj.name || coordStr;
+        const mapsUrl = `https://www.google.com/maps?q=${locObj.lat},${locObj.lng}`;
+        return `<td style="padding:9px 12px;font-size:11.5px;max-width:180px">
+          <a href="${mapsUrl}" target="_blank" style="color:#fbbf24;text-decoration:none;display:flex;align-items:flex-start;gap:4px" title="Lat: ${locObj.lat}\nLng: ${locObj.lng}\nAccuracy: ${locObj.accuracy||'?'}m">
+            <span>📍</span><span style="word-break:break-word;line-height:1.3">${displayName}</span>
+          </a>
+          <div style="font-size:10px;color:rgba(226,232,245,.3);margin-top:2px">${coordStr}${locObj.accuracy?' · ±'+locObj.accuracy+'m':''}</div>
+        </td>`;
+      }
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,.03)">'+
+        '<td style="padding:9px 12px;font-size:12px;color:rgba(226,232,245,.3)">'+(i+1)+'</td>'+
+        '<td style="padding:9px 12px"><div style="display:flex;align-items:center;gap:8px">'+avatar+'<div><div style="font-size:13px;font-weight:500">'+p.name+'</div><div style="font-size:10.5px;color:rgba(226,232,245,.3)">'+( p.role||'')+'</div></div></div></td>'+
+        '<td style="padding:9px 12px"><span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;'+sc+'">'+label+'</span></td>'+
+        '<td style="padding:9px 12px;font-family:monospace;font-size:12.5px;color:#60b0ff">'+(rec&&rec.time_in||'—')+'</td>'+
+        '<td style="padding:9px 12px;font-family:monospace;font-size:12.5px;color:#c084fc">'+(rec&&rec.time_out||'—')+'</td>'+
+        '<td style="padding:9px 12px;font-size:12.5px;color:#4ade80">'+(rec&&rec.hours?rec.hours+'h':'—')+'</td>'+
+        locCell(rec&&rec.location_in)+
+        locCell(rec&&rec.location_out)+
+      '</tr>';
+    }).join('');
+    container.innerHTML='<div style="font-size:12px;color:rgba(226,232,245,.35);margin-bottom:10px">📅 '+date+' — '+people.length+' people</div>'+
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'+
+      '<thead><tr style="background:rgba(255,255,255,.025)">'+
+      ['#','Name','Status','Time In','Time Out','Hours','Location In','Location Out'].map(h=>'<th style="padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:rgba(226,232,245,.4);white-space:nowrap">'+h+'</th>').join('')+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  } else {
+    const [yr,mo] = month.split('-').map(Number);
+    const daysInMonth = new Date(yr,mo,0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const allDates = Array.from({length:daysInMonth},(_,i)=>{
+      return yr+'-'+String(mo).padStart(2,'0')+'-'+String(i+1).padStart(2,'0');
+    }).filter(d=> new Date(d+'T00:00:00') <= today);
+    const dayHdr = allDates.map(d=>{
+      const dt=new Date(d+'T00:00:00');
+      const isWE=dt.getDay()===5||dt.getDay()===6;
+      return '<th style="padding:5px 4px;text-align:center;font-size:9.5px;min-width:26px;color:'+(isWE?'#fbbf24':'rgba(226,232,245,.4)')+'">'+dt.getDate()+'</th>';
+    }).join('');
+    const hdr='<th style="padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:rgba(226,232,245,.4);white-space:nowrap">Name</th>'+dayHdr+
+      '<th style="padding:7px 8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:rgba(226,232,245,.4)">Days</th>'+
+      '<th style="padding:7px 8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:rgba(226,232,245,.4)">Hours</th>';
+    const monthRecs = recs;
+    const rows = people.map(p=>{
+      let present=0, totalH=0;
+      const cells = allDates.map(d=>{
+        const dayRecs = monthRecs[d];
+        if(dayRecs===undefined)
+          return '<td style="padding:4px 3px;text-align:center;background:rgba(30,41,59,.4);font-size:9px;color:rgba(226,232,245,.2)">?</td>';
+        const rec = dayRecs[p.name];
+        if(rec===undefined)
+          return '<td style="padding:4px 3px;text-align:center;background:rgba(239,68,68,.06);font-size:9px;color:#f87171">A</td>';
+        const isP=!!rec.time_in; if(isP) present++;
+        try{totalH+=parseFloat(rec.hours)||0;}catch(_){}
+        const ti=rec.time_in?rec.time_in.slice(0,5):'';
+        return '<td style="padding:4px 3px;text-align:center;background:'+(isP?'rgba(34,197,94,.1)':'rgba(239,68,68,.06)')+';font-size:9px;color:'+(isP?'#4ade80':'#f87171')+'" title="'+(ti?'In:'+ti:'')+'">'+(ti||(isP?'P':'A'))+'</td>';
+      }).join('');
+      return '<tr style="border-bottom:1px solid rgba(255,255,255,.025)">'+
+        '<td style="padding:7px 10px;font-size:12.5px;font-weight:500;white-space:nowrap">'+p.name+'</td>'+cells+
+        '<td style="padding:7px 8px;text-align:center;font-size:12.5px;font-weight:700;color:#4ade80">'+present+'</td>'+
+        '<td style="padding:7px 8px;text-align:center;font-size:12px;color:#60b0ff">'+totalH.toFixed(1)+'h</td>'+
+      '</tr>';
+    }).join('');
+    container.innerHTML='<div style="font-size:12px;color:rgba(226,232,245,.35);margin-bottom:10px">📅 '+month+' — '+people.length+' people &nbsp;<span style="color:rgba(226,232,245,.2)">? = no records that day  A = absent  P = present</span></div>'+
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:400px">'+
+      '<thead><tr style="background:rgba(255,255,255,.025)">'+hdr+'</tr></thead>'+
+      '<tbody>'+rows+'</tbody></table></div>';
+  }
+}
+
+function exportAttendance(mode){
+  const date  = document.getElementById('recordDateInput')?.value  || new Date().toISOString().split('T')[0];
+  const month = document.getElementById('recordMonthInput')?.value || new Date().toISOString().slice(0,7);
+  window.location.href = mode==='day'
+    ? '/api/attendance/export/?date='+date
+    : '/api/attendance/export/?month='+month;
+}
+
+/* ─── Init ─── */
+document.getElementById('recordDateInput').value  = new Date().toISOString().split('T')[0];
+document.getElementById('recordMonthInput').value = new Date().toISOString().slice(0,7);
+loadTodayAttendance();
+</script>
+
+<!-- face-api.js loaded lazily (only when camera is started) -->
+<script>
+/* ════════════════════════════════════════════════
+   FACE RECOGNITION (lazy-loads face-api on demand)
+════════════════════════════════════════════════ */
+let faceApiReady = false;
+let faceApiLoading = false;
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model';
+// facePhotos is declared in the core block above (shared between both script blocks)
+
+function loadFaceApiScript(){
+  return new Promise((resolve, reject)=>{
+    if(window.faceapi){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.js';
+    s.onload  = resolve;
+    s.onerror = ()=>reject(new Error('Failed to load face-api.js'));
+    document.head.appendChild(s);
+  });
+}
+
+async function loadFaceModels(){
+  if(faceApiReady) return true;
+  if(faceApiLoading) return false;
+  faceApiLoading = true;
+  try{
+    await loadFaceApiScript();
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    faceApiReady = true;
+    return true;
+  }catch(e){ console.error('face-api load failed:',e); return false; }
+  finally{ faceApiLoading = false; }
+}
+
+async function buildFaceMatcher(){
+  if(!faceApiReady) return null;
+  try{
+    const r = await fetch('/api/attendance/face/descriptors/',{credentials:'same-origin'});
+    if(!r.ok) return null;
+    const d = await r.json();
+    const labeled = [];
+    for(const [name,info] of Object.entries(d)){
+      const descs = (info.descriptors||[]).map(arr=>new Float32Array(arr));
+      if(descs.length) labeled.push(new faceapi.LabeledFaceDescriptors(name,descs));
+    }
+    return labeled.length ? new faceapi.FaceMatcher(labeled, 0.5) : null;
+  }catch(e){ return null; }
+}
+
+/* ── Mark Camera ── */
+let markStream=null, markRunning=false, markAnimId=null;
+
+async function startMarkCamera(){
+  const ov = document.getElementById('markOverlay');
+  ov.innerHTML='<div style="color:#e2e8f5;font-size:13px;text-align:center">Loading AI models…<br><small style="color:rgba(226,232,245,.4)">First load ~20 seconds</small></div>';
+  ov.style.display='flex';
+  const ok = await loadFaceModels();
+  if(!ok){ ov.innerHTML='<div style="color:#f87171;padding:16px;text-align:center">Failed to load AI.<br>Check internet.</div>'; return; }
+  try{
+    markStream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}});
+    const v = document.getElementById('markVideo');
+    v.srcObject = markStream; await v.play();
+    ov.style.display='none';
+    document.getElementById('recognizeBtn').disabled=false;
+    startMarkLoop();
+  }catch(e){ ov.innerHTML='<div style="color:#f87171;padding:16px;text-align:center">Camera denied.<br><small>'+e.message+'</small></div>'; }
+}
+function stopMarkCamera(){
+  markRunning=false; if(markAnimId) cancelAnimationFrame(markAnimId);
+  if(markStream) markStream.getTracks().forEach(t=>t.stop()); markStream=null;
+  document.getElementById('markOverlay').innerHTML=
+    '<span style="font-size:32px">📷</span><span style="color:#e2e8f5;font-size:14px">Camera stopped</span>'+
+    '<button onclick="startMarkCamera()" style="padding:8px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,#3b9eff,#1a52cc);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fb)">Start Camera</button>';
+  document.getElementById('markOverlay').style.display='flex';
+  document.getElementById('recognizeBtn').disabled=true;
+}
+function startMarkLoop(){
+  markRunning=true;
+  const video=document.getElementById('markVideo'), canvas=document.getElementById('markCanvas'), ctx=canvas.getContext('2d');
+  async function loop(){
+    if(!markRunning) return;
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+    const dets = await faceapi.detectAllFaces(video).withFaceLandmarks();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    dets.forEach(det=>{ const b=det.detection.box; ctx.strokeStyle='#4ade80'; ctx.lineWidth=2; ctx.strokeRect(b.x,b.y,b.width,b.height); ctx.fillStyle='rgba(34,197,94,.08)'; ctx.fillRect(b.x,b.y,b.width,b.height); });
+    markAnimId=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+async function recognizeFace(){
+  const btn=document.getElementById('recognizeBtn');
+  btn.disabled=true; btn.textContent='⏳ Recognizing…';
+  try{
+    const det=await faceapi.detectSingleFace(document.getElementById('markVideo')).withFaceLandmarks().withFaceDescriptor();
+    if(!det){ showMarkStatus('error','❌ No face detected — face the camera'); btn.disabled=false; btn.textContent='🔍 Recognize & Mark'; return; }
+    const matcher=await buildFaceMatcher();
+    if(!matcher){ showMarkStatus('error','⚠ No trained faces. Go to Face Training tab.'); btn.disabled=false; btn.textContent='🔍 Recognize & Mark'; return; }
+    const match=matcher.findBestMatch(det.descriptor);
+    if(match.label==='unknown'||match.distance>0.5){ showMarkStatus('error','❌ Not recognized. Not in training data.'); btn.disabled=false; btn.textContent='🔍 Recognize & Mark'; return; }
+    const name=match.label, now=new Date(), timeStr=now.toTimeString().slice(0,8), dateStr=now.toISOString().split('T')[0];
+    const recR=await fetch('/api/attendance/?date='+dateStr,{credentials:'same-origin'});
+    const recD=await recR.json();
+    const existing=(recD.records||{})[name]||{};
+    const action=existing.time_in&&!existing.time_out?'out':'in';
+
+    // Get GPS location before marking
+    showMarkStatus('info','📍 Getting location…');
+    const loc = await getLocation();
+
+    const payload = {name, action, time:timeStr, date:dateStr};
+    if(loc){
+      payload.lat      = loc.lat;
+      payload.lng      = loc.lng;
+      payload.accuracy = loc.accuracy;
+      payload.location_name = loc.name || '';
+    }
+
+    const r=await fetch('/api/attendance/mark/',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+      body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.ok){
+      let msg='✅ '+name+' — '+(action==='in'?'Time In':'Time Out')+' at '+timeStr;
+      if(action==='out'&&d.record.hours) msg+=' · '+d.record.hours+'h';
+      if(loc) msg+=' 📍 '+(loc.name||loc.lat.toFixed(4)+', '+loc.lng.toFixed(4));
+      showMarkStatus('success', msg);
+      loadTodayAttendance();
+    } else showMarkStatus('error','❌ '+d.error);
+  }catch(e){ showMarkStatus('error','❌ '+e.message); }
+  btn.disabled=false; btn.textContent='🔍 Recognize & Mark';
+}
+
+// ── GEOLOCATION HELPER ────────────────────────────────────────────────────
+async function getLocation() {
+  if(!navigator.geolocation) return null;
+  try {
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true, timeout: 8000, maximumAge: 0
+      })
+    );
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const accuracy = pos.coords.accuracy;
+    // Try reverse geocoding via Nominatim (free, no key needed)
+    let locationName = '';
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+      const resp = await fetch(url, {headers:{'Accept-Language':'en', 'User-Agent':'HDEC-CMMS/1.0'}});
+      if(resp.ok){
+        const geo = await resp.json();
+        const a = geo.address || {};
+        // Build a short readable name: building/road + city/state
+        const parts = [
+          a.building || a.amenity || a.industrial || a.office,
+          a.road || a.village || a.suburb,
+          a.city || a.town || a.county || a.state_district,
+          a.country_code ? a.country_code.toUpperCase() : ''
+        ].filter(Boolean);
+        locationName = parts.slice(0,3).join(', ');
+      }
+    } catch(_) { /* geocoding failed — coords only */ }
+    return { lat, lng, accuracy, name: locationName };
+  } catch(e) {
+    // User denied or timeout — continue without location
+    console.warn('Geolocation:', e.message);
+    return null;
+  }
+}
+
+function showMarkStatus(type,msg){
+  const el=document.getElementById('markStatus');
+  el.style.display='block';
+  const cfg = {
+    success:{ bg:'rgba(34,197,94,.1)',  border:'rgba(34,197,94,.25)',  color:'#4ade80' },
+    error:  { bg:'rgba(239,68,68,.1)',  border:'rgba(239,68,68,.25)',  color:'#f87171' },
+    info:   { bg:'rgba(59,158,255,.1)', border:'rgba(59,158,255,.25)', color:'#60b0ff' },
+  }[type] || cfg.info;
+  el.style.background = cfg.bg;
+  el.style.border      = '1px solid '+cfg.border;
+  el.style.color       = cfg.color;
+  el.textContent = msg;
+  if(type !== 'info') setTimeout(()=>el.style.display='none', 7000);
+}
+
+/* ── Train Camera ── */
+let trainStream=null;
+async function populateTrainSelect(){
+  await loadPeopleRoster();
+  const sel=document.getElementById('trainNameSelect'); if(!sel) return;
+  const people=attendancePeople.length?attendancePeople:techData.map(p=>({name:p.name}));
+  sel.innerHTML='<option value="">— Choose person —</option>'+people.map(p=>'<option value="'+p.name+'">'+p.name+'</option>').join('');
+}
+async function startTrainCamera(){
+  const ov=document.getElementById('trainOverlay');
+  ov.innerHTML='<div style="color:#e2e8f5;font-size:13px">Loading AI models…</div>';
+  const ok=await loadFaceModels();
+  if(!ok){ ov.innerHTML='<div style="color:#f87171">Failed to load AI.</div>'; return; }
+  try{
+    trainStream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}});
+    const v=document.getElementById('trainVideo'); v.srcObject=trainStream; await v.play();
+    ov.style.display='none'; document.getElementById('captureBtn').disabled=false;
+    const canvas=document.getElementById('trainCanvas'), ctx=canvas.getContext('2d');
+    async function loop(){
+      if(!trainStream) return;
+      canvas.width=v.videoWidth; canvas.height=v.videoHeight;
+      const dets=await faceapi.detectAllFaces(v).withFaceLandmarks();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      dets.forEach(d=>{ const b=d.detection.box; ctx.strokeStyle='#a259ff'; ctx.lineWidth=2; ctx.strokeRect(b.x,b.y,b.width,b.height); });
+      requestAnimationFrame(loop);
+    }
+    loop();
+  }catch(e){ ov.innerHTML='<div style="color:#f87171;padding:14px">Camera denied.<br><small>'+e.message+'</small></div>'; }
+}
+async function captureTrainSample(){
+  const name=document.getElementById('trainNameSelect').value;
+  if(!name){ showTrainStatus('error','Select a person first'); return; }
+  const btn=document.getElementById('captureBtn'); btn.disabled=true; btn.textContent='⏳ Capturing…';
+  const video=document.getElementById('trainVideo');
+  const det=await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+  if(!det){ showTrainStatus('error','❌ No face detected'); btn.disabled=false; btn.textContent='📸 Capture Sample'; return; }
+
+  // ── Crop just the face area from the video frame ──
+  const box   = det.detection.box;
+  const pad   = Math.round(Math.max(box.width, box.height) * 0.25);
+  const sx    = Math.max(0, Math.round(box.x - pad));
+  const sy    = Math.max(0, Math.round(box.y - pad));
+  const sw    = Math.min(video.videoWidth  - sx, Math.round(box.width  + pad*2));
+  const sh    = Math.min(video.videoHeight - sy, Math.round(box.height + pad*2));
+  const size  = 120;  // output thumbnail size
+  const offscreen = document.createElement('canvas');
+  offscreen.width  = size;
+  offscreen.height = size;
+  offscreen.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, size, size);
+  const photoDataUrl = offscreen.toDataURL('image/jpeg', 0.85);
+
+  // ── Save descriptor ──
+  const r=await fetch('/api/attendance/face/',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+    body:JSON.stringify({name,descriptor:Array.from(det.descriptor),label:name})});
+  const d=await r.json();
+  if(!d.ok){ showTrainStatus('error',d.error||'Failed'); btn.disabled=false; btn.textContent='📸 Capture Sample'; return; }
+
+  // ── Save photo (only on first sample to keep the best-framed shot;
+  //    replace on explicit re-train via same button) ──
+  await fetch('/api/attendance/face/photo/save/',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+    body:JSON.stringify({name, photo: photoDataUrl})});
+
+  facePhotos[name] = photoDataUrl;  // update local cache immediately
+
+  document.getElementById('trainSampleCount').textContent='✓ '+d.samples+' sample'+(d.samples!==1?'s':'')+' for '+name;
+  showTrainStatus('success','✅ Captured! Sample '+d.samples+'. Aim for 5+ from different angles.');
+  loadTrainedFaces();
+  btn.disabled=false; btn.textContent='📸 Capture Sample';
+}
+function showTrainStatus(type,msg){
+  const el=document.getElementById('trainStatus'); if(!el) return;
+  el.style.display='block'; el.style.background=type==='success'?'rgba(34,197,94,.1)':'rgba(239,68,68,.1)';
+  el.style.border='1px solid rgba('+(type==='success'?'34,197,94':'239,68,68')+',.25)'; el.style.color=type==='success'?'#4ade80':'#f87171';
+  el.textContent=msg; setTimeout(()=>el.style.display='none',4000);
+}
+async function loadTrainedFaces(){
+  const el=document.getElementById('trainedFacesList'); if(!el) return;
+  try{
+    const [fr, pr] = await Promise.all([
+      fetch('/api/attendance/face/',{credentials:'same-origin'}),
+      fetch('/api/attendance/face/photo/all/',{credentials:'same-origin'})
+    ]);
+    const fd=await fr.json(); const faces=fd.faces||[];
+    const photos = pr.ok ? await pr.json() : {};
+    // Update local cache
+    Object.assign(facePhotos, photos);
+
+    if(!faces.length){
+      el.innerHTML='<div style="color:rgba(226,232,245,.3);font-size:13px;text-align:center;padding:20px">No trained faces yet</div>';
+      return;
+    }
+    el.innerHTML = faces.map(name=>{
+      const photo = photos[name];
+      const avatar = photo
+        ? `<img src="${photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(162,89,255,.4);flex-shrink:0">`
+        : `<span style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#a259ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;color:#fff;font-weight:700;letter-spacing:-.5px">${name.charAt(0).toUpperCase()}</span>`;
+      const safeName = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.025)">
+        ${avatar}
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${name}</div>
+          <div style="font-size:11px;color:#4ade80;margin-top:2px">✓ Face trained${photo?' · Photo saved':''}</div>
+        </div>
+        <button class="delete-face-btn" data-name="${safeName}"
+          style="padding:5px 10px;border-radius:8px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.08);color:#f87171;font-size:11px;cursor:pointer;font-family:var(--fb);font-weight:600">
+          Delete
+        </button>
+      </div>`;
+    }).join('');
+
+    // Attach delete handlers (no inline onclick = no quote issues)
+    el.querySelectorAll('.delete-face-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=> deleteFace(btn.dataset.name));
+    });
+  }catch(e){ console.error(e); }
+}
+
+async function deleteFace(name){
+  if(!confirm('Delete face data for "'+name+'"?')) return;
+  const r=await fetch('/api/attendance/face/delete/',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()},
+    body:JSON.stringify({name})});
+  const d=await r.json();
+  if(d.ok){
+    delete facePhotos[name];
+    loadTrainedFaces();
+  }
+}
+
+/* Pre-load all face photos at startup (for attendance list display) */
+async function preloadFacePhotos(){
+  try{
+    const r=await fetch('/api/attendance/face/photo/all/',{credentials:'same-origin'});
+    if(r.ok){ const d=await r.json(); Object.assign(facePhotos, d); }
+  }catch(e){}
+}
+// Load photos eagerly so they're ready when attendance list is shown
+preloadFacePhotos();
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
+(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+</script>
+
+</body>
+</html>

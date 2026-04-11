@@ -1,0 +1,40 @@
+[
+  {
+    "id": "522f4263-5f8e-4de5-95f3-558a87ae4e3d",
+    "date": "2026-04-09",
+    "shift": "day",
+    "timing": "08:00 \u2013 20:00",
+    "shift_incharge": "Abdul Rahim",
+    "technicians": "Arif, Ariful, Azad, Fazlulhaq, Hamza",
+    "major_alarms": "mvps block 36",
+    "equipment_breakdown": "",
+    "maintenance_activities": [
+      {
+        "sr": 0,
+        "equipment": "scb",
+        "location": "block 34",
+        "work_desc": "dsdsad",
+        "type": "CM",
+        "status": "Completed",
+        "remarks": "dasdas"
+      }
+    ],
+    "inverter_faults": [],
+    "scb_faults": [],
+    "robot_maintenance": [],
+    "spare_parts": [],
+    "key_issues": "",
+    "pending_work": "",
+    "instructions_next_shift": "",
+    "observation_text": "",
+    "observation_images": [
+      "cmms/handover_images/522f4263-5f8e-4de5-95f3-558a87ae4e3d_d78e012a.jpg"
+    ],
+    "shift_engineer_sig": "Abdul Rahim",
+    "incoming_engineer_sig": "Basit",
+    "status": "submitted",
+    "created_at": "2026-04-09T16:26:08.162044",
+    "created_by": "admin",
+    "submitted_at": "2026-04-09T16:26:26.581707"
+  }
+]

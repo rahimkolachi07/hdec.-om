@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{% if is_new %}New Handover{% else %}Handover — {{ handover.date }}{% endif %} · {{ project.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.22);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.2}
+    .wrap{position:relative;z-index:1}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.88);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:10px}
+    .back{padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s}.back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}.page-title span{color:var(--a2)}
+    .user-chip{padding:7px 16px;border-radius:30px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.06);color:#7ec3ff;font-size:13px;font-weight:500}
+
+    /* STATUS BANNER */
+    .status-banner{padding:10px 40px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border)}
+    .status-banner.draft{background:rgba(251,191,36,.06);color:#fbbf24}
+    .status-banner.submitted{background:rgba(34,197,94,.06);color:#4ade80}
+    .status-banner.new-entry{background:rgba(59,158,255,.06);color:#7ec3ff}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block;flex-shrink:0}
+
+    /* MAIN */
+    .main{padding:28px 40px 100px;max-width:1100px;margin:0 auto}
+
+    /* PAGE HEADER */
+    .page-header{margin-bottom:28px}
+    .page-header h1{font-family:var(--fd);font-size:24px;font-weight:800;letter-spacing:-.3px}
+    .page-header p{font-size:13px;color:var(--tm);margin-top:5px}
+
+    /* SECTIONS */
+    .section{background:var(--s);border:1px solid var(--border);border-radius:var(--r);margin-bottom:18px;overflow:hidden}
+    .section-head{display:flex;align-items:center;gap:10px;padding:15px 20px;background:var(--s2);border-bottom:1px solid var(--border)}
+    .section-head .ico{font-size:18px}
+    .section-head h3{font-family:var(--fd);font-size:14px;font-weight:700;flex:1}
+    .section-body{padding:20px}
+
+    /* FORM */
+    .form-row{display:grid;gap:14px;margin-bottom:14px}
+    .form-row.cols-2{grid-template-columns:1fr 1fr}
+    .form-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+    .form-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr}
+    .form-row:last-child{margin-bottom:0}
+    @media(max-width:700px){.form-row.cols-2,.form-row.cols-3,.form-row.cols-4{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.6px}
+    .form-control{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--fb);font-size:13.5px;padding:10px 14px;transition:all .2s;width:100%}
+    .form-control:focus{outline:none;border-color:rgba(59,158,255,.45);background:rgba(59,158,255,.04)}
+    .form-control[readonly]{opacity:.55;cursor:default}
+    .form-control:disabled{opacity:.55;cursor:default}
+    textarea.form-control{resize:vertical;min-height:90px;line-height:1.6}
+    select.form-control option{background:#0d1120}
+
+    /* VIEW FIELDS */
+    .view-field{font-size:13.5px;line-height:1.6;padding:10px 14px;background:rgba(255,255,255,.02);border-radius:10px;border:1px solid var(--border);min-height:36px;white-space:pre-wrap;word-break:break-word;color:var(--text)}
+    .view-field.muted{color:var(--td)}
+
+    /* SHIFT BADGE */
+    .shift-badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid}
+    .shift-Day{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.25);color:#7ec3ff}
+    .shift-Night{background:rgba(162,89,255,.1);border-color:rgba(162,89,255,.25);color:#c084fc}
+    .shift-General{background:rgba(0,229,200,.1);border-color:rgba(0,229,200,.25);color:#2dd4bf}
+
+    /* TECHNICIANS */
+    .tech-tags{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:rgba(255,255,255,.02);border-radius:10px;border:1px solid var(--border);min-height:42px}
+    .tech-tag{padding:4px 10px;border-radius:20px;background:rgba(59,158,255,.1);border:1px solid rgba(59,158,255,.2);color:#7ec3ff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+    .tech-tag .rm{background:none;border:none;color:#7ec3ff;cursor:pointer;font-size:13px;padding:0;line-height:1;opacity:.6}
+    .tech-tag .rm:hover{opacity:1}
+    .tech-input-wrap{display:flex;gap:8px;margin-top:8px}
+    .tech-input-wrap input{flex:1}
+    .btn-sm{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid;font-family:var(--fb);transition:all .15s}
+    .btn-add{background:rgba(0,229,200,.08);border-color:rgba(0,229,200,.25);color:#2dd4bf}.btn-add:hover{background:rgba(0,229,200,.16)}
+
+    /* SIGNATURE */
+    .sig-zone{border:2px dashed rgba(59,158,255,.2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+    .sig-zone:hover{border-color:rgba(59,158,255,.45);background:rgba(59,158,255,.03)}
+    .sig-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .sig-zone .sig-placeholder{color:var(--tm);font-size:13px}
+    .sig-zone .sig-placeholder span{display:block;font-size:24px;margin-bottom:6px}
+    .sig-preview{display:none;max-width:200px;max-height:80px;object-fit:contain;margin:0 auto}
+    .sig-label-text{font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:.5px;margin-top:8px}
+
+    /* ACTION BAR */
+    .action-bar{position:sticky;bottom:0;z-index:50;background:rgba(4,6,15,.92);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:14px 40px;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:30px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .2s;font-family:var(--fb)}
+    .btn-primary{background:linear-gradient(135deg,var(--a2),#00a896);color:#fff;border:none}.btn-primary:hover{box-shadow:0 4px 16px rgba(0,229,200,.3);transform:translateY(-1px)}
+    .btn-accent{background:linear-gradient(135deg,var(--accent),#1a52cc);color:#fff;border:none}.btn-accent:hover{box-shadow:0 4px 16px rgba(59,158,255,.3);transform:translateY(-1px)}
+    .btn-success{background:#22c55e;color:#fff;border:none}.btn-success:hover{background:#16a34a;transform:translateY(-1px)}
+    .btn-ghost{background:var(--s);border:1px solid var(--border);color:var(--text)}.btn-ghost:hover{border-color:rgba(59,158,255,.3)}
+    .btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171}.btn-danger:hover{background:rgba(239,68,68,.2)}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:80px;right:24px;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:999;display:none;background:#22c55e;color:#fff;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+    .toast.error{background:#ef4444}.toast.show{display:block}
+
+    /* SUBMITTED NOTICE */
+    .submitted-notice{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:20px}
+    .submitted-notice .ico{font-size:22px}
+    .submitted-notice p{font-size:13.5px;color:#4ade80;line-height:1.5}
+
+    /* INFO GRID */
+    .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px}
+    .info-item{background:rgba(255,255,255,.02);border-radius:10px;border:1px solid var(--border);padding:12px 14px}
+    .info-item .lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--td);margin-bottom:4px}
+    .info-item .val{font-size:13.5px;font-weight:600}
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media(max-width:768px){
+      .topbar{padding:12px 16px}
+      .page-title{font-size:14px}
+      .user-chip{display:none}
+      .status-banner{padding:8px 16px;font-size:12px}
+      .main{padding:16px 16px 100px}
+      .page-header h1{font-size:18px}
+      .section-body{padding:14px}
+      .form-row.cols-2,.form-row.cols-3,.form-row.cols-4{grid-template-columns:1fr}
+      .info-grid{grid-template-columns:1fr 1fr}
+      .action-bar{padding:12px 16px;gap:8px}
+      .btn{padding:9px 16px;font-size:13px}
+    }
+    @media(max-width:480px){
+      .action-bar{flex-direction:column}
+      .btn{width:100%;justify-content:center}
+      .info-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="tl">
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="back" onclick="return goBack(event, this.href)">← Handover Log</a>
+      <div class="page-title">📝 <span>Shift Handover</span> — {{ project.name }}</div>
+    </div>
+    <div class="user-chip">{{ current_user.name }}</div>
+  </header>
+
+  <!-- STATUS BANNER -->
+  {% if is_new %}
+  <div class="status-banner new-entry"><span class="status-dot"></span>New Handover Entry</div>
+  {% elif handover.status == 'submitted' %}
+  <div class="status-banner submitted"><span class="status-dot"></span>Submitted — Read-only</div>
+  {% else %}
+  <div class="status-banner draft"><span class="status-dot"></span>Draft — Editable</div>
+  {% endif %}
+
+  <div id="toast" class="toast"></div>
+
+  <div class="main">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      {% if is_new %}
+        <h1>New Shift Handover Report</h1>
+        <p>Fill in shift details and submit when complete.</p>
+      {% else %}
+        <h1>
+          {% if handover.shift == 'Day' %}☀{% elif handover.shift == 'Night' %}🌙{% else %}📋{% endif %}
+          {{ handover.shift }} Shift — {{ handover.date }}
+        </h1>
+        <p>Created {{ handover.created_at|slice:":10" }}{% if handover.created_by %} by {{ handover.created_by }}{% endif %}
+          {% if handover.submitted_at %} · Submitted {{ handover.submitted_at|slice:":10" }}{% endif %}
+        </p>
+      {% endif %}
+    </div>
+
+    {% if handover and handover.status == 'submitted' %}
+    <div class="submitted-notice">
+      <span class="ico">✅</span>
+      <p>This handover has been submitted and is locked for editing. Contact an admin if changes are needed.</p>
+    </div>
+    {% endif %}
+
+    <!-- ── SECTION 1: SHIFT INFORMATION ── -->
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">📋</span>
+        <h3>Shift Information</h3>
+        {% if not is_new %}
+          <span class="shift-badge shift-{{ handover.shift }}">{{ handover.shift }} Shift</span>
+        {% endif %}
+      </div>
+      <div class="section-body">
+        {% if is_new or handover.status == 'draft' %}
+          <div class="form-row cols-4">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="f-date" class="form-control" value="{% if handover %}{{ handover.date }}{% endif %}">
+            </div>
+            <div class="form-group">
+              <label>Shift</label>
+              <select id="f-shift" class="form-control" onchange="onShiftChange()">
+                <option value="Day" {% if handover.shift == 'Day' %}selected{% endif %}>☀ Day Shift</option>
+                <option value="Night" {% if handover.shift == 'Night' %}selected{% endif %}>🌙 Night Shift</option>
+                <option value="General" {% if handover.shift == 'General' %}selected{% endif %}>📋 General</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Timing</label>
+              <input type="text" id="f-timing" class="form-control" placeholder="e.g. 08:00 – 20:00" value="{% if handover %}{{ handover.timing }}{% endif %}">
+            </div>
+            <div class="form-group">
+              <label>Shift In-Charge</label>
+              <input type="text" id="f-incharge" class="form-control" placeholder="Engineer name" value="{% if handover %}{{ handover.shift_incharge }}{% endif %}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Technicians on Shift</label>
+            <div class="tech-tags" id="tech-tags"></div>
+            <div class="tech-input-wrap">
+              <input type="text" id="tech-input" class="form-control" placeholder="Type name and press Enter or Add…" onkeydown="if(event.key==='Enter'){event.preventDefault();addTech()}">
+              <button class="btn-sm btn-add" onclick="addTech()">+ Add</button>
+            </div>
+          </div>
+        {% else %}
+          <div class="info-grid">
+            <div class="info-item"><div class="lbl">Date</div><div class="val">{{ handover.date }}</div></div>
+            <div class="info-item"><div class="lbl">Shift</div><div class="val">{{ handover.shift }} Shift</div></div>
+            <div class="info-item"><div class="lbl">Timing</div><div class="val">{{ handover.timing|default:"—" }}</div></div>
+            <div class="info-item"><div class="lbl">Shift In-Charge</div><div class="val">{{ handover.shift_incharge|default:"—" }}</div></div>
+          </div>
+          <div class="form-group">
+            <label>Technicians on Shift</label>
+            <div class="view-field">{% if handover.technicians %}{{ handover.technicians|join:", " }}{% else %}<span style="color:var(--td)">—</span>{% endif %}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: ALARM STATUS ── -->
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">🚨</span>
+        <h3>Alarm & Equipment Status</h3>
+      </div>
+      <div class="section-body">
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label>Major Alarms</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.major_alarms %}muted{% endif %}">{{ handover.major_alarms|default:"None reported" }}</div>
+            {% else %}
+              <textarea id="f-major-alarms" class="form-control" placeholder="List active major alarms during this shift…">{% if handover %}{{ handover.major_alarms }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+          <div class="form-group">
+            <label>Equipment Breakdown</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.equipment_breakdown %}muted{% endif %}">{{ handover.equipment_breakdown|default:"None reported" }}</div>
+            {% else %}
+              <textarea id="f-equipment-breakdown" class="form-control" placeholder="Equipment currently down or under maintenance…">{% if handover %}{{ handover.equipment_breakdown }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: MAINTENANCE ACTIVITIES ── -->
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">🔧</span>
+        <h3>Maintenance Activities</h3>
+      </div>
+      <div class="section-body">
+        <div class="form-group">
+          {% if handover and handover.status == 'submitted' %}
+            <div class="view-field {% if not handover.maintenance_activities %}muted{% endif %}">{{ handover.maintenance_activities|default:"None recorded" }}</div>
+          {% else %}
+            <textarea id="f-maintenance-activities" class="form-control" placeholder="Describe maintenance tasks performed during this shift…" style="min-height:110px">{% if handover %}{{ handover.maintenance_activities }}{% endif %}</textarea>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 4: FAULTS ── -->
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">⚡</span>
+        <h3>Faults & Spare Parts</h3>
+      </div>
+      <div class="section-body">
+        <div class="form-row cols-3">
+          <div class="form-group">
+            <label>Inverter Faults</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.inverter_faults %}muted{% endif %}">{{ handover.inverter_faults|default:"—" }}</div>
+            {% else %}
+              <textarea id="f-inverter-faults" class="form-control" placeholder="Inverter fault details…">{% if handover %}{{ handover.inverter_faults }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+          <div class="form-group">
+            <label>SCB Faults</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.scb_faults %}muted{% endif %}">{{ handover.scb_faults|default:"—" }}</div>
+            {% else %}
+              <textarea id="f-scb-faults" class="form-control" placeholder="SCB / combiner box faults…">{% if handover %}{{ handover.scb_faults }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+          <div class="form-group">
+            <label>Spare Parts Used</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.spare_parts %}muted{% endif %}">{{ handover.spare_parts|default:"—" }}</div>
+            {% else %}
+              <textarea id="f-spare-parts" class="form-control" placeholder="Parts consumed or requisitioned…">{% if handover %}{{ handover.spare_parts }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 5: KEY ISSUES & PENDING WORK ── -->
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">📌</span>
+        <h3>Key Issues & Pending Work</h3>
+      </div>
+      <div class="section-body">
+        <div class="form-row cols-2" style="margin-bottom:14px">
+          <div class="form-group">
+            <label>Key Issues</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.key_issues %}muted{% endif %}">{{ handover.key_issues|default:"None" }}</div>
+            {% else %}
+              <textarea id="f-key-issues" class="form-control" placeholder="Critical issues raised during shift…">{% if handover %}{{ handover.key_issues }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+          <div class="form-group">
+            <label>Pending Work</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.pending_work %}muted{% endif %}">{{ handover.pending_work|default:"None" }}</div>
+            {% else %}
+              <textarea id="f-pending-work" class="form-control" placeholder="Work carried over to next shift…">{% if handover %}{{ handover.pending_work }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Instructions for Next Shift</label>
+            {% if handover and handover.status == 'submitted' %}
+              <div class="view-field {% if not handover.instructions_next_shift %}muted{% endif %}">{{ handover.instructions_next_shift|default:"None" }}</div>
+            {% else %}
+              <textarea id="f-instructions" class="form-control" placeholder="Handover instructions, tasks, and follow-ups for the incoming team…">{% if handover %}{{ handover.instructions_next_shift }}{% endif %}</textarea>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 6: OBSERVATIONS ── -->
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">🔍</span>
+        <h3>General Observations</h3>
+      </div>
+      <div class="section-body">
+        <div class="form-group">
+          {% if handover and handover.status == 'submitted' %}
+            <div class="view-field {% if not handover.observation_text %}muted{% endif %}">{{ handover.observation_text|default:"No observations recorded." }}</div>
+          {% else %}
+            <textarea id="f-observations" class="form-control" placeholder="General observations, site conditions, safety concerns…" style="min-height:100px">{% if handover %}{{ handover.observation_text }}{% endif %}</textarea>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 7: SIGNATURES (view-only when submitted) ── -->
+    {% if not is_new %}
+    <div class="section">
+      <div class="section-head">
+        <span class="ico">✍️</span>
+        <h3>Digital Signatures</h3>
+      </div>
+      <div class="section-body">
+        <div class="form-row cols-2">
+          <div class="form-group">
+            <label>Outgoing Shift Engineer</label>
+            {% if handover.status == 'draft' %}
+              <div class="sig-zone" onclick="document.getElementById('sig-outgoing').click()">
+                <input type="file" id="sig-outgoing" accept="image/*" onchange="previewSig(this,'prev-outgoing')">
+                <img id="prev-outgoing" class="sig-preview" src="">
+                <div class="sig-placeholder" id="ph-outgoing"><span>✍️</span>Click to upload signature image</div>
+              </div>
+            {% else %}
+              {% if handover.shift_engineer_sig %}
+                <img src="{{ handover.shift_engineer_sig }}" style="max-height:80px;max-width:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border)">
+              {% else %}
+                <div class="view-field muted">Not signed</div>
+              {% endif %}
+            {% endif %}
+            <div class="sig-label-text">{{ handover.shift_incharge|default:"Shift Engineer" }}</div>
+          </div>
+          <div class="form-group">
+            <label>Incoming Shift Engineer</label>
+            {% if handover.status == 'draft' %}
+              <div class="sig-zone" onclick="document.getElementById('sig-incoming').click()">
+                <input type="file" id="sig-incoming" accept="image/*" onchange="previewSig(this,'prev-incoming')">
+                <img id="prev-incoming" class="sig-preview" src="">
+                <div class="sig-placeholder" id="ph-incoming"><span>✍️</span>Click to upload signature image</div>
+              </div>
+            {% else %}
+              {% if handover.incoming_engineer_sig %}
+                <img src="{{ handover.incoming_engineer_sig }}" style="max-height:80px;max-width:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border)">
+              {% else %}
+                <div class="view-field muted">Not signed</div>
+              {% endif %}
+            {% endif %}
+            <div class="sig-label-text">Incoming Engineer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /main -->
+
+  <!-- ACTION BAR -->
+  {% if is_new %}
+  <div class="action-bar">
+    <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="btn btn-ghost">Cancel</a>
+    <button class="btn btn-primary" onclick="saveHandover('draft')">💾 Save as Draft</button>
+    <button class="btn btn-success" onclick="saveHandover('submitted')">✅ Submit Handover</button>
+  </div>
+  {% elif handover.status == 'draft' %}
+  <div class="action-bar">
+    <button class="btn btn-danger" onclick="deleteHandover()">🗑 Delete</button>
+    <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="btn btn-ghost">← Back</a>
+    <button class="btn btn-primary" onclick="updateHandover('draft')">💾 Save Changes</button>
+    <button class="btn btn-success" onclick="updateHandover('submitted')">✅ Submit</button>
+  </div>
+  {% else %}
+  <div class="action-bar">
+    <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="btn btn-ghost">← Back to List</a>
+    <a href="/api/p/{{ country_id }}/{{ project_id }}/handover/?action=export" class="btn btn-accent">📤 Export Excel</a>
+  </div>
+  {% endif %}
+
+</div><!-- /wrap -->
+
+<script>
+const CID = '{{ country_id }}';
+const PID = '{{ project_id }}';
+const CAT = '{{ category }}';
+const HO_ID = '{{ handover.id|default:"" }}';
+const IS_NEW = {{ is_new|yesno:"true,false" }};
+
+/* ── TECH TAGS ── */
+let techs = [];
+{% if handover and handover.technicians %}
+  techs = {{ handover.technicians|safe }};
+{% endif %}
+
+function renderTechs(){
+  const wrap = document.getElementById('tech-tags');
+  if(!wrap) return;
+  wrap.innerHTML = techs.map((t,i)=>
+    `<span class="tech-tag">${t}<button class="rm" onclick="removeTech(${i})">×</button></span>`
+  ).join('');
+}
+function addTech(){
+  const inp = document.getElementById('tech-input');
+  const v = inp.value.trim();
+  if(!v) return;
+  techs.push(v);
+  inp.value='';
+  renderTechs();
+}
+function removeTech(i){techs.splice(i,1);renderTechs();}
+renderTechs();
+
+/* ── SHIFT TIMING AUTO-FILL ── */
+function onShiftChange(){
+  const s = document.getElementById('f-shift').value;
+  const t = document.getElementById('f-timing');
+  if(!t) return;
+  if(s==='Day') t.value='08:00 – 20:00';
+  else if(s==='Night') t.value='20:00 – 08:00';
+  else t.value='';
+}
+
+/* ── SET TODAY'S DATE ── */
+if(IS_NEW){
+  const fd = document.getElementById('f-date');
+  if(fd && !fd.value){
+    fd.value = new Date().toISOString().slice(0,10);
+  }
+  onShiftChange();
+}
+
+/* ── SIGNATURE PREVIEW ── */
+function previewSig(input, previewId){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(previewId);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    const ph = input.closest('.sig-zone').querySelector('.sig-placeholder');
+    if(ph) ph.style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function readSig(inputId){
+  return new Promise(resolve=>{
+    const inp = document.getElementById(inputId);
+    if(!inp || !inp.files.length) return resolve(null);
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.readAsDataURL(inp.files[0]);
+  });
+}
+
+/* ── COLLECT FORM DATA ── */
+async function collectPayload(status){
+  const g = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+  const payload = {
+    date: g('f-date'),
+    shift: g('f-shift'),
+    timing: g('f-timing'),
+    shift_incharge: g('f-incharge'),
+    technicians: [...techs],
+    major_alarms: g('f-major-alarms'),
+    equipment_breakdown: g('f-equipment-breakdown'),
+    maintenance_activities: g('f-maintenance-activities'),
+    inverter_faults: g('f-inverter-faults'),
+    scb_faults: g('f-scb-faults'),
+    spare_parts: g('f-spare-parts'),
+    key_issues: g('f-key-issues'),
+    pending_work: g('f-pending-work'),
+    instructions_next_shift: g('f-instructions'),
+    observation_text: g('f-observations'),
+    status: status,
+  };
+  const sigOut = await readSig('sig-outgoing');
+  const sigIn = await readSig('sig-incoming');
+  if(sigOut) payload.shift_engineer_sig = sigOut;
+  if(sigIn) payload.incoming_engineer_sig = sigIn;
+  return payload;
+}
+
+/* ── VALIDATE ── */
+function validate(payload){
+  if(!payload.date){ showToast('Please set a date.', true); return false; }
+  if(!payload.shift){ showToast('Please select a shift.', true); return false; }
+  return true;
+}
+
+/* ── CREATE ── */
+async function saveHandover(status){
+  const payload = await collectPayload(status);
+  if(!validate(payload)) return;
+  payload.action = 'create';
+  const r = await fetch(`/api/p/${CID}/${PID}/${CAT}/handover/`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const j = await r.json();
+  if(j.ok){
+    showToast(status==='submitted' ? '✅ Handover submitted!' : '💾 Draft saved!');
+    setTimeout(()=>{ location.href=`/p/${CID}/${PID}/${CAT}/cmms/handover/${j.handover.id}/`; }, 900);
+  } else {
+    showToast(j.error || 'Failed to save.', true);
+  }
+}
+
+/* ── UPDATE ── */
+async function updateHandover(status){
+  const payload = await collectPayload(status);
+  if(!validate(payload)) return;
+  payload.action = 'update';
+  payload.id = HO_ID;
+  if(status==='submitted') payload.submitted_at = new Date().toISOString();
+  const r = await fetch(`/api/p/${CID}/${PID}/${CAT}/handover/`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const j = await r.json();
+  if(j.ok){
+    showToast(status==='submitted' ? '✅ Submitted!' : '💾 Saved!');
+    setTimeout(()=>{ location.reload(); }, 900);
+  } else {
+    showToast(j.error || 'Failed to save.', true);
+  }
+}
+
+/* ── DELETE ── */
+async function deleteHandover(){
+  if(!confirm('Delete this handover entry? This cannot be undone.')) return;
+  const r = await fetch(`/api/p/${CID}/${PID}/${CAT}/handover/`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action:'delete', id: HO_ID})
+  });
+  const j = await r.json();
+  if(j.ok){
+    showToast('Deleted.');
+    setTimeout(()=>{ location.href=`/p/${CID}/${PID}/${CAT}/cmms/handover/`; }, 700);
+  } else {
+    showToast(j.error||'Failed to delete.', true);
+  }
+}
+
+/* ── TOAST ── */
+function showToast(msg, err=false){
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(err?' error':'');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+
+/* ── CANVAS PARTICLES ── */
+const canvas=document.getElementById('cv'),c=canvas.getContext('2d');let W,H;
+const DOTS=Array.from({length:30},()=>({x:Math.random()*2000,y:Math.random()*1200,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.15,r:Math.random()*1.1+.3,a:Math.random()*.1+.03}));
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}resize();window.addEventListener('resize',resize);
+(function draw(){c.clearRect(0,0,W,H);DOTS.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle=`rgba(0,229,200,${p.a})`;c.fill()});requestAnimationFrame(draw)})();
+</script>
+</body>
+</html>

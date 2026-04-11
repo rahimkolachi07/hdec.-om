@@ -1,0 +1,1157 @@
+{% load cmms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{% if permit %}Permit {{ permit.permit_number|default:"(Pending)" }}{% else %}New PTW{% endif %} — HDEC CMMS</title>
+  <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.07);--accent:#3b9eff;--a2:#00e5c8;--text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.22);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:14px}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .wrap{position:relative;z-index:1}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 32px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.9);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;gap:10px;flex-wrap:wrap}
+    .tl{display:flex;align-items:center;gap:10px}
+    .back{padding:6px 14px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s;white-space:nowrap}
+    .back:hover{color:var(--text)}
+    .page-title{font-family:var(--fd);font-size:15px;font-weight:700}.page-title span{color:var(--accent)}
+    .topbar-right{display:flex;gap:6px;flex-wrap:wrap}
+    .btn{padding:8px 16px;border-radius:10px;border:none;font-size:12.5px;font-weight:600;font-family:var(--fb);cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#1a52cc);color:#fff}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(59,158,255,.3)}
+    .btn-ghost{background:var(--s);border:1px solid var(--border);color:var(--tm)}
+    .btn-ghost:hover{color:var(--text);border-color:rgba(59,158,255,.25)}
+    .btn-success{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff}
+    .btn-success:hover{transform:translateY(-1px)}
+    .btn-warning{background:linear-gradient(135deg,#d97706,#b45309);color:#fff}
+    .btn-warning:hover{transform:translateY(-1px)}
+    .btn-danger{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+    .btn-sm{padding:5px 12px;font-size:11.5px;border-radius:8px}
+
+    .main{padding:20px 32px 60px;max-width:1200px;margin:0 auto}
+    .layout{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+    @media(max-width:880px){.layout{grid-template-columns:1fr}}
+
+    /* STATUS BANNER */
+    .status-banner{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-radius:12px;border:1px solid;margin-bottom:20px;flex-wrap:wrap;gap:8px}
+    .sb-label{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .sb-pending_issue .sb-label{color:#fbbf24}.sb-pending_issue{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.2)}
+    .sb-pending_hse .sb-label{color:#fb923c}.sb-pending_hse{background:rgba(249,115,22,.06);border-color:rgba(249,115,22,.2)}
+    .sb-active .sb-label{color:#4ade80}.sb-active{background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.2)}
+    .sb-closed .sb-label{color:#94a3b8}.sb-closed{background:rgba(100,116,139,.06);border-color:rgba(100,116,139,.18)}
+    .sb-cancelled .sb-label{color:#f87171}.sb-cancelled{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.2)}
+    .sb-meta{font-size:11.5px;color:var(--tm)}
+
+    /* WORKFLOW */
+    .workflow{display:flex;margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+    .wf-step{flex:1;padding:10px 14px;border-right:1px solid var(--border);min-width:120px}
+    .wf-step:last-child{border-right:none}
+    .wf-done{background:rgba(34,197,94,.06)}
+    .wf-current{background:rgba(59,158,255,.08)}
+    .wf-pending{background:rgba(255,255,255,.01)}
+    .wf-num{font-size:11px;font-weight:700;margin-bottom:2px}
+    .wf-done .wf-num{color:#4ade80}.wf-current .wf-num{color:var(--accent)}.wf-pending .wf-num{color:var(--td)}
+    .wf-title{font-size:12px;font-weight:700}
+    .wf-done .wf-title{color:#4ade80}.wf-current .wf-title{color:var(--accent)}.wf-pending .wf-title{color:var(--td)}
+    .wf-sub{font-size:10.5px;color:var(--td);margin-top:1px}
+
+    /* CARDS */
+    .card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+    .card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.01)}
+    .card-head h3{font-family:var(--fd);font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .card-body{padding:16px}
+
+    /* FORM FIELDS */
+    .field{margin-bottom:11px}
+    .field label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);margin-bottom:5px}
+    .field input,.field select,.field textarea{width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:12.5px;font-family:var(--fb);outline:none;transition:border-color .2s;resize:vertical}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(59,158,255,.35);background:rgba(59,158,255,.04)}
+    .field select option{background:#0f1827}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+    /* CHECKBOXES GRID */
+    .cb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:12px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.01)}
+    .cb-item{display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer;padding:4px 6px;border-radius:7px;transition:background .15s}
+    .cb-item:hover{background:rgba(255,255,255,.04)}
+    .cb-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+
+    /* PRECAUTION TABLE */
+    .prec-table{width:100%;border-collapse:collapse;font-size:12px}
+    .prec-table th{padding:7px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:700;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+    .prec-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+    .prec-table tr:last-child td{border-bottom:none}
+    .prec-table tr:hover td{background:rgba(255,255,255,.02)}
+    .yn-group{display:flex;gap:14px}
+    .yn-label{display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer}
+    .yn-label input{accent-color:var(--accent)}
+
+    /* SIGNATURE */
+    .sig-canvas{width:100%;height:100px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.03);cursor:crosshair;display:block}
+    .sig-actions{display:flex;gap:6px;margin-top:6px}
+    .sig-preview img{max-height:70px;border-radius:7px;border:1px solid var(--border)}
+    .sig-signed{font-size:11.5px;color:#4ade80;margin-top:4px}
+
+    /* WORKERS TABLE */
+    .workers-table{width:100%;border-collapse:collapse;font-size:12px}
+    .workers-table th{padding:7px 10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);font-weight:700;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);text-align:left}
+    .workers-table td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.03)}
+    .workers-table input{width:100%;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:12px;font-family:var(--fb);outline:none}
+    .workers-table input:focus{border-color:rgba(59,158,255,.35)}
+
+    /* SUMMARY ROWS */
+    .sum-row{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:flex-start}
+    .sum-row:last-child{border-bottom:none}
+    .sum-lbl{font-size:11.5px;color:var(--tm);font-weight:600;min-width:120px;flex-shrink:0}
+    .sum-val{font-size:12.5px;flex:1;white-space:pre-wrap}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+    .b-pending_issue{background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.25)}
+    .b-pending_hse{background:rgba(249,115,22,.1);color:#fb923c;border-color:rgba(249,115,22,.25)}
+    .b-active{background:rgba(34,197,94,.1);color:#4ade80;border-color:rgba(34,197,94,.25)}
+    .b-closed{background:rgba(100,116,139,.1);color:#94a3b8;border-color:rgba(100,116,139,.2)}
+    .b-cancelled{background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.2)}
+
+    /* ACTION PANEL */
+    .action-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px}
+    .action-card h3{font-family:var(--fd);font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+    .action-sep{height:1px;background:var(--border);margin:12px 0}
+
+    .toast{position:fixed;top:80px;right:24px;z-index:9999;padding:11px 18px;border-radius:11px;font-size:13px;font-weight:500;border:1px solid;display:none;animation:fadeIn .3s ease}
+    .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);color:#4ade80}
+    .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#f87171}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    .spinner{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .iso-badge-yes{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.2);padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+    .iso-badge-no{background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.2);padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+    /* WAITING FOR CLOSE */
+    .sb-waiting_for_close .sb-label{color:#06b6d4}.sb-waiting_for_close{background:rgba(6,182,212,.06);border-color:rgba(6,182,212,.2)}
+    .b-waiting_for_close{background:rgba(6,182,212,.1);color:#06b6d4;border-color:rgba(6,182,212,.25)}
+    /* FILE UPLOAD INPUTS */
+    .sig-upload-wrap{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;background:rgba(255,255,255,.01)}
+    .sig-upload-wrap:hover{border-color:rgba(59,158,255,.35)}
+    .sig-upload-wrap input[type=file]{display:none}
+    .sig-upload-label{font-size:12px;color:var(--tm);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+    .sig-upload-label span{font-size:22px}
+    .sig-preview-uploaded{max-height:90px;max-width:100%;border-radius:7px;border:1px solid var(--border);margin-top:8px;display:none}
+    .upload-req-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+    .upload-req-row:last-child{border-bottom:none}
+    .req-icon{font-size:14px;width:18px;text-align:center}
+    .req-done{color:#4ade80}.req-missing{color:#f87171}
+    .img-thumb-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .img-thumb-grid img{height:60px;width:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+    .draft-banner{background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.18);border-radius:10px;padding:9px 14px;font-size:12px;color:#67e8f9;margin-bottom:14px;display:none}
+    /* DAY MODE */
+    html[data-theme="light"]{--bg:#f4f6fd;--s:rgba(0,0,0,.028);--s2:rgba(0,0,0,.055);--border:rgba(0,0,0,.09);--text:#0d1728;--tm:rgba(13,23,40,.5);--td:rgba(13,23,40,.28);}
+    html[data-theme="light"] body{background:#f4f6fd}html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important;border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] canvas{opacity:.05!important}html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
+    html[data-theme="light"] .btn-ghost{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1);color:rgba(13,23,40,.55)}
+    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
+    .tt-label{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
+    .theme-toggle:hover .tt-label{color:var(--text)}.tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
+    html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
+    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
+    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="toast" class="toast"></div>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/cmms/permits/" class="back" onclick="return goBack(event, this.href)">← Permits</a>
+      <div class="page-title">
+        {% if permit %}🔐 Permit <span>{{ permit.permit_number|default:"(Pending Number)" }}</span>
+        {% else %}🔐 <span>New PTW Application</span>{% endif %}
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="tt-label" id="tt-label">Night</span>
+        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
+      </button>
+      {% if permit %}
+      <a href="/cmms/permits/{{ permit.id }}/pdf/" target="_blank" class="btn btn-ghost btn-sm">📄 PTW PDF</a>
+      <a href="/cmms/permits/{{ permit.id }}/docx/" class="btn btn-ghost btn-sm">📝 Word</a>
+      {% if permit.isolation_required %}
+      <a href="/cmms/permits/{{ permit.id }}/icc/" target="_blank" class="btn btn-ghost btn-sm">🔒 ICC PDF</a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="main">
+  {% if permit %}
+  <!-- ═══════════════════════════ EXISTING PERMIT ═══════════════════════════ -->
+
+  <!-- STATUS BANNER -->
+  <div class="status-banner sb-{{ permit.status }}">
+    <div class="sb-label">
+      {% if permit.status == 'pending_issue' %}⏳ Awaiting Issuance
+      {% elif permit.status == 'pending_hse' %}🔄 Awaiting HSE Sign-off
+      {% elif permit.status == 'active' %}✅ Permit Active
+      {% elif permit.status == 'waiting_for_close' %}📋 Waiting for Close — Upload Images &amp; Signatures
+      {% elif permit.status == 'closed' %}🔒 Permit Closed
+      {% else %}✕ Cancelled{% endif %}
+    </div>
+    <div class="sb-meta">
+      {% if permit.permit_number %}PTW: <strong>{{ permit.permit_number }}</strong>&nbsp;·&nbsp;{% endif %}
+      {% if permit.isolation_cert_number %}ICC: <strong>{{ permit.isolation_cert_number }}</strong>&nbsp;·&nbsp;{% endif %}
+      {{ permit.created_at|slice:":10" }}
+    </div>
+  </div>
+
+  <!-- WORKFLOW -->
+  <div class="workflow">
+    <div class="wf-step {% if permit.status != 'cancelled' %}wf-done{% else %}wf-pending{% endif %}">
+      <div class="wf-num">✓ Step 1</div>
+      <div class="wf-title">Application</div>
+      <div class="wf-sub">{{ permit.receiver_name }}</div>
+    </div>
+    <div class="wf-step {% if permit.status in 'pending_hse,active,waiting_for_close,closed' %}wf-done{% elif permit.status == 'pending_issue' %}wf-current{% else %}wf-pending{% endif %}">
+      <div class="wf-num">{% if permit.status in 'pending_hse,active,waiting_for_close,closed' %}✓{% else %}2{% endif %} Issuance</div>
+      <div class="wf-title">Operation Eng.</div>
+      <div class="wf-sub">{{ permit.issuer_name|default:"Pending" }}</div>
+    </div>
+    <div class="wf-step {% if permit.status in 'active,waiting_for_close,closed' %}wf-done{% elif permit.status == 'pending_hse' %}wf-current{% else %}wf-pending{% endif %}">
+      <div class="wf-num">{% if permit.status in 'active,waiting_for_close,closed' %}✓{% else %}3{% endif %} HSE</div>
+      <div class="wf-title">HSE Sign-off</div>
+      <div class="wf-sub">{{ permit.hse_name|default:"Pending" }}</div>
+    </div>
+    <div class="wf-step {% if permit.status == 'closed' %}wf-done{% elif permit.status in 'active,waiting_for_close' %}wf-current{% else %}wf-pending{% endif %}">
+      <div class="wf-num">{% if permit.status == 'closed' %}✓{% else %}4{% endif %} Close</div>
+      <div class="wf-title">Work Complete</div>
+      <div class="wf-sub">{% if permit.closed_at %}{{ permit.closed_at|slice:":10" }}{% else %}Upload &amp; Close{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: PERMIT DETAILS -->
+    <div>
+      <div class="card">
+        <div class="card-head"><h3>🏭 Work Details</h3></div>
+        <div class="card-body">
+          <div class="sum-row"><div class="sum-lbl">Equipment</div><div class="sum-val">{{ permit.equipment }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Location</div><div class="sum-val">{{ permit.location }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Work Type</div><div class="sum-val">{{ work_types|get_dict:permit.work_type|default:permit.work_type }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Job Description</div><div class="sum-val">{{ permit.job_description }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Tools/Equipment</div><div class="sum-val">{{ permit.tools_equipment|default:"—" }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Workers</div><div class="sum-val">{{ permit.workers|default:"—" }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Employees</div><div class="sum-val">{{ permit.num_employees|default:"—" }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Valid From</div><div class="sum-val">{{ permit.valid_from }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Valid Until</div><div class="sum-val">{{ permit.valid_until }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Energy State</div>
+            <div class="sum-val">
+              {% if permit.energized_lines %}⚡ Energized Lines/Equipment{% endif %}
+              {% if permit.de_energized_lines %}✅ De-Energized{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>⚠️ Risks &amp; PPE</h3></div>
+        <div class="card-body">
+          <div style="font-size:11.5px;color:var(--tm);font-weight:700;margin-bottom:8px">RISKS IDENTIFIED</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+            {% with r=permit.risks %}
+            {% if r.electrocution %}<span class="badge b-cancelled">Electrocution</span>{% endif %}
+            {% if r.arc_flash %}<span class="badge b-cancelled">Arc Flash</span>{% endif %}
+            {% if r.flying_particles %}<span class="badge b-cancelled">Flying Particles</span>{% endif %}
+            {% if r.noise %}<span class="badge b-pending_issue">Noise</span>{% endif %}
+            {% if r.falling_objects %}<span class="badge b-cancelled">Falling Objects</span>{% endif %}
+            {% if r.protruding_objects %}<span class="badge b-cancelled">Protruding Objects</span>{% endif %}
+            {% if r.tripping_slipping %}<span class="badge b-pending_issue">Tripping/Slipping</span>{% endif %}
+            {% if r.electric_shock %}<span class="badge b-cancelled">Electric Shock</span>{% endif %}
+            {% if r.fire %}<span class="badge b-cancelled">Fire</span>{% endif %}
+            {% if r.manual_handling %}<span class="badge b-pending_issue">Manual Handling</span>{% endif %}
+            {% if r.electric_burn %}<span class="badge b-cancelled">Electric Burn</span>{% endif %}
+            {% if r.near_overhead_lines %}<span class="badge b-cancelled">Near Overhead Lines</span>{% endif %}
+            {% if r.other_risk %}<span class="badge b-pending_hse">{{ r.other_risk }}</span>{% endif %}
+            {% endwith %}
+          </div>
+          <div style="font-size:11.5px;color:var(--tm);font-weight:700;margin-bottom:8px">PPE REQUIRED</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            {% with p=permit.ppe_required %}
+            {% if p.helmet %}<span class="badge b-active">Helmet</span>{% endif %}
+            {% if p.safety_shoes %}<span class="badge b-active">Safety Shoes</span>{% endif %}
+            {% if p.elec_gloves %}<span class="badge b-active">Elec. Gloves{% if p.elec_gloves_rating %} ({{ p.elec_gloves_rating }}){% endif %}</span>{% endif %}
+            {% if p.half_mask %}<span class="badge b-active">Half Mask</span>{% endif %}
+            {% if p.safety_goggles %}<span class="badge b-active">Safety Goggles</span>{% endif %}
+            {% if p.reflective_vest %}<span class="badge b-active">Reflective Vest</span>{% endif %}
+            {% if p.dust_mask %}<span class="badge b-active">Dust Mask</span>{% endif %}
+            {% if p.safety_clothes %}<span class="badge b-active">Safety Clothes</span>{% endif %}
+            {% if p.face_shield %}<span class="badge b-active">Face Shield</span>{% endif %}
+            {% if p.arc_flash_ppe %}<span class="badge b-active">Arc Flash PPE</span>{% endif %}
+            {% if p.ear_plugs %}<span class="badge b-active">Ear Plugs</span>{% endif %}
+            {% if p.other_ppe %}<span class="badge b-active">{{ p.other_ppe }}</span>{% endif %}
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>🔒 Isolation</h3></div>
+        <div class="card-body">
+          <div class="sum-row">
+            <div class="sum-lbl">Required</div>
+            <div class="sum-val">
+              {% if permit.isolation_required %}<span class="iso-badge-yes">⚡ YES</span>
+              {% else %}<span class="iso-badge-no">✓ NO</span>{% endif %}
+            </div>
+          </div>
+          {% if permit.isolation_required %}
+          <div class="sum-row"><div class="sum-lbl">ICC No.</div><div class="sum-val">{{ permit.isolation_cert_number|default:"TBD by HSE" }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">SLD Drawing</div><div class="sum-val">{{ permit.sld_drawing_no|default:"—" }}</div></div>
+          <div class="sum-row"><div class="sum-lbl">Details</div><div class="sum-val">{{ permit.isolation_details|default:"—" }}</div></div>
+          {% with it=permit.isolation_type %}
+          {% if it %}
+          <div class="sum-row"><div class="sum-lbl">Type</div>
+            <div class="sum-val">
+              {% if it.electrical %}Electrical &nbsp;{% endif %}
+              {% if it.mechanical %}Mechanical &nbsp;{% endif %}
+              {% if it.earthing %}Earthing &nbsp;{% endif %}
+              {% if it.others %}{{ it.others }}{% endif %}
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- SIGNATURES -->
+      <div class="card">
+        <div class="card-head"><h3>✍️ Signatures</h3></div>
+        <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+          {% for label, name, sig, date in sig_triples %}
+          <div>
+            <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:6px">{{ label }}</div>
+            <div style="font-size:12.5px;margin-bottom:4px">{{ name|default:"—" }}</div>
+            {% if sig %}
+            <div class="sig-preview"><img src="{{ sig }}" alt="sig"></div>
+            <div class="sig-signed">✓ {{ date|slice:":10" }}</div>
+            {% else %}
+            <div style="height:50px;border:1px dashed rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center">
+              <span style="font-size:11.5px;color:var(--td)">Not yet signed</span>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: ACTION PANEL -->
+    <div>
+      {% if can_issue and permit.status == 'pending_issue' %}
+      <div class="action-card">
+        <h3>⚙️ Issue Permit</h3>
+        <p style="font-size:12px;color:var(--tm);margin-bottom:12px">Sign to authorize work to proceed.</p>
+        <div style="margin-bottom:10px">
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:6px">Your E-Signature Image *</div>
+          <div class="sig-upload-wrap" onclick="document.getElementById('issuerSigFile').click()">
+            <input type="file" id="issuerSigFile" accept="image/*" onchange="previewSig('issuerSigFile','issuerSigPreview')">
+            <label class="sig-upload-label"><span>✍️</span>Click to upload e-signature image</label>
+            <img id="issuerSigPreview" class="sig-preview-uploaded" alt="Issuer signature preview">
+          </div>
+        </div>
+        <button class="btn btn-success" style="width:100%" onclick="issuePermit()">
+          <span id="issueSpinner" class="spinner"></span>⚙️ Issue Permit
+        </button>
+        <div class="action-sep"></div>
+        <button class="btn btn-danger btn-sm" style="width:100%" onclick="cancelPermit()">✕ Reject</button>
+      </div>
+      {% endif %}
+
+      {% if can_hse_sign and permit.status == 'pending_hse' %}
+      <div class="action-card">
+        <h3>🦺 HSE Sign-off</h3>
+        <div class="field"><label>Permit Number *</label><input id="hsePermitNum" placeholder="PTW-2026-0001" style="font-family:monospace"></div>
+        {% if permit.isolation_required %}
+        <div class="field"><label>Isolation Cert. No. *</label><input id="hseIsoNum" placeholder="ICC-2026-0001" style="font-family:monospace"></div>
+        {% endif %}
+        <div style="margin-bottom:10px">
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:6px">Your E-Signature Image *</div>
+          <div class="sig-upload-wrap" onclick="document.getElementById('hseSigFile').click()">
+            <input type="file" id="hseSigFile" accept="image/*" onchange="previewSig('hseSigFile','hseSigPreview')">
+            <label class="sig-upload-label"><span>✍️</span>Click to upload e-signature image</label>
+            <img id="hseSigPreview" class="sig-preview-uploaded" alt="HSE signature preview">
+          </div>
+        </div>
+        <button class="btn btn-warning" style="width:100%" onclick="hseSignOff()">
+          <span id="hseSpinner" class="spinner"></span>🦺 Approve &amp; Sign
+        </button>
+      </div>
+      {% endif %}
+
+      {% if can_close and permit.status in 'active,waiting_for_close' %}
+      <div class="action-card">
+        <h3>🔒 Close Permit</h3>
+        <p style="font-size:12px;color:var(--tm);margin-bottom:6px">Upload activity images and all closure signatures before closing.</p>
+        <div style="font-size:11.5px;color:var(--accent);margin-bottom:12px;padding:6px 10px;background:rgba(59,158,255,.06);border-radius:8px;border:1px solid rgba(59,158,255,.15)">
+          👤 Closing as: <strong>{{ current_user.name }}</strong>
+        </div>
+
+        <!-- Signature status check -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:6px">Signature Status</div>
+          <div class="upload-req-row">
+            <span class="req-icon {% if permit.receiver_signature %}req-done{% else %}req-missing{% endif %}">{% if permit.receiver_signature %}✓{% else %}✗{% endif %}</span>
+            <span>Receiver Signature</span>
+          </div>
+          <div class="upload-req-row">
+            <span class="req-icon {% if permit.issuer_signature %}req-done{% else %}req-missing{% endif %}">{% if permit.issuer_signature %}✓{% else %}✗{% endif %}</span>
+            <span>Issuer Signature</span>
+          </div>
+          <div class="upload-req-row">
+            <span class="req-icon {% if permit.hse_signature %}req-done{% else %}req-missing{% endif %}">{% if permit.hse_signature %}✓{% else %}✗{% endif %}</span>
+            <span>HSE Signature</span>
+          </div>
+        </div>
+
+        <!-- Closure Signatures -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:8px">Closure Signatures *</div>
+          <p style="font-size:11.5px;color:var(--td);margin-bottom:10px">Upload fresh e-signature images for each party to sign off the work completion.</p>
+
+          <div style="margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:4px">Receiver Closure Signature *</div>
+            <div class="sig-upload-wrap" onclick="document.getElementById('closureRcvSigFile').click()">
+              <input type="file" id="closureRcvSigFile" accept="image/*" onchange="previewSig('closureRcvSigFile','closureRcvSigPreview')">
+              <label class="sig-upload-label"><span>✍️</span>Receiver — click to upload</label>
+              <img id="closureRcvSigPreview" class="sig-preview-uploaded" alt="Closure receiver sig">
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:4px">Issuer Closure Signature *</div>
+            <div class="sig-upload-wrap" onclick="document.getElementById('closureIssSigFile').click()">
+              <input type="file" id="closureIssSigFile" accept="image/*" onchange="previewSig('closureIssSigFile','closureIssSigPreview')">
+              <label class="sig-upload-label"><span>✍️</span>Issuer — click to upload</label>
+              <img id="closureIssSigPreview" class="sig-preview-uploaded" alt="Closure issuer sig">
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;color:var(--tm);margin-bottom:4px">HSE Closure Signature *</div>
+            <div class="sig-upload-wrap" onclick="document.getElementById('closureHseSigFile').click()">
+              <input type="file" id="closureHseSigFile" accept="image/*" onchange="previewSig('closureHseSigFile','closureHseSigPreview')">
+              <label class="sig-upload-label"><span>✍️</span>HSE Officer — click to upload</label>
+              <img id="closureHseSigPreview" class="sig-preview-uploaded" alt="Closure HSE sig">
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity images upload -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:6px">Activity Completion Images *</div>
+          <div class="sig-upload-wrap" onclick="document.getElementById('activityImagesInput').click()">
+            <input type="file" id="activityImagesInput" accept="image/*" multiple onchange="previewActivityImages()">
+            <label class="sig-upload-label"><span>📷</span>Click to upload activity images (multiple allowed)</label>
+          </div>
+          <div id="activityImageThumbs" class="img-thumb-grid"></div>
+        </div>
+
+        <button class="btn btn-ghost" id="closePermitBtn" style="width:100%" onclick="closePermit()">
+          <span id="closeSpinner" class="spinner"></span>🔒 Mark as Done &amp; Close
+        </button>
+        {% if not permit.issuer_signature or not permit.hse_signature %}
+        <div style="font-size:11.5px;color:#f87171;margin-top:8px">⚠ Work-started signatures must be uploaded in earlier workflow steps before closing.</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="action-card">
+        <h3>📄 Documents</h3>
+        <a href="/cmms/permits/{{ permit.id }}/pdf/" target="_blank" class="btn btn-ghost" style="width:100%;justify-content:center;margin-bottom:6px">📄 PTW PDF</a>
+        <a href="/cmms/permits/{{ permit.id }}/docx/" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:6px">📝 Download Word (.docx)</a>
+        {% if permit.isolation_required %}
+        <a href="/cmms/permits/{{ permit.id }}/icc/" target="_blank" class="btn btn-ghost" style="width:100%;justify-content:center">🔒 ICC PDF</a>
+        {% endif %}
+      </div>
+
+      <div class="action-card">
+        <h3>📋 Summary</h3>
+        <div class="sum-row" style="padding:6px 0"><div class="sum-lbl" style="font-size:11px">Receiver</div><div class="sum-val" style="font-size:12px">{{ permit.receiver_name }}</div></div>
+        <div class="sum-row" style="padding:6px 0"><div class="sum-lbl" style="font-size:11px">Issuer</div><div class="sum-val" style="font-size:12px">{{ permit.issuer_name|default:"—" }}</div></div>
+        <div class="sum-row" style="padding:6px 0"><div class="sum-lbl" style="font-size:11px">HSE</div><div class="sum-val" style="font-size:12px">{{ permit.hse_name|default:"—" }}</div></div>
+        {% if permit.closed_by_name %}
+        <div class="sum-row" style="padding:6px 0"><div class="sum-lbl" style="font-size:11px">Closed by</div><div class="sum-val" style="font-size:12px">{{ permit.closed_by_name }}</div></div>
+        {% endif %}
+        <div class="sum-row" style="padding:6px 0"><div class="sum-lbl" style="font-size:11px">Status</div><div class="sum-val"><span class="badge b-{{ permit.status }}">{{ permit.status|title }}</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ═══════════════════════════ NEW PERMIT FORM ════════════════════════════ -->
+  {% if current_user.role in 'maintenance_engineer,admin' %}
+  <div style="max-width:900px;margin:0 auto">
+    <div id="draftBanner" class="draft-banner">
+      ✓ Previous permit data restored. Review and confirm, then submit.
+      <button onclick="clearDraft()" class="btn btn-ghost btn-sm" style="margin-left:10px;padding:2px 10px;font-size:11px">Clear Draft</button>
+    </div>
+
+    <!-- SECTION 1: WORK DETAILS -->
+    <div class="card">
+      <div class="card-head"><h3>📋 Section 1 — Work Details</h3></div>
+      <div class="card-body">
+        <div class="field"><label>Job Description *</label><textarea id="nDesc" rows="3" placeholder="Describe work to be performed..."></textarea></div>
+        <div class="field-row">
+          <div class="field"><label>Equipment / Tag No. *</label><input id="nEquip" placeholder="e.g. Transformer T1, CB-101"></div>
+          <div class="field"><label>Location *</label><input id="nLoc" placeholder="e.g. Substation A, Panel Room 2"></div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Work Type *</label>
+            <select id="nType">
+              {% for key, label in work_types.items %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field"><label>Tools / Equipment to be Used</label><input id="nTools" placeholder="List tools and equipment..."></div>
+        </div>
+        <div class="field-row3">
+          <div class="field"><label>Expected Duration</label><input id="nDuration" placeholder="e.g. 4 hours"></div>
+          <div class="field"><label>No. of Employees</label><input id="nNumEmp" type="number" min="1" placeholder="e.g. 4"></div>
+          <div class="field"><label>SLD / Drawing No.</label><input id="nSld" placeholder="e.g. SLD-001"></div>
+        </div>
+        <div class="field">
+          <label>Application Date &amp; Time *</label>
+          <input type="datetime-local" id="nAppDatetime">
+          <div style="font-size:10.5px;color:var(--td);margin-top:3px">Editable — defaults to now. Change if submitting on behalf or backdating.</div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Valid From *</label><input type="datetime-local" id="nFrom"></div>
+          <div class="field"><label>Valid Until *</label><input type="datetime-local" id="nUntil"></div>
+        </div>
+        <div class="field">
+          <label>Energy State</label>
+          <div style="display:flex;gap:16px;padding:8px 0">
+            <label class="cb-item"><input type="checkbox" id="nEnergized"> Energized Lines/Equipment</label>
+            <label class="cb-item"><input type="checkbox" id="nDeEnergized" checked> De-Energized Lines/Equipment</label>
+          </div>
+        </div>
+        <div class="field"><label>Workers / Technicians Names</label><input id="nWorkers" placeholder="Names of all workers involved"></div>
+        <div class="field"><label>Company Name</label><input id="nCompany" value="POWERCHINA" placeholder="Company name"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: RISKS -->
+    <div class="card">
+      <div class="card-head"><h3>⚠️ Section 2 — Risk Identification</h3></div>
+      <div class="card-body">
+        <div class="cb-grid" id="risksGrid">
+          <label class="cb-item"><input type="checkbox" data-risk="electrocution"> Electrocution</label>
+          <label class="cb-item"><input type="checkbox" data-risk="arc_flash"> Arc Flash</label>
+          <label class="cb-item"><input type="checkbox" data-risk="flying_particles"> Flying Particles</label>
+          <label class="cb-item"><input type="checkbox" data-risk="noise"> Noise</label>
+          <label class="cb-item"><input type="checkbox" data-risk="falling_objects"> Falling Objects</label>
+          <label class="cb-item"><input type="checkbox" data-risk="protruding_objects"> Protruding Objects</label>
+          <label class="cb-item"><input type="checkbox" data-risk="tripping_slipping"> Tripping / Slipping</label>
+          <label class="cb-item"><input type="checkbox" data-risk="electric_shock"> Electric Shock</label>
+          <label class="cb-item"><input type="checkbox" data-risk="fire"> Fire</label>
+          <label class="cb-item"><input type="checkbox" data-risk="manual_handling"> Manual Handling</label>
+          <label class="cb-item"><input type="checkbox" data-risk="electric_burn"> Electric Burn</label>
+          <label class="cb-item"><input type="checkbox" data-risk="near_overhead_lines"> Near Overhead Lines</label>
+        </div>
+        <div class="field" style="margin-top:10px"><label>Other Risk (specify)</label><input id="nOtherRisk" placeholder="Specify other risk..."></div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: PRECAUTIONS -->
+    <div class="card">
+      <div class="card-head"><h3>✅ Section 3 — Precautions</h3></div>
+      <div class="card-body">
+        <table class="prec-table">
+          <thead><tr><th style="width:65%">Precaution Item</th><th>Yes</th><th>No</th><th>N/A</th></tr></thead>
+          <tbody>
+            {% for item in precaution_items %}
+            <tr>
+              <td>{{ item.label }}{% if item.key == 'safe_distance' %}
+                <span style="margin-left:10px">Voltage: <input id="nVoltage" style="width:80px;padding:3px 6px;border-radius:5px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:11px"> Distance: <input id="nDistance" style="width:80px;padding:3px 6px;border-radius:5px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:11px"></span>
+              {% endif %}</td>
+              <td><label class="yn-label"><input type="radio" name="prec_{{ item.key }}" value="Yes" {% if item.default == 'Yes' %}checked{% endif %}> Yes</label></td>
+              <td><label class="yn-label"><input type="radio" name="prec_{{ item.key }}" value="No" {% if item.default == 'No' %}checked{% endif %}> No</label></td>
+              <td><label class="yn-label"><input type="radio" name="prec_{{ item.key }}" value="N/A" {% if item.default == 'N/A' %}checked{% endif %}> N/A</label></td>
+            </tr>
+            {% endfor %}
+            <tr>
+              <td colspan="4">
+                <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+                  <label class="cb-item"><input type="checkbox" id="nIsoSwitch"> Switch Out</label>
+                  <label class="cb-item"><input type="checkbox" id="nIsoLoto"> Lockout/Tagout</label>
+                  <span style="font-size:12px;color:var(--tm)">No. of Locks: <input id="nNumLocks" style="width:60px;padding:3px 6px;border-radius:5px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:11px"></span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="field" style="margin-top:10px"><label>Other Precaution (specify)</label><input id="nOtherPrec" placeholder="Any other precaution..."></div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: INSPECTED AREAS -->
+    <div class="card">
+      <div class="card-head"><h3>🔍 Section 4 — Areas / Items Inspected</h3></div>
+      <div class="card-body">
+        <div class="field-row3" style="margin-bottom:10px">
+          <div class="field"><label>Fire Extinguisher Type</label><input id="nFireType" placeholder="e.g. CO2"></div>
+          <div class="field"><label>Quantity</label><input id="nFireQty" placeholder="e.g. 2"></div>
+          <div class="field"><label>Size</label><input id="nFireSize" placeholder="e.g. 6kg"></div>
+        </div>
+        <div class="cb-grid">
+          <label class="cb-item"><input type="checkbox" data-insp="access_escape"> Access/Escape Route</label>
+          <label class="cb-item"><input type="checkbox" data-insp="danger_sign"> Danger/Warning Sign</label>
+          <label class="cb-item"><input type="checkbox" data-insp="lighting"> Lighting</label>
+          <label class="cb-item"><input type="checkbox" data-insp="safety_barriers"> Safety Barriers</label>
+          <label class="cb-item"><input type="checkbox" data-insp="stick"> Stick</label>
+          <label class="cb-item"><input type="checkbox" data-insp="portable_radio"> Portable Radio</label>
+        </div>
+        <div class="field" style="margin-top:10px"><label>Other (specify)</label><input id="nOtherArea" placeholder="Any other area/item..."></div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: PPE -->
+    <div class="card">
+      <div class="card-head"><h3>🦺 Section 5 — PPE Required</h3></div>
+      <div class="card-body">
+        <div class="cb-grid">
+          <label class="cb-item"><input type="checkbox" data-ppe="helmet"> Helmet</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="safety_shoes"> Safety Shoes</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="elec_gloves"> Electrical Gloves</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="half_mask"> Half Mask</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="safety_goggles"> Safety Goggles</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="reflective_vest"> Reflective Vest</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="dust_mask"> Dust Mask</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="safety_clothes"> Safety Clothes</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="face_shield"> Face Shield</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="arc_flash_ppe"> Arc Flash PPE</label>
+          <label class="cb-item"><input type="checkbox" data-ppe="ear_plugs"> Safety Ear Plugs/Muffs</label>
+        </div>
+        <div class="field-row" style="margin-top:10px">
+          <div class="field"><label>Gloves Rating</label><input id="nGlovesRating" placeholder="e.g. Class 2, 17kV"></div>
+          <div class="field"><label>Other PPE (specify)</label><input id="nOtherPpe" placeholder="Other PPE..."></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 6: ISOLATION -->
+    <div class="card">
+      <div class="card-head"><h3>🔒 Section 6 — Isolation</h3></div>
+      <div class="card-body">
+        <div class="field">
+          <label>Isolation Required?</label>
+          <select id="nIsoReq" onchange="toggleIsoFields(this.value)">
+            <option value="no">No — Not required</option>
+            <option value="yes">Yes — Isolation required</option>
+          </select>
+        </div>
+        <div id="isoFields" style="display:none">
+          <div class="field"><label>Isolation Details</label><textarea id="nIsoDet" rows="2" placeholder="Describe isolation method and sequence..."></textarea></div>
+          <div class="field">
+            <label>Isolation Type</label>
+            <div style="display:flex;gap:16px;padding:6px 0;flex-wrap:wrap">
+              <label class="cb-item"><input type="checkbox" id="isoElec"> Electrical Isolation</label>
+              <label class="cb-item"><input type="checkbox" id="isoMech"> Mechanical Isolation</label>
+              <label class="cb-item"><input type="checkbox" id="isoEarth"> Earthing</label>
+              <input id="isoOthers" placeholder="Others (specify)" style="padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:12px;width:180px">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 7: HAZARDS & ADDITIONAL PRECAUTIONS -->
+    <div class="card">
+      <div class="card-head"><h3>📝 Section 7 — Hazards &amp; Additional Precautions</h3></div>
+      <div class="card-body">
+        <div class="field"><label>Hazards Identified</label><textarea id="nHazards" rows="2" placeholder="List all hazards..."></textarea></div>
+        <div class="field"><label>General Precautions</label><textarea id="nPrecautions" rows="2" placeholder="General safety precautions..."></textarea></div>
+        <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:8px">Additional Precaution Measures</div>
+        {% for i in "12345" %}
+        <div class="field"><label>{{ forloop.counter }}.</label><input id="nAddPrec{{ forloop.counter }}" placeholder="Additional precaution {{ forloop.counter }}..."></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- SECTION 8: WORKERS LIST -->
+    <div class="card">
+      <div class="card-head">
+        <h3>👷 Section 8 — Workers Sign-in List</h3>
+        <button class="btn btn-ghost btn-sm" onclick="addWorkerRow()">+ Add</button>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--tm);margin-bottom:10px">Add workers who will perform this task (name and Iqama number).</p>
+        <div style="overflow-x:auto">
+          <table class="workers-table">
+            <thead><tr><th>#</th><th>Name</th><th>Iqama Number</th><th></th></tr></thead>
+            <tbody id="workersBody">
+              <tr><td style="font-size:12px;text-align:center">1</td>
+                <td><input placeholder="Worker name"></td>
+                <td><input placeholder="Iqama / ID number"></td>
+                <td><button onclick="removeRow(this)" class="btn btn-danger btn-sm" style="padding:3px 8px">✕</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 9: RECEIVER SIGNATURE -->
+    <div class="card">
+      <div class="card-head"><h3>✍️ Section 9 — Permit Receiver E-Signature</h3></div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--tm);margin-bottom:10px">
+          I certify that I have read and verified this work permit. I am aware of all risks and commit to following all safety rules. Upload your e-signature image below.
+        </p>
+        <div class="sig-upload-wrap" onclick="document.getElementById('receiverSigFile').click()">
+          <input type="file" id="receiverSigFile" accept="image/*" onchange="previewSig('receiverSigFile','receiverSigPreview')">
+          <label class="sig-upload-label"><span>✍️</span>Click to upload your e-signature image *</label>
+          <img id="receiverSigPreview" class="sig-preview-uploaded" alt="Receiver signature preview">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+      <a href="/cmms/permits/" class="btn btn-ghost">Cancel</a>
+      <button class="btn btn-primary" onclick="submitPermit()">
+        <span id="submitSpinner" class="spinner"></span>📤 Submit Permit Application
+      </button>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;color:var(--td)">
+    <div style="font-size:48px;margin-bottom:12px">🚫</div>
+    <p style="font-size:14px">Only Maintenance Engineers can apply for permits.</p>
+    <a href="/cmms/permits/" class="btn btn-ghost" style="margin-top:16px;display:inline-flex">← Back</a>
+  </div>
+  {% endif %}
+  {% endif %}
+  </main>
+</div>
+
+<script>
+// ── ANIMATED BACKGROUND ───────────────────────────────────────────────────
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');let W,H;
+const dots=Array.from({length:28},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.18,dy:(Math.random()-.5)*.18,r:Math.random()*1.1+.3,a:Math.random()*.17+.04}));
+function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}rs();addEventListener('resize',rs);
+function draw(){ctx.clearRect(0,0,W,H);dots.forEach(d=>{d.x=(d.x+d.dx+W)%W;d.y=(d.y+d.dy+H)%H;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(59,158,255,${d.a})`;ctx.fill()});requestAnimationFrame(draw)}
+draw();
+
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1]||'';
+const PERMIT_ID = '{{ permit.id|default:"" }}';
+const CURRENT_USER = '{{ current_user.username|default:"" }}';
+const DRAFT_KEY = `hdec_permit_draft_${CURRENT_USER}`;
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${type}`;t.style.display='block';
+  setTimeout(()=>{t.style.display='none'},3500);
+}
+
+// ── FILE → BASE64 HELPERS ─────────────────────────────────────────────────
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=e=>resolve(e.target.result);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function getFileBase64(inputId){
+  const inp=document.getElementById(inputId);
+  if(!inp||!inp.files||!inp.files[0]) return null;
+  return await readFileAsDataURL(inp.files[0]);
+}
+
+function previewSig(inputId, previewId){
+  const inp=document.getElementById(inputId);
+  const img=document.getElementById(previewId);
+  if(!inp||!img||!inp.files||!inp.files[0]) return;
+  const r=new FileReader();
+  r.onload=e=>{img.src=e.target.result;img.style.display='block';};
+  r.readAsDataURL(inp.files[0]);
+}
+
+// Activity images preview
+const _activityImgData=[];
+function previewActivityImages(){
+  const inp=document.getElementById('activityImagesInput');
+  const grid=document.getElementById('activityImageThumbs');
+  if(!inp||!grid) return;
+  grid.innerHTML='';
+  _activityImgData.length=0;
+  [...inp.files].forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      _activityImgData.push(e.target.result);
+      const img=document.createElement('img');
+      img.src=e.target.result;
+      grid.appendChild(img);
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+// ── TOGGLE ISOLATION FIELDS ────────────────────────────────────────────────
+function toggleIsoFields(val){
+  const el=document.getElementById('isoFields');
+  if(el) el.style.display=val==='yes'?'block':'none';
+}
+
+// ── WORKERS TABLE ──────────────────────────────────────────────────────────
+let workerCount=1;
+function addWorkerRow(){
+  workerCount++;
+  const tbody=document.getElementById('workersBody');
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="font-size:12px;text-align:center">${workerCount}</td>
+    <td><input placeholder="Worker name"></td>
+    <td><input placeholder="Iqama / ID number"></td>
+    <td><button onclick="removeRow(this)" class="btn btn-danger btn-sm" style="padding:3px 8px">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+function removeRow(btn){btn.closest('tr').remove();}
+function getWorkersList(){
+  return [...document.querySelectorAll('#workersBody tr')].map(tr=>{
+    const ins=[...tr.querySelectorAll('input')];
+    return {name:ins[0]?.value.trim()||'', iqama:ins[1]?.value.trim()||''};
+  }).filter(w=>w.name||w.iqama);
+}
+
+// ── AUTO-FILL DUTY STAFF ───────────────────────────────────────────────────
+async function autofillFromSchedule(){
+  const from = document.getElementById('nFrom')?.value;
+  const date = from ? from.slice(0,10) : new Date().toISOString().slice(0,10);
+  const r = await fetch(`/api/cmms/duty-staff/?date=${date}`);
+  const d = await r.json();
+  if(d.ok && d.engineers.length){
+    const names = d.engineers.map(e=>e.name).join(', ');
+    if(!document.getElementById('nWorkers').value)
+      document.getElementById('nWorkers').value = names;
+    const tbody = document.getElementById('workersBody');
+    tbody.innerHTML='';
+    workerCount=0;
+    const all = [...d.engineers, ...d.technicians];
+    all.forEach((p,i)=>{
+      workerCount++;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td style="font-size:12px;text-align:center">${i+1}</td>
+        <td><input value="${p.name}" placeholder="Worker name"></td>
+        <td><input placeholder="Iqama / ID number"></td>
+        <td><button onclick="removeRow(this)" class="btn btn-danger btn-sm" style="padding:3px 8px">✕</button></td>`;
+      tbody.appendChild(tr);
+    });
+    showToast(`✓ Loaded ${d.engineers.length} engineers + ${d.technicians.length} technicians on duty`);
+  } else {
+    showToast('No duty staff found for this date','error');
+  }
+}
+document.getElementById('nFrom')?.addEventListener('change', ()=>autofillFromSchedule());
+
+// ── COLLECT FORM DATA ──────────────────────────────────────────────────────
+function collectRisks(){
+  const r={};
+  document.querySelectorAll('[data-risk]').forEach(cb=>{r[cb.dataset.risk]=cb.checked;});
+  r.other_risk = document.getElementById('nOtherRisk')?.value.trim()||'';
+  return r;
+}
+function collectInspected(){
+  const r={};
+  document.querySelectorAll('[data-insp]').forEach(cb=>{r[cb.dataset.insp]=cb.checked;});
+  r.fire_ext_type=document.getElementById('nFireType')?.value.trim()||'';
+  r.fire_ext_qty=document.getElementById('nFireQty')?.value.trim()||'';
+  r.fire_ext_size=document.getElementById('nFireSize')?.value.trim()||'';
+  r.other_area=document.getElementById('nOtherArea')?.value.trim()||'';
+  return r;
+}
+function collectPpe(){
+  const r={};
+  document.querySelectorAll('[data-ppe]').forEach(cb=>{r[cb.dataset.ppe]=cb.checked;});
+  r.elec_gloves_rating=document.getElementById('nGlovesRating')?.value.trim()||'';
+  r.other_ppe=document.getElementById('nOtherPpe')?.value.trim()||'';
+  return r;
+}
+function collectPrecs(){
+  const keys=['safe_distance','loto_required','confined_space','power_isolated','lines_de_energized','tools_tested'];
+  const r={};
+  keys.forEach(k=>{
+    const sel=document.querySelector(`input[name="prec_${k}"]:checked`);
+    r[k]=sel?sel.value:'N/A';
+  });
+  r.safe_distance_voltage=document.getElementById('nVoltage')?.value||'';
+  r.safe_distance_dist=document.getElementById('nDistance')?.value||'';
+  r.isolation_type_switch=document.getElementById('nIsoSwitch')?.checked||false;
+  r.isolation_type_loto=document.getElementById('nIsoLoto')?.checked||false;
+  r.num_locks=document.getElementById('nNumLocks')?.value||'';
+  r.other_precaution=document.getElementById('nOtherPrec')?.value.trim()||'';
+  return r;
+}
+
+// ── AUTO-SAVE / RESTORE (localStorage) ───────────────────────────────────
+function _sv(id){return document.getElementById(id)?.value||'';}
+function _sc(id){return document.getElementById(id)?.checked||false;}
+
+function savePermitDraft(){
+  if(!document.getElementById('nDesc')) return; // not on new form page
+  const risks={},ppe={},inspected={},precs={},addPrecs=[];
+  document.querySelectorAll('[data-risk]').forEach(cb=>{risks[cb.dataset.risk]=cb.checked;});
+  document.querySelectorAll('[data-ppe]').forEach(cb=>{ppe[cb.dataset.ppe]=cb.checked;});
+  document.querySelectorAll('[data-insp]').forEach(cb=>{inspected[cb.dataset.insp]=cb.checked;});
+  ['safe_distance','loto_required','confined_space','power_isolated','lines_de_energized','tools_tested'].forEach(k=>{
+    const s=document.querySelector(`input[name="prec_${k}"]:checked`);
+    precs[k]=s?s.value:'N/A';
+  });
+  for(let i=1;i<=5;i++) addPrecs.push(_sv(`nAddPrec${i}`));
+  const data={
+    nDesc:_sv('nDesc'),nEquip:_sv('nEquip'),nLoc:_sv('nLoc'),nType:_sv('nType'),
+    nTools:_sv('nTools'),nDuration:_sv('nDuration'),nNumEmp:_sv('nNumEmp'),nSld:_sv('nSld'),
+    nCompany:_sv('nCompany'),nWorkers:_sv('nWorkers'),
+    nEnergized:_sc('nEnergized'),nDeEnergized:_sc('nDeEnergized'),
+    nOtherRisk:_sv('nOtherRisk'),nVoltage:_sv('nVoltage'),nDistance:_sv('nDistance'),
+    nIsoSwitch:_sc('nIsoSwitch'),nIsoLoto:_sc('nIsoLoto'),nNumLocks:_sv('nNumLocks'),
+    nOtherPrec:_sv('nOtherPrec'),nFireType:_sv('nFireType'),nFireQty:_sv('nFireQty'),
+    nFireSize:_sv('nFireSize'),nOtherArea:_sv('nOtherArea'),nGlovesRating:_sv('nGlovesRating'),
+    nOtherPpe:_sv('nOtherPpe'),nHazards:_sv('nHazards'),nPrecautions:_sv('nPrecautions'),
+    nIsoReq:_sv('nIsoReq'),nIsoDet:_sv('nIsoDet'),isoOthers:_sv('isoOthers'),
+    isoElec:_sc('isoElec'),isoMech:_sc('isoMech'),isoEarth:_sc('isoEarth'),
+    risks,ppe,inspected,precs,addPrecs,workers:getWorkersList(),
+  };
+  try{localStorage.setItem(DRAFT_KEY,JSON.stringify(data));}catch(e){}
+}
+
+function loadPermitDraft(){
+  if(!document.getElementById('nDesc')) return;
+  let raw;
+  try{raw=localStorage.getItem(DRAFT_KEY);}catch(e){return;}
+  if(!raw) return;
+  let d;
+  try{d=JSON.parse(raw);}catch(e){return;}
+
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
+  const sc=(id,v)=>{const el=document.getElementById(id);if(el)el.checked=!!v;};
+
+  sv('nDesc',d.nDesc);sv('nEquip',d.nEquip);sv('nLoc',d.nLoc);sv('nType',d.nType);
+  sv('nTools',d.nTools);sv('nDuration',d.nDuration);sv('nNumEmp',d.nNumEmp);sv('nSld',d.nSld);
+  sv('nCompany',d.nCompany);sv('nWorkers',d.nWorkers);
+  sc('nEnergized',d.nEnergized);sc('nDeEnergized',d.nDeEnergized);
+  sv('nOtherRisk',d.nOtherRisk);sv('nVoltage',d.nVoltage);sv('nDistance',d.nDistance);
+  sc('nIsoSwitch',d.nIsoSwitch);sc('nIsoLoto',d.nIsoLoto);sv('nNumLocks',d.nNumLocks);
+  sv('nOtherPrec',d.nOtherPrec);sv('nFireType',d.nFireType);sv('nFireQty',d.nFireQty);
+  sv('nFireSize',d.nFireSize);sv('nOtherArea',d.nOtherArea);sv('nGlovesRating',d.nGlovesRating);
+  sv('nOtherPpe',d.nOtherPpe);sv('nHazards',d.nHazards);sv('nPrecautions',d.nPrecautions);
+  sv('nIsoReq',d.nIsoReq);if(d.nIsoReq==='yes')toggleIsoFields('yes');
+  sv('nIsoDet',d.nIsoDet);sv('isoOthers',d.isoOthers);
+  sc('isoElec',d.isoElec);sc('isoMech',d.isoMech);sc('isoEarth',d.isoEarth);
+
+  if(d.risks) document.querySelectorAll('[data-risk]').forEach(cb=>{if(d.risks[cb.dataset.risk])cb.checked=true;});
+  if(d.ppe) document.querySelectorAll('[data-ppe]').forEach(cb=>{if(d.ppe[cb.dataset.ppe])cb.checked=true;});
+  if(d.inspected) document.querySelectorAll('[data-insp]').forEach(cb=>{if(d.inspected[cb.dataset.insp])cb.checked=true;});
+  if(d.precs){
+    ['safe_distance','loto_required','confined_space','power_isolated','lines_de_energized','tools_tested'].forEach(k=>{
+      if(d.precs[k]){const rd=document.querySelector(`input[name="prec_${k}"][value="${d.precs[k]}"]`);if(rd)rd.checked=true;}
+    });
+  }
+  if(d.addPrecs) d.addPrecs.forEach((v,i)=>sv(`nAddPrec${i+1}`,v));
+
+  if(d.workers&&d.workers.length){
+    const tbody=document.getElementById('workersBody');
+    tbody.innerHTML='';workerCount=0;
+    d.workers.forEach((w,i)=>{
+      workerCount++;
+      const tr=document.createElement('tr');
+      const wname=(w.name||'').replace(/"/g,'&quot;');
+      const wiqa=(w.iqama||'').replace(/"/g,'&quot;');
+      tr.innerHTML=`<td style="font-size:12px;text-align:center">${i+1}</td>
+        <td><input value="${wname}" placeholder="Worker name"></td>
+        <td><input value="${wiqa}" placeholder="Iqama / ID number"></td>
+        <td><button onclick="removeRow(this)" class="btn btn-danger btn-sm" style="padding:3px 8px">✕</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const banner=document.getElementById('draftBanner');
+  if(banner) banner.style.display='block';
+}
+
+function clearDraft(){
+  try{localStorage.removeItem(DRAFT_KEY);}catch(e){}
+  const banner=document.getElementById('draftBanner');
+  if(banner) banner.style.display='none';
+  showToast('Draft cleared','success');
+}
+
+// Auto-save on any input/change
+let _saveTimer;
+document.addEventListener('input',()=>{clearTimeout(_saveTimer);_saveTimer=setTimeout(savePermitDraft,800);});
+document.addEventListener('change',()=>{clearTimeout(_saveTimer);_saveTimer=setTimeout(savePermitDraft,400);});
+
+// ── NEW PERMIT SUBMIT ──────────────────────────────────────────────────────
+async function submitPermit(){
+  const desc=document.getElementById('nDesc')?.value.trim();
+  const equip=document.getElementById('nEquip')?.value.trim();
+  const loc=document.getElementById('nLoc')?.value.trim();
+  const from=document.getElementById('nFrom')?.value;
+  const until=document.getElementById('nUntil')?.value;
+  if(!desc||!equip||!loc||!from||!until){showToast('Please fill required fields (*)','error');return;}
+  if(new Date(from)>=new Date(until)){showToast('Valid Until must be after Valid From','error');return;}
+
+  const receiverSig = await getFileBase64('receiverSigFile');
+  if(!receiverSig){showToast('Please upload your e-signature image (Section 9)','error');return;}
+
+  const isoReq=document.getElementById('nIsoReq')?.value==='yes';
+  document.getElementById('submitSpinner').style.display='block';
+
+  const addPrecs=[];
+  for(let i=1;i<=5;i++) addPrecs.push(document.getElementById(`nAddPrec${i}`)?.value.trim()||'');
+
+  const appDt = document.getElementById('nAppDatetime')?.value || new Date().toISOString().slice(0,16);
+
+  const payload={
+    action:'create',
+    application_datetime: appDt,
+    job_description:desc, equipment:equip, location:loc,
+    work_type:document.getElementById('nType').value,
+    tools_equipment:document.getElementById('nTools')?.value.trim()||'',
+    expected_duration:document.getElementById('nDuration')?.value.trim()||'',
+    num_employees:document.getElementById('nNumEmp')?.value.trim()||'',
+    sld_drawing_no:document.getElementById('nSld')?.value.trim()||'',
+    receiver_company:document.getElementById('nCompany')?.value.trim()||'POWERCHINA',
+    energized_lines:document.getElementById('nEnergized')?.checked||false,
+    de_energized_lines:document.getElementById('nDeEnergized')?.checked||true,
+    valid_from:from, valid_until:until,
+    workers:document.getElementById('nWorkers')?.value.trim()||'',
+    workers_list:getWorkersList(),
+    hazards:document.getElementById('nHazards')?.value.trim()||'',
+    precautions:document.getElementById('nPrecautions')?.value.trim()||'',
+    additional_precautions:addPrecs,
+    risks:collectRisks(), precaution_checks:collectPrecs(),
+    inspected_areas:collectInspected(), ppe_required:collectPpe(),
+    isolation_required:isoReq,
+    isolation_details:document.getElementById('nIsoDet')?.value.trim()||'',
+    isolation_type:{
+      electrical:document.getElementById('isoElec')?.checked||false,
+      mechanical:document.getElementById('isoMech')?.checked||false,
+      earthing:document.getElementById('isoEarth')?.checked||false,
+      others:document.getElementById('isoOthers')?.value.trim()||'',
+    },
+    receiver_signature: receiverSig,
+  };
+
+  const r=await fetch('/api/cmms/permits/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(payload)});
+  const d=await r.json();
+  document.getElementById('submitSpinner').style.display='none';
+  if(d.ok){
+    clearDraft();
+    showToast('✓ Permit submitted! Operation engineers notified by email.');
+    setTimeout(()=>window.location.href='/cmms/permits/'+d.permit_id+'/',1200);
+  } else {
+    showToast(d.error||'Submission failed','error');
+  }
+}
+
+// ── ISSUE PERMIT ──────────────────────────────────────────────────────────
+async function issuePermit(){
+  const sig = await getFileBase64('issuerSigFile');
+  if(!sig){showToast('Please upload your e-signature image before issuing','error');return;}
+  document.getElementById('issueSpinner').style.display='block';
+  const r=await fetch('/api/cmms/permits/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({action:'issue',permit_id:PERMIT_ID,issuer_signature:sig})});
+  const d=await r.json();
+  document.getElementById('issueSpinner').style.display='none';
+  if(d.ok){showToast('✓ Permit issued! HSE officers notified.');setTimeout(()=>location.reload(),1200);}
+  else showToast(d.error||'Failed','error');
+}
+
+// ── HSE SIGN ──────────────────────────────────────────────────────────────
+async function hseSignOff(){
+  const pnum=document.getElementById('hsePermitNum')?.value.trim();
+  if(!pnum){showToast('Permit number is required','error');return;}
+  const sig = await getFileBase64('hseSigFile');
+  if(!sig){showToast('Please upload your e-signature image before signing','error');return;}
+  const isoNum=document.getElementById('hseIsoNum')?.value.trim()||null;
+  document.getElementById('hseSpinner').style.display='block';
+  const r=await fetch('/api/cmms/permits/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({action:'hse_sign',permit_id:PERMIT_ID,permit_number:pnum,isolation_cert_number:isoNum,hse_signature:sig})});
+  const d=await r.json();
+  document.getElementById('hseSpinner').style.display='none';
+  if(d.ok){showToast('✓ Permit approved! Permit is now Waiting for Close.');setTimeout(()=>location.reload(),1200);}
+  else showToast(d.error||'Failed','error');
+}
+
+// ── CLOSE PERMIT ──────────────────────────────────────────────────────────
+async function closePermit(){
+  // Validate closure signatures
+  const closureRcv = await getFileBase64('closureRcvSigFile');
+  const closureIss = await getFileBase64('closureIssSigFile');
+  const closureHse = await getFileBase64('closureHseSigFile');
+  if(!closureRcv){showToast('Closure Receiver signature is required','error');return;}
+  if(!closureIss){showToast('Closure Issuer signature is required','error');return;}
+  if(!closureHse){showToast('Closure HSE signature is required','error');return;}
+  // Validate activity images
+  if(_activityImgData.length===0){
+    showToast('Please upload at least one activity image before closing','error');return;
+  }
+  if(!confirm('Mark this permit as Done and close? This cannot be undone.')) return;
+  const btn=document.getElementById('closePermitBtn');
+  if(btn){btn.disabled=true;}
+  document.getElementById('closeSpinner').style.display='block';
+  const r=await fetch('/api/cmms/permits/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({
+      action:'close', permit_id:PERMIT_ID,
+      activity_images:_activityImgData,
+      closure_receiver_signature: closureRcv,
+      closure_issuer_signature:   closureIss,
+      closure_hse_signature:      closureHse,
+    })});
+  const d=await r.json();
+  document.getElementById('closeSpinner').style.display='none';
+  if(btn){btn.disabled=false;}
+  if(d.ok){showToast('✓ Permit closed. Word document updated with all signatures.');setTimeout(()=>location.reload(),1200);}
+  else showToast(d.error||'Failed','error');
+}
+
+// ── CANCEL PERMIT ──────────────────────────────────────────────────────────
+async function cancelPermit(){
+  if(!confirm('Reject and cancel this permit?')) return;
+  const r=await fetch('/api/cmms/permits/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body:JSON.stringify({action:'cancel',permit_id:PERMIT_ID})});
+  const d=await r.json();
+  if(d.ok){showToast('Cancelled');setTimeout(()=>window.location.href='/cmms/permits/',1000);}
+  else showToast(d.error||'Failed','error');
+}
+
+// ── PAGE INIT ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Set default application datetime
+  const appDtEl=document.getElementById('nAppDatetime');
+  if(appDtEl && !appDtEl.value){
+    const now=new Date();
+    appDtEl.value=now.toISOString().slice(0,16);
+  }
+
+  // Restore previous draft first (before autofill overwrites)
+  loadPermitDraft();
+
+  // Set default valid_from / valid_until if not restored
+  const fromEl=document.getElementById('nFrom');
+  if(fromEl && !fromEl.value){
+    const now=new Date();
+    now.setMinutes(0,0,0);
+    fromEl.value=now.toISOString().slice(0,16);
+    const until=new Date(now.getTime()+8*3600000);
+    document.getElementById('nUntil').value=until.toISOString().slice(0,16);
+    autofillFromSchedule();
+  }
+});
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
+(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+</script>
+</body>
+</html>

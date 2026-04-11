@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{{ folder.name }} — Annual Plan — HDEC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#030711;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.055);--border:rgba(255,255,255,.07);--text:#e2e8f5;--tm:rgba(226,232,245,.45);--td:rgba(226,232,245,.2);--accent:{{ folder.color }};--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+    canvas.bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.3}
+    .wrap{position:relative;z-index:1}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(3,7,17,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200}
+    .tl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .back{padding:7px 14px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12.5px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .page-title{font-family:var(--fd);font-size:16px;font-weight:700}
+    .page-title em{color:var(--accent);font-style:normal}
+    .tr{display:flex;align-items:center;gap:10px}
+    .live-badge{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:30px;border:1px solid rgba(34,197,94,.25);background:rgba(34,197,94,.08);font-size:11.5px;font-weight:600;color:#4ade80}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 1.8s ease infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.5)}}
+    .rfbtn{display:flex;align-items:center;gap:6px;padding:7px 15px;border-radius:30px;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent);font-size:12.5px;font-weight:500;cursor:pointer;font-family:var(--fb);transition:all .2s}
+    .rfbtn:hover{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+    .rfbtn.spin svg{animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #lupd{font-size:11.5px;color:var(--td)}
+    .user-pill{padding:6px 13px;border-radius:30px;font-size:12px;font-weight:600}
+    .user-pill.admin{border:1px solid rgba(162,89,255,.3);background:rgba(162,89,255,.08);color:#c084fc}
+    .user-pill.viewer{border:1px solid var(--border);background:var(--s);color:var(--tm)}
+    .logout{padding:6px 13px;border-radius:30px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.07);color:#f87171;font-size:12px;text-decoration:none}
+
+    /* FOLDER NAV */
+    .fnav{display:flex;gap:6px;padding:11px 40px;border-bottom:1px solid var(--border);background:rgba(3,7,17,.5);overflow-x:auto;scrollbar-width:none}
+    .fnav::-webkit-scrollbar{display:none}
+    .fnav a{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:11.5px;white-space:nowrap;text-decoration:none;transition:all .15s}
+    .fnav a:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .fnav a.active{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent);font-weight:600}
+
+    /* MAIN */
+    .main{padding:26px 40px 60px;max-width:1500px;margin:0 auto}
+    .err{padding:13px 18px;border-radius:13px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08);color:#f87171;font-size:13px;margin-bottom:18px;display:none}
+
+    /* HERO CARD */
+    .hero-card{display:flex;align-items:center;gap:22px;padding:24px 28px;border-radius:20px;border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent);margin-bottom:24px;animation:up .4s ease both}
+    .hero-icon{font-size:48px;line-height:1;flex-shrink:0}
+    .hero-info h2{font-family:var(--fd);font-size:24px;font-weight:800;letter-spacing:-.6px;color:var(--accent)}
+    .hero-info p{font-size:13px;color:var(--tm);margin-top:4px}
+    .hero-stats{display:flex;gap:28px;margin-left:auto;flex-shrink:0}
+    .hs-item{text-align:center}
+    .hs-n{font-family:var(--fd);font-size:26px;font-weight:800;color:var(--accent);letter-spacing:-1px}
+    .hs-l{font-size:10.5px;color:var(--td);text-transform:uppercase;letter-spacing:.7px;margin-top:3px}
+
+    /* KPI ROW */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+    .kpi{padding:18px 20px;border-radius:16px;border:1px solid var(--border);background:var(--s);position:relative;overflow:hidden;animation:up .4s ease both}
+    .kpi::after{content:'';position:absolute;top:-20px;right:-20px;width:60px;height:60px;border-radius:50%;filter:blur(24px);background:var(--kc,var(--accent));opacity:.18}
+    .kpi-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--tm);font-weight:600;margin-bottom:7px}
+    .kpi-v{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:-1px;color:var(--kc,var(--accent));line-height:1}
+    .kpi-s{font-size:11px;color:var(--td);margin-top:5px}
+
+    /* CHARTS */
+    .charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+    .cc{border-radius:18px;border:1px solid var(--border);background:var(--s);padding:20px 22px;animation:up .45s ease both}
+    .cc.wide{grid-column:1/-1}
+    .cc h3{font-family:var(--fd);font-size:13.5px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px}
+    .cw{position:relative;height:220px}
+    .cw.tall{height:300px}
+    .cw.short{height:160px}
+    .no-data{height:100%;display:flex;align-items:center;justify-content:center;color:var(--td);font-size:13px;font-style:italic}
+
+    /* TIMELINE (GANTT LIKE) */
+    .gantt-wrap{overflow-x:auto;padding-bottom:8px}
+    .gantt-wrap::-webkit-scrollbar{height:4px}
+    .gantt-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+    .gantt-table{border-collapse:collapse;min-width:100%;white-space:nowrap}
+    .gantt-table th{padding:7px 10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);font-weight:600;background:rgba(255,255,255,.025);border-bottom:1px solid var(--border);text-align:center;min-width:50px}
+    .gantt-table th.t-task{text-align:left;min-width:200px;padding-left:14px}
+    .gantt-table th.t-freq{min-width:90px}
+    .gantt-table tbody tr{border-bottom:1px solid rgba(255,255,255,.035);transition:background .15s}
+    .gantt-table tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+    .gantt-table td{padding:7px 5px;text-align:center;font-size:11.5px}
+    .gantt-table td.t-task{text-align:left;padding-left:14px;font-size:12px;font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .gantt-table td.t-freq{text-align:center}
+    .freq-chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap}
+    .gc-daily{background:rgba(59,158,255,.12);color:#60b0ff;border:1px solid rgba(59,158,255,.2)}
+    .gc-weekly{background:rgba(0,229,200,.1);color:#2dd4bf;border:1px solid rgba(0,229,200,.2)}
+    .gc-monthly{background:rgba(162,89,255,.12);color:#c084fc;border:1px solid rgba(162,89,255,.2)}
+    .gc-quarterly{background:rgba(240,192,64,.1);color:#fbbf24;border:1px solid rgba(240,192,64,.2)}
+    .gc-halfyearly{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .gc-yearly{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.2)}
+    .gc-2yearly{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+    .dot-active{width:28px;height:10px;border-radius:3px;display:inline-block;background:var(--accent);opacity:.7}
+    .dot-empty{width:28px;height:10px;border-radius:3px;display:inline-block;background:rgba(255,255,255,.05)}
+
+    /* TABLE WRAP */
+    .tbl-wrap{border-radius:18px;border:1px solid var(--border);background:var(--s);overflow:hidden;animation:up .45s ease both}
+    .tbl-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border)}
+    .tbl-head h3{font-family:var(--fd);font-size:15px;font-weight:700}
+    table.dtbl{width:100%;border-collapse:collapse}
+    table.dtbl thead th{padding:10px 14px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);font-weight:600;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+    table.dtbl tbody tr{border-bottom:1px solid rgba(255,255,255,.035);transition:background .15s}
+    table.dtbl tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+    table.dtbl td{padding:10px 14px;font-size:12.5px}
+
+    @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:1100px){.charts-row{grid-template-columns:1fr 1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:700px){.main,.topbar,.fnav{padding-left:14px;padding-right:14px}.charts-row{grid-template-columns:1fr}.hero-stats{display:none}}
+  </style>
+</head>
+<body>
+<canvas class="bg" id="bgcv"></canvas>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="tl">
+      <a href="/" class="back">⌂</a>
+      <a href="/annual-plan/" class="back">← Annual Plan</a>
+      <div class="page-title">{{ folder.icon }} <em>{{ folder.name }}</em> · PM Schedule</div>
+    </div>
+    <div class="tr">
+      <span id="lupd"></span>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <button class="rfbtn" id="rfBtn" onclick="load()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Refresh
+      </button>
+      <div class="user-pill {% if is_admin %}admin{% else %}viewer{% endif %}">{% if is_admin %}👑{% else %}👁{% endif %} {{ current_user.name }}</div>
+      <a href="/logout/" class="logout">Sign Out</a>
+    </div>
+  </header>
+
+  <!-- FOLDER NAVIGATION -->
+  <nav class="fnav">
+    {% for f in folders %}
+    <a href="/annual-plan/{{ f.slug }}/" class="{% if f.slug == folder.slug %}active{% endif %}">{{ f.icon }} {{ f.name }}</a>
+    {% endfor %}
+  </nav>
+
+  <main class="main">
+    <div class="err" id="errBar"></div>
+
+    <!-- HERO CARD -->
+    <div class="hero-card">
+      <div class="hero-icon">{{ folder.icon }}</div>
+      <div class="hero-info">
+        <h2>{{ folder.name }}</h2>
+        <p>Preventive Maintenance Schedule · 1100MW Al Henakiya Project</p>
+      </div>
+      <div class="hero-stats">
+        <div class="hs-item"><div class="hs-n" id="hTotal">—</div><div class="hs-l">Tasks</div></div>
+        <div class="hs-item"><div class="hs-n" id="hFreqs">—</div><div class="hs-l">Freq Types</div></div>
+        <div class="hs-item"><div class="hs-n" id="hDates">—</div><div class="hs-l">Date Cols</div></div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="cc"><h3>Frequency Distribution</h3><div class="cw"><canvas id="cFreq"></canvas></div></div>
+      <div class="cc"><h3>Task Timeline (Start → End)</h3><div class="cw"><canvas id="cTimeline"></canvas></div></div>
+      <div class="cc"><h3>Maintenance Frequency Mix</h3><div class="cw"><canvas id="cDonut"></canvas></div></div>
+    </div>
+
+    <!-- GANTT TABLE -->
+    <div class="cc wide" style="margin-bottom:20px">
+      <h3>Gantt — Daily Schedule View</h3>
+      <div class="gantt-wrap" id="ganttWrap"></div>
+    </div>
+
+    <!-- FULL TABLE -->
+    <div class="tbl-wrap">
+      <div class="tbl-head"><h3>📋 All Tasks — {{ folder.name }}</h3></div>
+      <div style="overflow-x:auto">
+        <table class="dtbl">
+          <thead><tr><th>#</th><th>Task Description</th><th>Frequency</th><th>Date / Month</th><th>Expected Start</th><th>Expected End</th></tr></thead>
+          <tbody id="tasksTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SLUG='{{ folder.slug }}';
+const ACCENT='{{ folder.color }}';
+
+/* BG */
+const bgcv=document.getElementById('bgcv'),bgcx=bgcv.getContext('2d');let W,H;
+const dts=Array.from({length:40},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.25,dy:(Math.random()-.5)*.25,r:Math.random()*1.2+.3,a:Math.random()*.38+.07}));
+function rs(){W=bgcv.width=innerWidth;H=bgcv.height=innerHeight}rs();addEventListener('resize',rs);
+function drawBg(){bgcx.clearRect(0,0,W,H);bgcx.strokeStyle='rgba(59,158,255,.02)';bgcx.lineWidth=1;for(let x=0;x<W;x+=90){bgcx.beginPath();bgcx.moveTo(x,0);bgcx.lineTo(x,H);bgcx.stroke()}for(let y=0;y<H;y+=90){bgcx.beginPath();bgcx.moveTo(0,y);bgcx.lineTo(W,y);bgcx.stroke()}dts.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;bgcx.beginPath();bgcx.arc(d.x,d.y,d.r,0,Math.PI*2);bgcx.fillStyle=`rgba(59,158,255,${d.a})`;bgcx.fill()});requestAnimationFrame(drawBg)}
+drawBg();
+
+Chart.defaults.color='rgba(226,232,245,0.42)';Chart.defaults.borderColor='rgba(255,255,255,0.06)';Chart.defaults.font.family="'DM Sans',sans-serif";
+const PAL=['#3b9eff','#00e5c8','#a259ff','#fb923c','#f0c040','#22c55e','#ef4444','#e879f9'];
+const FREQ_COLORS={'Daily':'#3b9eff','Weekly':'#00e5c8','Monthly':'#a259ff','Quarterly':'#f0c040','Half Yearly':'#22c55e','Yearly':'#fb923c','2 Yearly':'#ef4444'};
+const FREQ_CHIP={'Daily':'gc-daily','Weekly':'gc-weekly','Monthly':'gc-monthly','Quarterly':'gc-quarterly','Half Yearly':'gc-halfyearly','Yearly':'gc-yearly','2 Yearly':'gc-2yearly'};
+
+let charts={};
+function mkChart(id,type,labels,datasets,opts={}){
+  if(charts[id])charts[id].destroy();
+  const el=document.getElementById(id);if(!el)return;
+  charts[id]=new Chart(el.getContext('2d'),{type,data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,animation:{duration:750},
+    plugins:{legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:11,font:{size:11}}},
+    tooltip:{backgroundColor:'rgba(6,13,26,.95)',borderColor:'rgba(59,158,255,.2)',borderWidth:1,padding:10}},
+    scales:opts.sc||undefined,...(opts.ex||{})
+  }});
+}
+
+async function load(){
+  const btn=document.getElementById('rfBtn');btn.classList.add('spin');
+  try{
+    const res=await fetch(`/api/annual-plan/${SLUG}/`);
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const d=await res.json();
+    if(d.error)throw new Error(d.error);
+    render(d);
+    document.getElementById('lupd').textContent='Updated: '+d.fetched_at;
+    document.getElementById('errBar').style.display='none';
+  }catch(e){
+    const eb=document.getElementById('errBar');eb.style.display='block';
+    eb.textContent='⚠ '+e.message+' — retrying in 60s';
+  }finally{btn.classList.remove('spin')}
+}
+
+function render(d){
+  const tasks=d.tasks||[];
+  const freqCnt=d.freq_counts||{};
+  const dateCols=d.date_cols||[];
+
+  // Hero stats
+  document.getElementById('hTotal').textContent=tasks.length;
+  document.getElementById('hFreqs').textContent=Object.keys(freqCnt).length;
+  document.getElementById('hDates').textContent=dateCols.length;
+
+  // KPIs
+  const kpis=[
+    {l:'Total Tasks',v:tasks.length,s:'This equipment',c:ACCENT},
+    {l:'Frequencies',v:Object.keys(freqCnt).length,s:'Unique types',c:'#a259ff'},
+    {l:'Daily',v:freqCnt['Daily']||0,s:'Every day',c:'#3b9eff'},
+    {l:'Yearly',v:freqCnt['Yearly']||0,s:'Annual PM',c:'#fb923c'},
+  ];
+  document.getElementById('kpiRow').innerHTML=kpis.map((k,i)=>`
+    <div class="kpi" style="--kc:${k.c};animation-delay:${i*60}ms">
+      <div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-s">${k.s}</div>
+    </div>`).join('');
+
+  // Frequency bar
+  const fl=Object.keys(freqCnt),fv=Object.values(freqCnt);
+  mkChart('cFreq','bar',fl,[{label:'Tasks',data:fv,backgroundColor:fl.map(l=>FREQ_COLORS[l]||ACCENT+'99'),borderColor:fl.map(l=>FREQ_COLORS[l]||ACCENT),borderWidth:1.5,borderRadius:6}],
+    {lp:false,sc:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10},stepSize:1}}}});
+
+  // Timeline — horizontal scatter of tasks by start date
+  const tLabels=tasks.map(t=>t.sno);
+  mkChart('cTimeline','bar',tLabels,[
+    {label:'Start → End',data:tasks.map(()=>1),backgroundColor:tasks.map(t=>FREQ_COLORS[t.frequency]||ACCENT+'99'),borderColor:tasks.map(t=>FREQ_COLORS[t.frequency]||ACCENT),borderWidth:1.5,borderRadius:4,barThickness:12}],
+    {lp:false,ex:{indexAxis:'y'},sc:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}}}});
+
+  // Donut
+  mkChart('cDonut','doughnut',fl,[{data:fv,backgroundColor:fl.map(l=>(FREQ_COLORS[l]||ACCENT)+'bb'),borderColor:'#060d1a',borderWidth:2,hoverOffset:6}],
+    {lp:'right',ex:{cutout:'65%'}});
+
+  // Gantt table
+  buildGantt(tasks, dateCols.slice(0,30)); // show first 30 dates
+
+  // Tasks table
+  document.getElementById('tasksTbody').innerHTML=tasks.map(t=>`
+    <tr>
+      <td style="color:var(--td);font-family:monospace">${t.sno}</td>
+      <td style="max-width:320px">${t.task}</td>
+      <td><span class="freq-chip ${FREQ_CHIP[t.frequency]||'gc-monthly'}">${t.frequency}</span></td>
+      <td style="color:var(--tm);font-size:12px">${t.date_month||'—'}</td>
+      <td style="color:var(--tm);font-size:12px">${t.start||'—'}</td>
+      <td style="color:var(--tm);font-size:12px">${t.end||'—'}</td>
+    </tr>`).join('');
+}
+
+function buildGantt(tasks, dateCols){
+  if(!tasks.length){document.getElementById('ganttWrap').innerHTML='<p style="padding:20px;color:var(--td);font-size:13px">No tasks for this equipment.</p>';return}
+  // Sample every 3rd date to keep it readable
+  const sampledDates=dateCols.filter((_,i)=>i%3===0);
+  let html=`<table class="gantt-table"><thead><tr><th class="t-task">Task</th><th class="t-freq">Frequency</th>`;
+  sampledDates.forEach(d=>{const dt=d.replace('-26','');html+=`<th>${dt}</th>`;});
+  html+=`</tr></thead><tbody>`;
+  tasks.forEach(t=>{
+    const fclass=FREQ_CHIP[t.frequency]||'gc-monthly';
+    const fc=FREQ_COLORS[t.frequency]||ACCENT;
+    const shortTask=t.task.length>45?t.task.slice(0,44)+'…':t.task;
+    html+=`<tr><td class="t-task" title="${t.task}">${shortTask}</td><td class="t-freq"><span class="freq-chip ${fclass}">${t.frequency}</span></td>`;
+    sampledDates.forEach(d=>{
+      // For daily/weekly tasks show active bar; for others show based on date range
+      let active=false;
+      if(t.frequency==='Daily'||t.frequency==='Weekly'){active=true;}
+      else if(t.frequency==='Monthly'){active=true;}
+      else{
+        // Check if date falls within start→end range (rough check)
+        active=Object.keys(t.daily).length>0;
+      }
+      html+=`<td>${active?`<span style="display:inline-block;width:24px;height:8px;border-radius:3px;background:${fc};opacity:.65"></span>`:'<span style="display:inline-block;width:24px;height:8px;border-radius:3px;background:rgba(255,255,255,.05)"></span>'}</td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table>`;
+  document.getElementById('ganttWrap').innerHTML=html;
+}
+
+load();
+setInterval(load,60000);
+</script>
+</body>
+</html>

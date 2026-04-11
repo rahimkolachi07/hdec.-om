@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Handover — {{ project.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.22);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.25}
+    .wrap{position:relative;z-index:1}
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:10px}
+    .back{padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s}.back:hover{color:var(--text)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}.page-title span{color:var(--a2)}
+    .act-btn{display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:30px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fb);transition:all .2s;border:1px solid;text-decoration:none}
+    .btn-new{background:linear-gradient(135deg,var(--a2),#00a896);color:#fff;border-color:transparent}.btn-new:hover{box-shadow:0 4px 16px rgba(0,229,200,.35)}
+    .btn-export{background:rgba(240,192,64,.08);border-color:rgba(240,192,64,.3);color:#fbbf24}.btn-export:hover{background:rgba(240,192,64,.16)}
+    .main{padding:24px 40px 60px;max-width:1100px;margin:0 auto}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+    .ho-card{border-radius:var(--r);border:1px solid var(--border);background:var(--s);overflow:hidden;transition:all .22s;text-decoration:none;color:inherit;display:flex;flex-direction:column}
+    .ho-card:hover{border-color:rgba(0,229,200,.25);transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,0,0,.4)}
+    .ho-top{padding:18px 20px 14px;flex:1}
+    .ho-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .ho-date{font-family:var(--fd);font-size:15px;font-weight:700}
+    .shift-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid}
+    .shift-Day{background:rgba(59,158,255,.1);border-color:rgba(59,158,255,.2);color:#7ec3ff}
+    .shift-Night{background:rgba(162,89,255,.1);border-color:rgba(162,89,255,.2);color:#c084fc}
+    .shift-General{background:rgba(0,229,200,.1);border-color:rgba(0,229,200,.2);color:#2dd4bf}
+    .ho-incharge{font-size:12.5px;color:var(--tm);margin-bottom:8px}
+    .ho-snippet{font-size:12.5px;color:var(--td);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .ho-foot{padding:10px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+    .status-draft{background:#fbbf24}.status-submitted{background:#4ade80}
+    .ho-created{font-size:11.5px;color:var(--td)}
+    .empty-state{text-align:center;padding:70px 20px;color:var(--td)}
+    .empty-state .ico{font-size:52px;margin-bottom:14px}
+    .empty-state p{font-size:14px;color:var(--tm);margin-bottom:16px}
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media(max-width:768px){
+      .topbar{padding:12px 16px}
+      .page-title{font-size:14px}
+      .act-btn{padding:6px 10px;font-size:11px}
+      .main{padding:16px 16px 60px}
+      .cards-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:480px){
+      .topbar{flex-wrap:wrap;gap:6px}
+      .ho-date{font-size:14px}
+    }
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/" class="back" onclick="return goBack(event, this.href)">← CMMS</a>
+      <div class="page-title">📝 <span>Shift Handover</span> — {{ project.name }}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a href="/api/p/{{ country_id }}/{{ project_id }}/{{ category }}/handover/?action=export" class="act-btn btn-export">📤 Export Excel</a>
+      {% if can_create %}
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/new/" class="act-btn btn-new">+ New Handover</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="main">
+    {% if handovers %}
+    <div class="cards-grid">
+      {% for h in handovers %}
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/{{ h.id }}/" class="ho-card">
+        <div class="ho-top">
+          <div class="ho-header">
+            <div class="ho-date">{{ h.date }}</div>
+            <span class="shift-badge shift-{{ h.shift }}">{{ h.shift }} Shift</span>
+          </div>
+          <div class="ho-incharge">👤 {{ h.shift_incharge|default:"—" }}</div>
+          <div class="ho-snippet">{{ h.key_issues|default:h.maintenance_activities|default:"No details recorded." }}</div>
+        </div>
+        <div class="ho-foot">
+          <span style="font-size:12px;font-weight:600;color:{% if h.status == 'submitted' %}#4ade80{% else %}#fbbf24{% endif %}">
+            <span class="status-dot status-{{ h.status }}"></span>
+            {{ h.status|capfirst }}
+          </span>
+          <span class="ho-created">{{ h.created_at|slice:":10" }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="ico">📝</div>
+      <p>No handover entries yet. Create the first one.</p>
+      {% if can_create %}<a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/new/" class="act-btn btn-new" style="display:inline-flex">+ New Handover</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+const canvas=document.getElementById('cv'),c=canvas.getContext('2d');let W,H;
+const DOTS=Array.from({length:35},()=>({x:Math.random()*2000,y:Math.random()*1200,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:Math.random()*1.2+.3,a:Math.random()*.12+.03}));
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}resize();window.addEventListener('resize',resize);
+(function draw(){c.clearRect(0,0,W,H);DOTS.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle=`rgba(0,229,200,${p.a})`;c.fill()});requestAnimationFrame(draw)})();
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+</script>
+</body>
+</html>

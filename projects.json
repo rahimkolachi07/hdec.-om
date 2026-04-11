@@ -1,0 +1,40 @@
+{
+  "countries": [
+    {
+      "id": "saudi_arabia",
+      "name": "Saudi Arabia",
+      "flag": "🇸🇦",
+      "color": "#006c35",
+      "projects": [
+        {
+          "id": "henakiya_1",
+          "name": "1100MW Al-Henakiya CCPP Ph-1",
+          "description": "Combined Cycle Power Plant — Operations & Maintenance, Phase 1",
+          "legacy": true,
+          "categories": {
+            "maintenance": {
+              "modules": [
+                "activities",
+                "permits",
+                "handover",
+                "manpower",
+                "store",
+                "tracing",
+                "annual_plan",
+                "documents",
+                "daily_report"
+              ]
+            },
+            "operation": {
+              "modules": []
+            },
+            "construction": {
+              "modules": []
+            }
+          },
+          "created_at": "2024-01-01T00:00:00"
+        }
+      ]
+    }
+  ]
+}

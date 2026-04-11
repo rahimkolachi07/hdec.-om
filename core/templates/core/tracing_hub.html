@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Tracing Hub — HDEC 1100MW Al Henakiya</title>
+  <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#030711;--surface:rgba(255,255,255,.03);--surface2:rgba(255,255,255,.055);
+      --border:rgba(255,255,255,.07);--text:#e2e8f5;--text-muted:rgba(226,232,245,.45);
+      --text-dim:rgba(226,232,245,.2);--accent:#3b9eff;--accent2:#00e5c8;
+      --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35}
+    .wrap{position:relative;z-index:1}
+
+    /* TOPBAR */
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 44px;border-bottom:1px solid var(--border);
+      background:rgba(3,7,17,.8);backdrop-filter:blur(20px);
+      position:sticky;top:0;z-index:100;
+    }
+    .logo{font-family:var(--fd);font-size:20px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:center;gap:10px}
+    .logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#3b9eff,#00e5c8);display:flex;align-items:center;justify-content:center;font-size:17px}
+    .logo span{color:var(--accent)}
+    .back{padding:8px 16px;border-radius:30px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:13px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+
+    /* HERO */
+    .hero{padding:64px 44px 48px;text-align:center}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:30px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.07);font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:24px}
+    .pulse{width:7px;height:7px;border-radius:50%;background:#00e5c8;animation:pulse 2s ease infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.5)}}
+    .hero h1{font-family:var(--fd);font-size:clamp(36px,5vw,58px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:14px}
+    .hero h1 .g{background:linear-gradient(90deg,#3b9eff,#00e5c8,#a259ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero p{font-size:16px;color:var(--text-muted);font-weight:300;max-width:480px;margin:0 auto 0}
+
+    /* STATS ROW */
+    .stats-row{display:flex;justify-content:center;gap:40px;padding:32px 44px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    .stat{text-align:center}
+    .stat-n{font-family:var(--fd);font-size:32px;font-weight:800;color:var(--accent);letter-spacing:-1px}
+    .stat-l{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+
+    /* GRID */
+    .grid-section{padding:40px 44px 80px;max-width:1400px;margin:0 auto}
+    .grid-section h2{font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:28px;letter-spacing:-.3px}
+    .grid-section h2 span{color:var(--text-muted);font-weight:400;font-size:15px;margin-left:10px}
+    .sheets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+
+    /* SHEET CARD */
+    .sheet-card{
+      position:relative;border-radius:20px;border:1px solid var(--border);
+      background:var(--surface);padding:30px 26px;
+      text-decoration:none;color:inherit;
+      display:flex;flex-direction:column;gap:0;
+      overflow:hidden;cursor:pointer;
+      transition:all .3s cubic-bezier(.34,1.56,.64,1);
+      animation:up .5s ease both;
+    }
+    .sheet-card:hover{
+      transform:translateY(-7px) scale(1.015);
+      border-color:var(--card-color);
+      box-shadow:0 0 40px var(--card-glow),0 20px 60px rgba(0,0,0,.35);
+    }
+    .card-glow-orb{
+      position:absolute;top:-30px;right:-30px;
+      width:110px;height:110px;border-radius:50%;
+      filter:blur(40px);background:var(--card-color);
+      opacity:.12;transition:opacity .3s;
+    }
+    .sheet-card:hover .card-glow-orb{opacity:.35}
+    .card-stripe{
+      position:absolute;top:0;left:0;right:0;height:3px;
+      background:var(--card-color);opacity:.7;
+      border-radius:20px 20px 0 0;
+    }
+    .card-icon{font-size:34px;margin-bottom:18px;line-height:1;position:relative;z-index:1}
+    .card-name{font-family:var(--fd);font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px;position:relative;z-index:1}
+    .card-desc{font-size:12.5px;color:var(--text-muted);font-weight:300;line-height:1.55;position:relative;z-index:1;flex:1}
+    .card-footer{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-top:22px;padding-top:16px;border-top:1px solid var(--border);
+      position:relative;z-index:1;
+    }
+    .card-tag{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;
+      background:color-mix(in srgb,var(--card-color) 12%,transparent);
+      color:var(--card-color);border:1px solid color-mix(in srgb,var(--card-color) 25%,transparent);
+    }
+    .card-arrow{
+      width:30px;height:30px;border-radius:9px;
+      background:var(--surface2);display:flex;align-items:center;justify-content:center;
+      font-size:15px;transition:all .25s;
+    }
+    .sheet-card:hover .card-arrow{background:var(--card-color);transform:translate(2px,-2px)}
+
+    @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:700px){.topbar,.hero,.grid-section,.stats-row{padding-left:16px;padding-right:16px}}
+    /* ── DAY MODE ── */
+    html[data-theme="light"]{--bg:#030711;--surface:rgba(0,0,0,.028);--surface2:rgba(0,0,0,.055);--border:rgba(0,0,0,.09);--text:#0d1728;--text-muted:rgba(13,23,40,.5);--text-dim:rgba(13,23,40,.28);}
+    html[data-theme="light"]{--bg:#f4f6fd}
+    html[data-theme="light"] body{background:#f4f6fd}
+    html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important;border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] #cv{opacity:.05!important}
+    html[data-theme="light"] .sheet-card{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .sheet-card:hover{box-shadow:0 0 40px var(--card-glow,rgba(59,158,255,.15)),0 20px 60px rgba(0,0,0,.1)}
+    html[data-theme="light"] .hero{background:rgba(248,249,255,.5)}
+    html[data-theme="light"] .stats-row{border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
+    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
+    .tt-label{font-size:10.5px;font-weight:700;color:var(--text-muted);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
+    .theme-toggle:hover .tt-label{color:var(--text)}
+    .tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
+    html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
+    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
+    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="logo"><div class="logo-icon">⚡</div>HDEC <span>· 1100MW Al Henakiya</span></div>
+    <a href="/" class="back">← Dashboard</a>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="padding:6px 13px;border-radius:30px;font-size:12px;font-weight:600;{% if is_admin %}border:1px solid rgba(162,89,255,.3);background:rgba(162,89,255,.08);color:#c084fc{% else %}border:1px solid var(--border);background:var(--s);color:var(--tm){% endif %}">{% if is_admin %}👑{% else %}👁{% endif %} {{ current_user.name }}</div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="tt-label" id="tt-label">Night</span>
+        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
+      </button>
+      <a href="/logout/" style="padding:6px 13px;border-radius:30px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.07);color:#f87171;font-size:12px;text-decoration:none">Sign Out</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-badge"><div class="pulse"></div>Live · Auto-Refresh Every 60s</div>
+    <h1>Maintenance <span class="g">Tracing Hub</span></h1>
+    <p>11 live data modules, each fetching directly from Google Sheets and updating automatically.</p>
+  </section>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-n">11</div><div class="stat-l">Active Modules</div></div>
+    <div class="stat"><div class="stat-n">60s</div><div class="stat-l">Refresh Rate</div></div>
+    <div class="stat"><div class="stat-n">Live</div><div class="stat-l">Google Sheets Sync</div></div>
+    <div class="stat"><div class="stat-n">270+</div><div class="stat-l">PM Tracing Records</div></div>
+  </div>
+
+  <section class="grid-section">
+    <h2>Tracing Modules <span>— click any to open live dashboard</span></h2>
+    <div class="sheets-grid">
+      {% for s in sheets %}
+      <a href="/tracing/{{ s.slug }}/" class="sheet-card"
+         style="--card-color:{{ s.color }};--card-glow:{{ s.color }}40"
+         {% if forloop.counter %}style="animation-delay:{{ forloop.counter0 }}00ms"{% endif %}>
+        <div class="card-stripe"></div>
+        <div class="card-glow-orb"></div>
+        <div class="card-icon">{{ s.icon }}</div>
+        <div class="card-name">{{ s.name }}</div>
+        <div class="card-desc">
+          {% if s.slug == 'statistics-pm' %}Preventive maintenance KPIs, completion rates & summary statistics{% endif %}
+          {% if s.slug == 'statistics-cm' %}Corrective maintenance aggregates, trends & performance metrics{% endif %}
+          {% if s.slug == 'pm-tracing' %}Detailed PM issue log — block, SCB, string, action & rectification{% endif %}
+          {% if s.slug == 'scb' %}String Combiner Box tracking, fault distribution & status{% endif %}
+          {% if s.slug == 'trackers' %}Solar tracker issues, alignment faults & operational status{% endif %}
+          {% if s.slug == 'inverter-mvps' %}Inverter & MVPS alarms, downtime and performance tracking{% endif %}
+          {% if s.slug == 'strings-pv-modules' %}String & PV module issues, damage reports & replacements{% endif %}
+          {% if s.slug == 'pv-equipment-failure' %}PV equipment failure log with root causes & resolution tracking{% endif %}
+          {% if s.slug == 'ss-equipment-failure' %}Substation equipment failures, fault types & repair status{% endif %}
+          {% if s.slug == 'ss-observations' %}Substation field observations, inspection findings & actions{% endif %}
+          {% if s.slug == 'pv-observations' %}PV field observations, site inspection records & findings{% endif %}
+        </div>
+        <div class="card-footer">
+          <span class="card-tag">Live Data</span>
+          <div class="card-arrow">→</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+let W,H;
+const dots=Array.from({length:55},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.28,dy:(Math.random()-.5)*.28,r:Math.random()*1.3+.3,a:Math.random()*.45+.08}));
+function rs(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight}rs();window.addEventListener('resize',rs);
+function draw(){
+  cx.clearRect(0,0,W,H);
+  cx.strokeStyle='rgba(59,158,255,0.022)';cx.lineWidth=1;
+  for(let x=0;x<W;x+=90){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke()}
+  for(let y=0;y<H;y+=90){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
+  dots.forEach(d=>{
+    d.x+=d.dx;d.y+=d.dy;
+    if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;
+    cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(59,158,255,${d.a})`;cx.fill();
+  });
+  // connections
+  for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){
+    const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<140){cx.beginPath();cx.moveTo(dots[i].x,dots[i].y);cx.lineTo(dots[j].x,dots[j].y);cx.strokeStyle=`rgba(59,158,255,${.05*(1-dist/140)})`;cx.lineWidth=.6;cx.stroke()}
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+// stagger card animations
+document.querySelectorAll('.sheet-card').forEach((c,i)=>{c.style.animationDelay=`${i*60}ms`});
+function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
+(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+</script>
+</body>
+</html>

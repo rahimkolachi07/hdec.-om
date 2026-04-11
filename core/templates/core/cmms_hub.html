@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CMMS — HDEC 1100MW</title>
+  <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.07);--accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;
+      --text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.25);
+      --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:18px;--rs:12px;
+    }
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+    .wrap{position:relative;z-index:1}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:12px}
+    .back{padding:7px 14px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12.5px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}
+    .page-title span{color:var(--accent)}
+    .user-badge{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:30px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.06);color:#60b0ff;font-size:12.5px;font-weight:600}
+
+    /* NAV TABS */
+    .nav-tabs{display:flex;gap:6px;padding:0 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.6);overflow-x:auto;scrollbar-width:none}
+    .nav-tabs::-webkit-scrollbar{display:none}
+    .nav-tab{padding:12px 18px;font-size:13px;font-weight:600;color:var(--tm);text-decoration:none;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+    .nav-tab:hover{color:var(--text)}
+    .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+    /* MAIN */
+    .main{padding:32px 40px 60px;max-width:1300px;margin:0 auto}
+
+    /* STATS GRID */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px}
+    .stat-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);padding:24px 20px;text-align:center;transition:border-color .2s}
+    .stat-card:hover{border-color:rgba(59,158,255,.25)}
+    .stat-num{font-family:var(--fd);font-size:38px;font-weight:800;margin-bottom:4px}
+    .stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--tm)}
+    .c-blue{color:var(--accent)}
+    .c-green{color:#22c55e}
+    .c-yellow{color:#fbbf24}
+    .c-red{color:#f87171}
+    .c-purple{color:#c084fc}
+    .c-teal{color:var(--a2)}
+
+    /* SECTIONS */
+    .sections{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    @media(max-width:800px){.sections{grid-template-columns:1fr}}
+    .section-card{background:var(--s);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+    .sec-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+    .sec-head h3{font-family:var(--fd);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .sec-link{font-size:12px;color:var(--accent);text-decoration:none;padding:5px 12px;border-radius:20px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.06);transition:all .2s}
+    .sec-link:hover{background:rgba(59,158,255,.12)}
+
+    /* LIST ITEMS */
+    .list-item{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s;text-decoration:none;color:inherit}
+    .list-item:hover{background:rgba(255,255,255,.03)}
+    .list-item:last-child{border-bottom:none}
+    .li-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .li-body{flex:1;min-width:0}
+    .li-title{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .li-sub{font-size:11.5px;color:var(--tm);margin-top:2px}
+    .li-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+
+    /* STATUS BADGES */
+    .badge-pending{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+    .badge-active{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .badge-closed{background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.2)}
+    .badge-cancelled{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+
+    /* QUICK ACTIONS */
+    .quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:32px}
+    .qa-btn{display:flex;align-items:center;gap:14px;padding:18px 22px;background:var(--s);border:1px solid var(--border);border-radius:var(--rs);text-decoration:none;color:inherit;transition:all .2s;cursor:pointer}
+    .qa-btn:hover{border-color:rgba(59,158,255,.3);background:rgba(59,158,255,.04);transform:translateY(-1px)}
+    .qa-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .qa-text h4{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:2px}
+    .qa-text p{font-size:11.5px;color:var(--tm)}
+
+    .empty{padding:32px;text-align:center;color:var(--td);font-size:13px}
+
+    /* DATE BANNER */
+    .date-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+      padding:22px 32px;margin-bottom:28px;
+      background:linear-gradient(135deg,rgba(30,64,175,.18) 0%,rgba(6,95,70,.12) 100%);
+      border:1px solid rgba(59,158,255,.15);border-radius:20px}
+    .date-banner-left{}
+    .date-day{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:-.3px;color:var(--text)}
+    .date-day span{color:var(--accent)}
+    .date-sub{font-size:12.5px;color:var(--tm);margin-top:3px;letter-spacing:.3px}
+    .date-banner-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .shift-pill{padding:6px 14px;border-radius:30px;font-size:12px;font-weight:600;letter-spacing:.3px}
+    .shift-day{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.25)}
+    .shift-night{background:rgba(162,89,255,.1);color:#c084fc;border:1px solid rgba(162,89,255,.25)}
+    .duty-count{padding:6px 14px;border-radius:30px;font-size:12px;font-weight:600;
+      background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+
+    /* DIVIDER LABEL */
+    .section-label{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:1.2px;
+      text-transform:uppercase;color:var(--tm);margin:0 0 14px;padding-left:4px}
+
+    /* TODAY ACTIVITY CARDS */
+    .today-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:32px}
+    .today-card{display:flex;align-items:center;gap:14px;padding:14px 18px;
+      background:var(--s);border:1px solid var(--border);border-radius:14px;
+      text-decoration:none;color:inherit;transition:all .2s}
+    .today-card:hover{border-color:rgba(59,158,255,.3);transform:translateY(-1px);background:rgba(59,158,255,.04)}
+    .today-card.done{border-color:rgba(34,197,94,.2);background:rgba(34,197,94,.04)}
+    .tc-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;
+      justify-content:center;font-size:18px;flex-shrink:0;background:rgba(59,158,255,.1)}
+    .today-card.done .tc-icon{background:rgba(34,197,94,.1)}
+    .tc-body{flex:1;min-width:0}
+    .tc-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tc-meta{font-size:11px;color:var(--tm);margin-top:3px}
+    .tc-prog{margin-top:6px;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+    .tc-prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+    .today-card.done .tc-prog-fill{background:#22c55e}
+
+    /* TABLE HEADER */
+    .tbl-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+    .tbl-title{font-family:var(--fd);font-size:15px;font-weight:700}
+    .tbl-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .pill{padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600}
+    .pill-done{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .pill-pending{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+    .pill-total{background:rgba(59,158,255,.08);color:#60b0ff;border:1px solid rgba(59,158,255,.15)}
+
+    /* CMMS TABLE */
+    .cmms-table-wrap{overflow-x:auto;border-radius:16px;border:1px solid var(--border);margin-bottom:32px}
+    .cmms-table{width:100%;border-collapse:collapse;font-size:13px}
+    .cmms-table thead tr{background:rgba(255,255,255,.04)}
+    .cmms-table th{padding:11px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);border-bottom:1px solid var(--border);white-space:nowrap}
+    .cmms-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+    .cmms-table tbody tr:last-child td{border-bottom:none}
+    .cmms-table tbody tr:hover{background:rgba(255,255,255,.03)}
+    .trow-done td{opacity:.65}
+    .td-num{color:var(--td);font-size:12px;text-align:center;width:36px}
+    .td-name{font-weight:500;display:flex;align-items:center;gap:8px}
+    .td-block{color:var(--accent);font-size:12.5px;font-weight:600}
+    .td-loc{color:var(--tm);font-size:12px}
+
+    /* FREQUENCY DOT */
+    .freq-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+    .freq-dot.freq-daily{background:#22c55e}
+    .freq-dot.freq-weekly{background:#60b0ff}
+    .freq-dot.freq-monthly{background:#c084fc}
+    .freq-dot.freq-half_yearly{background:#fb923c}
+    .freq-dot.freq-once{background:#94a3b8}
+
+    /* FREQUENCY BADGE */
+    .freq-badge{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.4px}
+    .freq-badge-daily{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .freq-badge-weekly{background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.2)}
+    .freq-badge-monthly{background:rgba(192,132,252,.1);color:#c084fc;border:1px solid rgba(192,132,252,.2)}
+    .freq-badge-half_yearly{background:rgba(251,146,60,.1);color:#fb923c;border:1px solid rgba(251,146,60,.2)}
+    .freq-badge-once{background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.2)}
+
+    /* STATUS BADGE */
+    .status-badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+    .s-done{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .s-prog{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+    .s-pend{background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.15)}
+    /* ── DAY MODE ── */
+    html[data-theme="light"]{--bg:#f4f6fd;--s:rgba(0,0,0,.028);--s2:rgba(0,0,0,.055);--border:rgba(0,0,0,.09);--text:#0d1728;--tm:rgba(13,23,40,.5);--td:rgba(13,23,40,.28);}
+    html[data-theme="light"] body{background:#f4f6fd}
+    html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important;border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] .nav-tabs{background:rgba(244,246,253,.92)!important;border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] canvas{opacity:.05!important}
+    html[data-theme="light"] .stat-card{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .section-card{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .today-card{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .today-card:hover{background:rgba(59,158,255,.04)}
+    html[data-theme="light"] .qa-btn{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .cmms-table thead tr{background:rgba(0,0,0,.04)}
+    html[data-theme="light"] .cmms-table-wrap{border-color:rgba(0,0,0,.09);background:#fff}
+    html[data-theme="light"] .cmms-table tbody tr:hover{background:rgba(0,0,0,.02)}
+    html[data-theme="light"] .cmms-table td,.html[data-theme="light"] .cmms-table th{border-color:rgba(0,0,0,.07)}
+    html[data-theme="light"] .list-item:hover{background:rgba(0,0,0,.025)}
+    html[data-theme="light"] .date-banner{background:linear-gradient(135deg,rgba(59,130,246,.08),rgba(16,185,129,.06));border-color:rgba(59,158,255,.2)}
+    html[data-theme="light"] .tc-prog{background:rgba(0,0,0,.06)}
+    html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
+    html[data-theme="light"] .user-badge{background:rgba(59,158,255,.08);border-color:rgba(59,158,255,.25);color:#1a6fcc}
+    /* TOGGLE */
+    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
+    .tt-label{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
+    .theme-toggle:hover .tt-label{color:var(--text)}
+    .tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
+    html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
+    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
+    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/" class="back" onclick="return goBack(event, this.href)">← Dashboard</a>
+      <div class="page-title">🏭 <span>CMMS</span> — Al Henakiya</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="tt-label" id="tt-label">Night</span>
+        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
+      </button>
+      <div class="user-badge">{{ current_user.name }} · {{ current_user.role|title }}</div>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <a href="/cmms/" class="nav-tab active">🏠 Hub</a>
+    <a href="/cmms/activities/" class="nav-tab">📋 Activities</a>
+    <a href="/cmms/permits/" class="nav-tab">🔐 Permits</a>
+    <a href="/cmms/handover/" class="nav-tab">📝 Handover</a>
+    {% if is_admin %}
+    <a href="/cmms/permits/?status=pending_issue" class="nav-tab">⚡ Pending</a>
+    {% endif %}
+  </nav>
+
+  <main class="main">
+
+    <!-- DATE BANNER -->
+    <div class="date-banner">
+      <div class="date-banner-left">
+        <div class="date-day"><span>{{ today_weekday }}</span>, {{ today_date_str }}</div>
+        <div class="date-sub">HDEC — 1100MW Al Henakiya Solar PV · CMMS Dashboard</div>
+      </div>
+      <div class="date-banner-right">
+        <span class="duty-count">{{ today_records|length }} task{{ today_records|length|pluralize }} today</span>
+        <span class="shift-pill shift-day">☀ Day Shift</span>
+        <span class="shift-pill shift-night">🌙 Night Shift</span>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num c-blue">{{ total_activities }}</div>
+        <div class="stat-label">Activities This Month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num c-green">{{ completed_records }}</div>
+        <div class="stat-label">Completed Checklists</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num c-yellow">{{ total_records }}</div>
+        <div class="stat-label">Total Records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num c-purple">{{ total_permits }}</div>
+        <div class="stat-label">Total Permits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num c-teal">{{ active_permits }}</div>
+        <div class="stat-label">Active Permits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num c-red">{{ pending_permits }}</div>
+        <div class="stat-label">Pending Permits</div>
+      </div>
+      <div class="stat-card" style="cursor:pointer" onclick="location.href='/cmms/handover/'">
+        <div class="stat-num c-teal">{{ today_handover_count }}</div>
+        <div class="stat-label">Shift Logs Today</div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+      <a href="/cmms/activities/" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(59,158,255,.1)">📋</div>
+        <div class="qa-text"><h4>View Activities</h4><p>Checklists & maintenance tasks</p></div>
+      </a>
+      <a href="/cmms/permits/" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(162,89,255,.1)">📄</div>
+        <div class="qa-text"><h4>View Permits</h4><p>Work permit applications</p></div>
+      </a>
+      {% if current_user.role == 'maintenance_engineer' or is_admin %}
+      <a href="/cmms/permits/new/" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(0,229,200,.1)">➕</div>
+        <div class="qa-text"><h4>Apply for Permit</h4><p>New permit to work</p></div>
+      </a>
+      {% endif %}
+      {% if current_user.role == 'operation_engineer' or is_admin %}
+      <a href="/cmms/permits/?status=pending_issue" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(251,191,36,.1)">⚙️</div>
+        <div class="qa-text"><h4>Issue Permits</h4><p>Permits awaiting issuance</p></div>
+      </a>
+      {% endif %}
+      {% if current_user.role == 'hse_engineer' or is_admin %}
+      <a href="/cmms/permits/?status=pending_hse" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(234,179,8,.1)">🦺</div>
+        <div class="qa-text"><h4>HSE Sign-off</h4><p>Permits awaiting HSE approval</p></div>
+      </a>
+      {% endif %}
+      <a href="/cmms/handover/" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(34,197,94,.1)">📝</div>
+        <div class="qa-text"><h4>Shift Handover</h4><p>Daily shift log & reports</p></div>
+      </a>
+      <a href="/cmms/handover/new/" class="qa-btn">
+        <div class="qa-icon" style="background:rgba(129,140,248,.1)">➕</div>
+        <div class="qa-text"><h4>New Shift Log</h4><p>File today's handover report</p></div>
+      </a>
+    </div>
+
+    <!-- TODAY'S CMMS SCHEDULE TABLE -->
+    <div class="tbl-header">
+      <div class="tbl-title">Today's Maintenance Schedule</div>
+      <div class="tbl-meta">
+        <span class="pill pill-done">✓ {{ tasks_done }} Done</span>
+        <span class="pill pill-pending">● {{ tasks_pending }} Pending</span>
+        <span class="pill pill-total">{{ tasks_total }} Total</span>
+        <a href="/cmms/activities/" class="sec-link" style="margin-left:4px">All Activities →</a>
+      </div>
+    </div>
+
+    {% if today_tasks %}
+    <div class="cmms-table-wrap">
+      <table class="cmms-table">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Task Name</th>
+            <th>Block / Unit</th>
+            <th>Location</th>
+            <th style="width:56px;text-align:center">Type</th>
+            <th style="width:70px;text-align:center">Checklist</th>
+            <th style="width:90px;text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in today_tasks %}
+          <tr class="trow trow-{{ t.status }}{% if forloop.first %}-first{% endif %}"
+              onclick="window.location='/cmms/activities/{{ t.activity_id }}/?date={{ today }}'"
+              style="cursor:pointer">
+            <td class="td-num">{{ forloop.counter }}</td>
+            <td class="td-name">
+              <span class="freq-dot freq-{{ t.frequency }}"></span>
+              {{ t.name }}
+            </td>
+            <td class="td-block">{{ t.block_info|default:"—" }}</td>
+            <td class="td-loc">{{ t.location|default:"—" }}</td>
+            <td style="text-align:center">
+              <span class="freq-badge freq-badge-{{ t.frequency }}">{{ t.freq_label }}</span>
+            </td>
+            <td style="text-align:center">
+              {% if t.checklist_required %}
+              <span style="color:#4ade80;font-size:12px">✓ Yes</span>
+              {% else %}
+              <span style="color:var(--td);font-size:12px">No</span>
+              {% endif %}
+            </td>
+            <td style="text-align:center">
+              {% if t.status == 'done' %}
+              <span class="status-badge s-done">Done</span>
+              {% elif t.status == 'in_progress' %}
+              <span class="status-badge s-prog">In Progress</span>
+              {% else %}
+              <span class="status-badge s-pend">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty" style="padding:48px;font-size:14px">
+      No activities scheduled for today.<br>
+      <a href="/cmms/activities/" style="color:var(--accent);font-size:13px;margin-top:8px;display:inline-block">
+        Import schedule or create activities →
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- RECENT PERMITS -->
+    {% if recent_permits %}
+    <div class="tbl-header" style="margin-top:32px">
+      <div class="tbl-title">Recent Permits</div>
+      <a href="/cmms/permits/" class="sec-link">View All →</a>
+    </div>
+    <div class="section-card">
+      {% for p in recent_permits %}
+      <a href="/cmms/permits/{{ p.id }}/" class="list-item">
+        <div class="li-icon" style="background:rgba(162,89,255,.08)">📄</div>
+        <div class="li-body">
+          <div class="li-title">{{ p.permit_number|default:"Draft" }} — {{ p.equipment }}</div>
+          <div class="li-sub">{{ p.receiver_name }} · {{ p.created_at|slice:":10" }}</div>
+        </div>
+        <span class="li-badge {% if p.status == 'active' %}badge-active{% elif p.status == 'closed' %}badge-closed{% elif p.status == 'cancelled' %}badge-cancelled{% else %}badge-pending{% endif %}">
+          {{ p.status|title }}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </main>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');let W,H;
+const dots=Array.from({length:40},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.2,dy:(Math.random()-.5)*.2,r:Math.random()*1.2+.3,a:Math.random()*.25+.05}));
+function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}rs();addEventListener('resize',rs);
+function draw(){ctx.clearRect(0,0,W,H);dots.forEach(d=>{d.x=(d.x+d.dx+W)%W;d.y=(d.y+d.dy+H)%H;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(59,158,255,${d.a})`;ctx.fill()});requestAnimationFrame(draw)}
+draw();
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
+(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+</script>
+</body>
+</html>

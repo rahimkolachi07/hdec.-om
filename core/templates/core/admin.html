@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Panel — HDEC</title>
+  <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#030711;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.07);--accent:#3b9eff;--a2:#00e5c8;--text:#e2e8f5;--tm:rgba(226,232,245,.45);--td:rgba(226,232,245,.2);--red:#ef4444;--green:#22c55e;--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.3}
+    .wrap{position:relative;z-index:1}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(3,7,17,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:12px}
+    .back{padding:7px 14px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12.5px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}
+    .page-title span{color:var(--accent)}
+    .user-badge{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:30px;border:1px solid rgba(162,89,255,.25);background:rgba(162,89,255,.08);color:#c084fc;font-size:12.5px;font-weight:600}
+
+    .main{padding:32px 40px 60px;max-width:1200px;margin:0 auto}
+
+    /* TOAST */
+    .toast{position:fixed;top:80px;right:24px;z-index:9999;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid;animation:slideIn .3s ease;display:none}
+    .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.25);color:#4ade80}
+    .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.25);color:#f87171}
+    @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+    /* GRID */
+    .top-grid{display:grid;grid-template-columns:520px 1fr;gap:24px;margin-bottom:28px}
+    @media(max-width:900px){.top-grid{grid-template-columns:1fr}}
+
+    /* CARD */
+    .card{background:var(--s);border:1px solid var(--border);border-radius:20px;overflow:hidden}
+    .card-head{padding:18px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+    .card-head h3{font-family:var(--fd);font-size:15px;font-weight:700;flex:1}
+    .card-head .ico{font-size:18px}
+    .card-body{padding:20px 24px}
+
+    /* FORM */
+    .field{margin-bottom:12px}
+    .field label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);margin-bottom:5px}
+    .field input,.field select{width:100%;padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:13.5px;font-family:var(--fb);outline:none;transition:all .2s}
+    .field input:focus,.field select:focus{border-color:rgba(59,158,255,.35);background:rgba(59,158,255,.04)}
+    .field input::placeholder{color:var(--td)}
+    .field select option{background:#0f1827}
+    .btn{padding:9px 18px;border-radius:10px;border:none;font-size:13px;font-weight:600;font-family:var(--fb);cursor:pointer;transition:all .2s}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),#1a52cc);color:#fff}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(59,158,255,.3)}
+    .btn-danger{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+    .btn-danger:hover{background:rgba(239,68,68,.2)}
+    .btn-sm{padding:5px 11px;font-size:11.5px;border-radius:8px}
+    .btn-perm{background:rgba(162,89,255,.1);color:#c084fc;border:1px solid rgba(162,89,255,.2)}
+    .btn-perm:hover{background:rgba(162,89,255,.2)}
+
+    /* PERMISSION MATRIX */
+    .perm-section{margin-top:14px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .perm-section-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+    .perm-section-head span{font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
+    .perm-reset-btn{font-size:11px;color:var(--accent);cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.06)}
+    .perm-reset-btn:hover{background:rgba(59,158,255,.12)}
+    .perm-row{display:grid;grid-template-columns:1fr auto;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03)}
+    .perm-row:last-child{border-bottom:none}
+    .perm-module{font-size:13px}
+    .perm-toggle{display:flex;gap:4px}
+    .perm-btn{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:all .15s;user-select:none}
+    .perm-btn.edit{background:rgba(34,197,94,.1);color:#4ade80;border-color:rgba(34,197,94,.2)}
+    .perm-btn.edit.active{background:#22c55e;color:#fff;border-color:#22c55e}
+    .perm-btn.view{background:rgba(59,158,255,.1);color:#60b0ff;border-color:rgba(59,158,255,.2)}
+    .perm-btn.view.active{background:#3b9eff;color:#fff;border-color:#3b9eff}
+    .perm-btn.none{background:rgba(100,116,139,.08);color:var(--td);border-color:rgba(100,116,139,.15)}
+    .perm-btn.none.active{background:#475569;color:#fff;border-color:#475569}
+    .access-body{padding:14px}
+    .scope-note{font-size:12px;color:var(--tm);line-height:1.5;margin-bottom:12px}
+    .access-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .access-box{border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.025);overflow:hidden}
+    .access-box-head{padding:10px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.6px}
+    .check-list{max-height:220px;overflow:auto}
+    .check-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03)}
+    .check-item:last-child{border-bottom:none}
+    .check-item input{margin-top:2px}
+    .check-item strong{display:block;font-size:12.5px}
+    .check-item small{display:block;font-size:11px;color:var(--td);margin-top:2px}
+    .empty-checks{padding:14px 12px;font-size:12px;color:var(--td)}
+    .scope-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+    .scope-pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10.5px;font-weight:700;border:1px solid rgba(59,158,255,.18);background:rgba(59,158,255,.08);color:#60b0ff}
+    .access-mini-line{font-size:11px;color:var(--tm);line-height:1.45;margin-top:4px}
+    .muted-note{font-size:12px;color:var(--td);padding:4px 0}
+
+    /* USERS TABLE */
+    .users-table{width:100%;border-collapse:collapse}
+    .users-table thead th{padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);font-weight:600;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+    .users-table tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+    .users-table tbody tr:hover{background:rgba(59,158,255,.03)}
+    .users-table td{padding:11px 14px;font-size:13px;vertical-align:middle}
+    .role-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .role-admin{background:rgba(162,89,255,.12);color:#c084fc;border:1px solid rgba(162,89,255,.2)}
+    .role-viewer{background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.18)}
+    .role-maintenance_engineer{background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.18)}
+    .role-operation_engineer{background:rgba(0,229,200,.1);color:#2dd4bf;border:1px solid rgba(0,229,200,.2)}
+    .role-hse_engineer{background:rgba(234,179,8,.1);color:#fbbf24;border:1px solid rgba(234,179,8,.2)}
+    .role-technician{background:rgba(249,115,22,.1);color:#fb923c;border:1px solid rgba(249,115,22,.2)}
+    .td-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+    /* PERM PILLS in table */
+    .perm-pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;margin:1px}
+    .perm-pill-edit{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+    .perm-pill-view{background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.18)}
+    .perm-pill-none{background:rgba(100,116,139,.08);color:var(--td);border:1px solid rgba(100,116,139,.15)}
+
+    /* MODAL */
+    .modal-bg{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center}
+    .modal-bg.open{display:flex}
+    .modal{background:#0a1020;border:1px solid var(--border);border-radius:18px;padding:28px 30px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;animation:up .25s ease;position:relative}
+    @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .modal h3{font-family:var(--fd);font-size:16px;font-weight:700;margin-bottom:18px}
+    .modal-close{position:absolute;right:18px;top:18px;cursor:pointer;color:var(--tm);font-size:18px;background:none;border:none;line-height:1}
+    .modal-close:hover{color:var(--text)}
+
+    /* STATS */
+    .stat-mini{text-align:center;padding:18px;border-radius:14px;border:1px solid var(--border)}
+    @media(max-width:720px){.access-grid{grid-template-columns:1fr}}
+    /* ── DAY MODE ── */
+    html[data-theme="light"]{--bg:#030711;--s:rgba(0,0,0,.028);--s2:rgba(0,0,0,.055);--border:rgba(0,0,0,.09);--text:#0d1728;--tm:rgba(13,23,40,.5);--td:rgba(13,23,40,.28);}
+    html[data-theme="light"]{--bg:#f4f6fd}
+    html[data-theme="light"] body{background:#f4f6fd}
+    html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important;border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] canvas{opacity:.05!important}
+    html[data-theme="light"] .card{background:#fff;border-color:rgba(0,0,0,.08)}
+    html[data-theme="light"] .card-head{border-bottom-color:rgba(0,0,0,.07);background:rgba(248,249,255,.9)}
+    html[data-theme="light"] .field input,.html[data-theme="light"] .field select{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1);color:#0d1728}
+    html[data-theme="light"] .users-table thead th{background:rgba(0,0,0,.04);border-bottom-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] .users-table tbody tr{border-bottom-color:rgba(0,0,0,.06)}
+    html[data-theme="light"] .users-table tbody tr:hover{background:rgba(59,158,255,.04)}
+    html[data-theme="light"] .perm-section{border-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] .perm-section-head{background:rgba(0,0,0,.03);border-bottom-color:rgba(0,0,0,.07)}
+    html[data-theme="light"] .perm-row{border-bottom-color:rgba(0,0,0,.05)}
+    html[data-theme="light"] .modal{background:#fff;border-color:rgba(0,0,0,.1)}
+    html[data-theme="light"] .access-box{background:rgba(248,249,255,.9);border-color:rgba(0,0,0,.09)}
+    html[data-theme="light"] .check-item{border-bottom-color:rgba(0,0,0,.05)}
+    html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
+    html[data-theme="light"] .user-badge{background:rgba(162,89,255,.08);border-color:rgba(162,89,255,.2);color:#7c3aed}
+    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
+    .tt-label{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
+    .theme-toggle:hover .tt-label{color:var(--text)}
+    .tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
+    html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
+    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
+    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/" class="back">← Dashboard</a>
+      <div class="page-title">🔐 <span>Admin Panel</span> · HDEC</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <span class="tt-label" id="tt-label">Night</span>
+        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
+      </button>
+      <div class="user-badge">👑 {{ current_user.name }}</div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="toast" id="toast"></div>
+
+    <div class="top-grid">
+      <!-- CREATE USER -->
+      <div class="card">
+        <div class="card-head"><span class="ico">➕</span><h3>Create New User</h3></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="field"><label>Full Name</label><input type="text" id="newName" placeholder="e.g. Ahmed Hassan"></div>
+            <div class="field"><label>Username</label><input type="text" id="newUsername" placeholder="e.g. ahmed.hassan"></div>
+          </div>
+          <div class="field"><label>Email (for notifications)</label><input type="email" id="newEmail" placeholder="e.g. ahmed@hdec.sa"></div>
+          <div class="field"><label>Password</label><input type="password" id="newPassword" placeholder="Min 4 characters"></div>
+          <div class="field">
+            <label>Role</label>
+            <select id="newRole" onchange="onRoleChange()">
+              <option value="viewer">👁 Viewer — read only</option>
+              <option value="maintenance_engineer">🔧 Maintenance Engineer</option>
+              <option value="operation_engineer">⚙️ Operation Engineer</option>
+              <option value="hse_engineer">🦺 HSE Engineer</option>
+              <option value="technician">🛠️ Technician</option>
+              <option value="admin">👑 Admin — full access</option>
+            </select>
+          </div>
+          <div class="perm-section" id="createAccessSection">
+            <div class="perm-section-head">
+              <span>Overall / Country / Project Control</span>
+              <span class="perm-reset-btn" onclick="resetCreateAccess()">Reset Access Scope</span>
+            </div>
+            <div class="access-body">
+              <div class="field" style="margin-bottom:10px">
+                <label>Overall Control</label>
+                <select id="createAccessOverall" onchange="onAccessOverallChange('create', this.value)">
+                  <option value="all">All countries and all projects</option>
+                  <option value="restricted">Selected countries / projects only</option>
+                </select>
+              </div>
+              <div id="createAccessNote" class="scope-note"></div>
+              <div id="createAccessFields"></div>
+            </div>
+          </div>
+
+          <!-- PERMISSION MATRIX -->
+          <div class="perm-section" id="createPermSection">
+            <div class="perm-section-head">
+              <span>Module Permissions</span>
+              <span class="perm-reset-btn" onclick="resetCreatePerms()">↺ Reset to Role Defaults</span>
+            </div>
+            <div id="createPermRows"></div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="createUser()">Create User</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="card">
+        <div class="card-head"><span class="ico">📊</span><h3>User Statistics</h3></div>
+        <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-top:20px">
+          <div class="stat-mini" style="background:rgba(162,89,255,.05)">
+            <div style="font-family:var(--fd);font-size:38px;font-weight:800;color:#c084fc" id="adminCount">—</div>
+            <div style="font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:.7px;margin-top:5px">Admins</div>
+          </div>
+          <div class="stat-mini" style="background:rgba(59,158,255,.05)">
+            <div style="font-family:var(--fd);font-size:38px;font-weight:800;color:#60b0ff" id="viewerCount">—</div>
+            <div style="font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:.7px;margin-top:5px">Viewers</div>
+          </div>
+          <div class="stat-mini" style="grid-column:1/-1;background:rgba(0,229,200,.04)">
+            <div style="font-family:var(--fd);font-size:34px;font-weight:800;color:#2dd4bf" id="totalCount">—</div>
+            <div style="font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:.7px;margin-top:4px">Total Users</div>
+          </div>
+
+          <!-- Legend -->
+          <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Permission Levels</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="perm-pill perm-pill-edit">Edit</span>
+                <span style="font-size:12px;color:var(--tm)">Full access — create, modify, delete</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="perm-pill perm-pill-view">View</span>
+                <span style="font-size:12px;color:var(--tm)">Read-only — can see but not change</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="perm-pill perm-pill-none">None</span>
+                <span style="font-size:12px;color:var(--tm)">No access — hidden from user</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL USERS TABLE -->
+    <div class="card">
+      <div class="card-head"><span class="ico">👥</span><h3>All Users</h3></div>
+      <div style="overflow-x:auto">
+        <table class="users-table">
+          <thead><tr>
+            <th>Name / Email</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Access Scope</th>
+            <th>Module Access</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-bg" id="pwModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('pwModal')">✕</button>
+    <h3>🔑 Change Password</h3>
+    <input type="hidden" id="pwUsername">
+    <div class="field"><label>User</label><input type="text" id="pwUsernameDisplay" disabled></div>
+    <div class="field"><label>New Password</label><input type="password" id="newPw" placeholder="Min 4 characters"></div>
+    <button class="btn btn-primary" onclick="submitPw()" style="width:100%;margin-top:6px">Update Password</button>
+  </div>
+</div>
+
+<!-- PERMISSIONS MODAL -->
+<div class="modal-bg" id="permModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('permModal')">✕</button>
+    <h3>🔒 Module Permissions</h3>
+    <div id="permModalUserInfo" style="font-size:13px;color:var(--tm);margin-bottom:14px"></div>
+    <input type="hidden" id="permUsername">
+
+    <div class="perm-section" style="margin-top:0">
+      <div class="perm-section-head">
+        <span>Overall / Country / Project Control</span>
+        <span class="perm-reset-btn" onclick="resetModalAccess()">Reset Access Scope</span>
+      </div>
+      <div class="access-body">
+        <div class="field" style="margin-bottom:10px">
+          <label>Overall Control</label>
+          <select id="modalAccessOverall" onchange="onAccessOverallChange('modal', this.value)">
+            <option value="all">All countries and all projects</option>
+            <option value="restricted">Selected countries / projects only</option>
+          </select>
+        </div>
+        <div id="modalAccessNote" class="scope-note"></div>
+        <div id="modalAccessFields"></div>
+      </div>
+    </div>
+
+    <div class="perm-section">
+      <div class="perm-section-head">
+        <span>Access per Module</span>
+        <span class="perm-reset-btn" onclick="resetModalPerms()">↺ Reset to Role Defaults</span>
+      </div>
+      <div id="permModalRows"></div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="savePermissions()">Save Permissions</button>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById('cv'),ctx=canvas.getContext('2d');let W,H;
+const dots=Array.from({length:40},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.25,dy:(Math.random()-.5)*.25,r:Math.random()*1.2+.3,a:Math.random()*.35+.07}));
+function rs(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}rs();addEventListener('resize',rs);
+function drawBg(){ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(59,158,255,0.02)';ctx.lineWidth=1;for(let x=0;x<W;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=90){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}dots.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(59,158,255,${d.a})`;ctx.fill()});requestAnimationFrame(drawBg)}
+drawBg();
+
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+const MODULES = {{ modules_json|safe }};
+const DEFAULTS = {{ defaults_json|safe }};
+const COUNTRIES = {{ countries_json|safe }};
+const USERS_DATA = {{ users_json|safe }};
+const COUNTRY_LOOKUP = Object.fromEntries(COUNTRIES.map(c => [c.id, c]));
+const PROJECT_LOOKUP = {};
+COUNTRIES.forEach(country => {
+  (country.projects || []).forEach(project => {
+    PROJECT_LOOKUP[`${country.id}/${project.id}`] = {
+      countryId: country.id,
+      countryName: country.name,
+      countryFlag: country.flag || '',
+      projectId: project.id,
+      projectName: project.name,
+    };
+  });
+});
+let allUsers = [];
+let createPerms = {};
+let modalPerms = {};
+let modalUserRole = 'viewer';
+let createAccess = defaultAccessForRole('viewer');
+let modalAccess = defaultAccessForRole('viewer');
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type}`; t.style.display='block';
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>{t.style.display='none'},3200);
+}
+async function api(body){
+  const r=await fetch('/api/admin/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},body:JSON.stringify(body)});
+  return r.json();
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open') }
+
+function pluralize(count, one, many){ return count === 1 ? one : many; }
+function escapeHtml(value){
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+function defaultAccessForRole(role){
+  return { overall:'all', countries:[], projects:[] };
+}
+function normalizeAccess(access){
+  const src = access && typeof access === 'object' ? access : {};
+  return {
+    overall: src.overall === 'restricted' ? 'restricted' : 'all',
+    countries: Array.from(new Set((src.countries || []).map(String).map(v => v.trim()).filter(Boolean))),
+    projects: Array.from(new Set((src.projects || []).map(String).map(v => v.trim().replace(/^\/+|\/+$/g,'')).filter(v => v.includes('/')))),
+  };
+}
+function cloneAccess(access){
+  const normalized = normalizeAccess(access);
+  return { overall: normalized.overall, countries: [...normalized.countries], projects: [...normalized.projects] };
+}
+function getAccessState(kind){ return kind === 'create' ? createAccess : modalAccess; }
+function setAccessState(kind, access){ if(kind === 'create') createAccess = access; else modalAccess = access; }
+
+// ── PERMISSION ROWS RENDERER ───────────────────────────────────────────────
+function renderPermRows(containerId, permsObj, onChange) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  for (const [mod, label] of Object.entries(MODULES)) {
+    const val = permsObj[mod] || 'view';
+    const row = document.createElement('div');
+    row.className = 'perm-row';
+    row.innerHTML = `
+      <span class="perm-module">${label}</span>
+      <div class="perm-toggle" data-mod="${mod}">
+        <span class="perm-btn edit ${val==='edit'?'active':''}" onclick="setPerm(this,'${mod}','edit','${containerId}')">Edit</span>
+        <span class="perm-btn view ${val==='view'?'active':''}" onclick="setPerm(this,'${mod}','view','${containerId}')">View</span>
+        <span class="perm-btn none ${val==='none'?'active':''}" onclick="setPerm(this,'${mod}','none','${containerId}')">None</span>
+      </div>`;
+    container.appendChild(row);
+  }
+}
+
+function setPerm(btn, mod, level, containerId) {
+  const group = btn.closest('.perm-toggle');
+  group.querySelectorAll('.perm-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (containerId === 'createPermRows') {
+    createPerms[mod] = level;
+  } else if (containerId === 'permModalRows') {
+    modalPerms[mod] = level;
+  }
+}
+
+function buildAccessFields(kind, access){
+  const countriesHtml = COUNTRIES.length
+    ? COUNTRIES.map(country => `
+        <label class="check-item">
+          <input type="checkbox" ${access.countries.includes(country.id) ? 'checked' : ''} onchange="toggleAccessCountry('${kind}','${country.id}',this.checked)">
+          <div>
+            <strong>${escapeHtml((country.flag ? `${country.flag} ` : '') + country.name)}</strong>
+            <small>All projects inside this country</small>
+          </div>
+        </label>`).join('')
+    : '<div class="empty-checks">No countries configured yet.</div>';
+
+  const projects = [];
+  COUNTRIES.forEach(country => {
+    (country.projects || []).forEach(project => {
+      projects.push({
+        key: `${country.id}/${project.id}`,
+        name: project.name,
+        countryName: country.name,
+        countryFlag: country.flag || '',
+      });
+    });
+  });
+
+  const projectsHtml = projects.length
+    ? projects.map(project => `
+        <label class="check-item">
+          <input type="checkbox" ${access.projects.includes(project.key) ? 'checked' : ''} onchange="toggleAccessProject('${kind}','${project.key}',this.checked)">
+          <div>
+            <strong>${escapeHtml(project.name)}</strong>
+            <small>${escapeHtml((project.countryFlag ? `${project.countryFlag} ` : '') + project.countryName)}</small>
+          </div>
+        </label>`).join('')
+    : '<div class="empty-checks">No projects configured yet.</div>';
+
+  const pills = [];
+  if (access.countries.length) pills.push(`<span class="scope-pill">${access.countries.length} ${pluralize(access.countries.length,'country','countries')}</span>`);
+  if (access.projects.length) pills.push(`<span class="scope-pill">${access.projects.length} ${pluralize(access.projects.length,'project','projects')}</span>`);
+
+  return `
+    <div class="access-grid">
+      <div class="access-box">
+        <div class="access-box-head">Country Access</div>
+        <div class="check-list">${countriesHtml}</div>
+      </div>
+      <div class="access-box">
+        <div class="access-box-head">Project Access</div>
+        <div class="check-list">${projectsHtml}</div>
+      </div>
+    </div>
+    ${pills.length ? `<div class="scope-pills">${pills.join('')}</div>` : '<div class="muted-note">No specific countries or projects selected yet.</div>'}
+  `;
+}
+
+function renderAccessControls(kind){
+  const role = kind === 'create' ? document.getElementById('newRole').value : modalUserRole;
+  const overallEl = document.getElementById(kind === 'create' ? 'createAccessOverall' : 'modalAccessOverall');
+  const noteEl = document.getElementById(kind === 'create' ? 'createAccessNote' : 'modalAccessNote');
+  const fieldsEl = document.getElementById(kind === 'create' ? 'createAccessFields' : 'modalAccessFields');
+
+  let access = cloneAccess(getAccessState(kind));
+  if (role === 'admin') access = defaultAccessForRole(role);
+  setAccessState(kind, access);
+
+  overallEl.value = access.overall;
+  overallEl.disabled = role === 'admin';
+
+  if (role === 'admin') {
+    noteEl.textContent = 'Admin accounts always keep full overall, country, and project access.';
+    fieldsEl.innerHTML = '<div class="muted-note">All countries and all projects are available for this admin account.</div>';
+    return;
+  }
+  if (access.overall === 'all') {
+    noteEl.textContent = 'This user can open every country and every project in the system.';
+    fieldsEl.innerHTML = '<div class="muted-note">Switch to selected countries / projects only if you want to restrict the user.</div>';
+    return;
+  }
+
+  noteEl.textContent = 'Choose full countries, specific projects, or both. Country access automatically includes every project inside that country.';
+  fieldsEl.innerHTML = buildAccessFields(kind, access);
+}
+
+function onAccessOverallChange(kind, value){
+  const access = cloneAccess(getAccessState(kind));
+  access.overall = value === 'restricted' ? 'restricted' : 'all';
+  setAccessState(kind, access);
+  renderAccessControls(kind);
+}
+
+function toggleAccessCountry(kind, countryId, checked){
+  const access = cloneAccess(getAccessState(kind));
+  const set = new Set(access.countries);
+  if (checked) set.add(countryId); else set.delete(countryId);
+  access.countries = Array.from(set);
+  setAccessState(kind, access);
+  renderAccessControls(kind);
+}
+
+function toggleAccessProject(kind, projectKey, checked){
+  const access = cloneAccess(getAccessState(kind));
+  const set = new Set(access.projects);
+  if (checked) set.add(projectKey); else set.delete(projectKey);
+  access.projects = Array.from(set);
+  setAccessState(kind, access);
+  renderAccessControls(kind);
+}
+
+function accessSummaryHtml(access){
+  const scope = normalizeAccess(access);
+  if (scope.overall === 'all') {
+    return `
+      <span class="scope-pill">All countries</span>
+      <span class="scope-pill">All projects</span>
+      <div class="access-mini-line">Overall access is open across the system.</div>`;
+  }
+
+  const countryNames = scope.countries.map(id => COUNTRY_LOOKUP[id]?.name || id);
+  const projectNames = scope.projects.map(key => PROJECT_LOOKUP[key]?.projectName || key);
+  const pills = [];
+  if (scope.countries.length) pills.push(`<span class="scope-pill">${scope.countries.length} ${pluralize(scope.countries.length,'country','countries')}</span>`);
+  if (scope.projects.length) pills.push(`<span class="scope-pill">${scope.projects.length} ${pluralize(scope.projects.length,'project','projects')}</span>`);
+  if (!pills.length) pills.push('<span class="scope-pill">Restricted</span>');
+
+  const lines = [];
+  if (countryNames.length) lines.push(`<div class="access-mini-line">Countries: ${escapeHtml(countryNames.slice(0,2).join(', '))}${countryNames.length > 2 ? ` +${countryNames.length - 2}` : ''}</div>`);
+  if (projectNames.length) lines.push(`<div class="access-mini-line">Projects: ${escapeHtml(projectNames.slice(0,2).join(', '))}${projectNames.length > 2 ? ` +${projectNames.length - 2}` : ''}</div>`);
+  if (!countryNames.length && !projectNames.length) lines.push('<div class="access-mini-line">Restricted, but no country or project has been selected yet.</div>');
+
+  return `${pills.join('')}${lines.join('')}`;
+}
+
+// ── CREATE FORM ─────────────────────────────────────────────────────────────
+function onRoleChange() {
+  const role = document.getElementById('newRole').value;
+  createPerms = Object.assign({}, DEFAULTS[role] || {});
+  renderPermRows('createPermRows', createPerms);
+  createAccess = defaultAccessForRole(role);
+  renderAccessControls('create');
+}
+
+function resetCreatePerms() {
+  const role = document.getElementById('newRole').value;
+  createPerms = Object.assign({}, DEFAULTS[role] || {});
+  renderPermRows('createPermRows', createPerms);
+}
+
+function resetCreateAccess() {
+  createAccess = defaultAccessForRole(document.getElementById('newRole').value);
+  renderAccessControls('create');
+}
+
+// ── CREATE USER ────────────────────────────────────────────────────────────
+async function createUser(){
+  const name=document.getElementById('newName').value.trim();
+  const username=document.getElementById('newUsername').value.trim();
+  const email=document.getElementById('newEmail').value.trim();
+  const password=document.getElementById('newPassword').value;
+  const role=document.getElementById('newRole').value;
+  if(!name||!username||!password){showToast('Name, username and password are required','error');return}
+  const payloadAccess = cloneAccess(createAccess);
+  const r=await api({action:'create',name,username,password,role,email,permissions:createPerms,access:payloadAccess});
+  if(r.ok){
+    showToast(`✓ User "${username}" created`);
+    allUsers.push({name,username,role,email,permissions:Object.assign({},createPerms),access:payloadAccess});
+    renderUsers(allUsers);
+    ['newName','newUsername','newEmail','newPassword'].forEach(id=>document.getElementById(id).value='');
+    onRoleChange();
+  } else {
+    showToast(r.msg,'error');
+  }
+}
+
+// ── USERS TABLE ────────────────────────────────────────────────────────────
+const ROLE_LABELS = {
+  'admin': '👑 Admin', 'viewer': '👁 Viewer',
+  'maintenance_engineer': '🔧 Maint. Engineer',
+  'operation_engineer': '⚙️ Op. Engineer',
+  'hse_engineer': '🦺 HSE Engineer',
+  'technician': '🛠️ Technician',
+};
+
+function renderUsers(users){
+  allUsers = users;
+  document.getElementById('adminCount').textContent=users.filter(u=>u.role==='admin').length;
+  document.getElementById('viewerCount').textContent=users.filter(u=>u.role==='viewer').length;
+  document.getElementById('totalCount').textContent=users.length;
+
+  const tbody=document.getElementById('usersTableBody');
+  tbody.innerHTML=users.map(u=>{
+    const perms = u.permissions || {};
+    // Show compact pills for non-admin
+    let permHtml = '';
+    if (u.role === 'admin') {
+      permHtml = '<span style="font-size:11px;color:var(--td)">All modules — full access</span>';
+    } else {
+      permHtml = Object.entries(MODULES).map(([mod, label]) => {
+        const level = perms[mod] || 'view';
+        if (level === 'none') return '';
+        return `<span class="perm-pill perm-pill-${level}" title="${label}">${label.replace(/^[^\s]+\s/,'')} · ${level}</span>`;
+      }).filter(Boolean).join('') || '<span style="font-size:11px;color:var(--td)">No access</span>';
+    }
+    return `
+    <tr>
+      <td><strong>${u.name}</strong><br><span style="font-size:11px;color:var(--tm)">${u.email||''}</span></td>
+      <td style="color:var(--tm);font-family:monospace;font-size:12.5px">${u.username}</td>
+      <td><span class="role-badge role-${u.role}">${ROLE_LABELS[u.role]||u.role}</span></td>
+      <td style="max-width:320px">${permHtml}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-sm btn-perm" onclick="openPermModal('${u.username}','${u.name}','${u.role}')">🔒 Permissions</button>
+          <button class="btn btn-sm" style="background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.2)" onclick="openPwModal('${u.username}','${u.name}')">🔑 Password</button>
+          ${u.username!=='admin'?`<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.username}','${u.name}')">🗑</button>`:'<span style="font-size:11px;color:var(--td)">Protected</span>'}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── DELETE ─────────────────────────────────────────────────────────────────
+async function deleteUser(username, name){
+  if(!confirm(`Delete user "${name}" (${username})?`))return;
+  const r=await api({action:'delete',username});
+  if(r.ok){
+    showToast(`✓ Deleted "${username}"`);
+    allUsers=allUsers.filter(u=>u.username!==username);
+    renderUsers(allUsers);
+  } else {
+    showToast(r.msg,'error');
+  }
+}
+
+// ── PASSWORD MODAL ─────────────────────────────────────────────────────────
+function openPwModal(username, name){
+  document.getElementById('pwUsername').value=username;
+  document.getElementById('pwUsernameDisplay').value=`${name} (${username})`;
+  document.getElementById('newPw').value='';
+  document.getElementById('pwModal').classList.add('open');
+}
+async function submitPw(){
+  const username=document.getElementById('pwUsername').value;
+  const password=document.getElementById('newPw').value;
+  if(!password||password.length<4){showToast('Password must be at least 4 characters','error');return}
+  const r=await api({action:'change_password',username,password});
+  if(r.ok){showToast('✓ Password updated');closeModal('pwModal');}
+  else showToast(r.msg,'error');
+}
+
+// ── PERMISSIONS MODAL ──────────────────────────────────────────────────────
+function openPermModal(username, name, role) {
+  const user = allUsers.find(u => u.username === username);
+  modalPerms = Object.assign({}, DEFAULTS[role] || {}, user?.permissions || {});
+  modalUserRole = role;
+  document.getElementById('permUsername').value = username;
+  document.getElementById('permModalUserInfo').textContent =
+    `${name} (${username}) · ${ROLE_LABELS[role] || role}`;
+  renderPermRows('permModalRows', modalPerms);
+  document.getElementById('permModal').classList.add('open');
+}
+
+function resetModalPerms() {
+  modalPerms = Object.assign({}, DEFAULTS[modalUserRole] || {});
+  renderPermRows('permModalRows', modalPerms);
+}
+
+async function savePermissions() {
+  const username = document.getElementById('permUsername').value;
+  const r = await api({action:'update_permissions', username, permissions: modalPerms});
+  if (r.ok) {
+    showToast('✓ Permissions updated');
+    const idx = allUsers.findIndex(u => u.username === username);
+    if (idx >= 0) allUsers[idx].permissions = Object.assign({}, modalPerms);
+    renderUsers(allUsers);
+    closeModal('permModal');
+  } else {
+    showToast(r.msg || 'Failed', 'error');
+  }
+}
+
+// ── CLOSE MODALS ON BACKDROP ───────────────────────────────────────────────
+// Scope-aware overrides
+function onRoleChange() {
+  const role = document.getElementById('newRole').value;
+  createPerms = Object.assign({}, DEFAULTS[role] || {});
+  createAccess = defaultAccessForRole(role);
+  renderPermRows('createPermRows', createPerms);
+  renderAccessControls('create');
+}
+
+function resetCreatePerms() {
+  const role = document.getElementById('newRole').value;
+  createPerms = Object.assign({}, DEFAULTS[role] || {});
+  renderPermRows('createPermRows', createPerms);
+}
+
+function resetCreateAccess() {
+  createAccess = defaultAccessForRole(document.getElementById('newRole').value);
+  renderAccessControls('create');
+}
+
+async function createUser(){
+  const name=document.getElementById('newName').value.trim();
+  const username=document.getElementById('newUsername').value.trim();
+  const email=document.getElementById('newEmail').value.trim();
+  const password=document.getElementById('newPassword').value;
+  const role=document.getElementById('newRole').value;
+  if(!name||!username||!password){showToast('Name, username and password are required','error');return}
+  const payloadAccess = cloneAccess(createAccess);
+  const r=await api({action:'create',name,username,password,role,email,permissions:createPerms,access:payloadAccess});
+  if(r.ok){
+    showToast(`✓ User "${username}" created`);
+    allUsers.push({name,username,role,email,permissions:Object.assign({},createPerms),access:payloadAccess});
+    renderUsers(allUsers);
+    ['newName','newUsername','newEmail','newPassword'].forEach(id=>document.getElementById(id).value='');
+    onRoleChange();
+  } else {
+    showToast(r.msg,'error');
+  }
+}
+
+function renderUsers(users){
+  allUsers = users;
+  document.getElementById('adminCount').textContent=users.filter(u=>u.role==='admin').length;
+  document.getElementById('viewerCount').textContent=users.filter(u=>u.role==='viewer').length;
+  document.getElementById('totalCount').textContent=users.length;
+
+  const tbody=document.getElementById('usersTableBody');
+  tbody.innerHTML=users.map(u=>{
+    const perms = u.permissions || {};
+    let permHtml = '';
+    if (u.role === 'admin') {
+      permHtml = '<span style="font-size:11px;color:var(--td)">All modules - full access</span>';
+    } else {
+      permHtml = Object.entries(MODULES).map(([mod, label]) => {
+        const level = perms[mod] || 'view';
+        if (level === 'none') return '';
+        return `<span class="perm-pill perm-pill-${level}" title="${escapeHtml(label)}">${escapeHtml(label.replace(/^[^\\s]+\\s/,''))} · ${level}</span>`;
+      }).filter(Boolean).join('') || '<span style="font-size:11px;color:var(--td)">No access</span>';
+    }
+    return `
+    <tr>
+      <td><strong>${escapeHtml(u.name)}</strong><br><span style="font-size:11px;color:var(--tm)">${escapeHtml(u.email||'')}</span></td>
+      <td style="color:var(--tm);font-family:monospace;font-size:12.5px">${escapeHtml(u.username)}</td>
+      <td><span class="role-badge role-${escapeHtml(u.role)}">${escapeHtml(ROLE_LABELS[u.role]||u.role)}</span></td>
+      <td style="max-width:260px">${accessSummaryHtml(u.access)}</td>
+      <td style="max-width:320px">${permHtml}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-sm btn-perm" onclick='openPermModal(${JSON.stringify(u.username)},${JSON.stringify(u.name)},${JSON.stringify(u.role)})'>🔒 Permissions</button>
+          <button class="btn btn-sm" style="background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.2)" onclick='openPwModal(${JSON.stringify(u.username)},${JSON.stringify(u.name)})'>🔑 Password</button>
+          ${u.username!=='admin'?`<button class="btn btn-sm btn-danger" onclick='deleteUser(${JSON.stringify(u.username)},${JSON.stringify(u.name)})'>🗑</button>`:'<span style="font-size:11px;color:var(--td)">Protected</span>'}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openPermModal(username, name, role) {
+  const user = allUsers.find(u => u.username === username);
+  modalPerms = Object.assign({}, DEFAULTS[role] || {}, user?.permissions || {});
+  modalAccess = cloneAccess(user?.access || defaultAccessForRole(role));
+  modalUserRole = role;
+  document.getElementById('permUsername').value = username;
+  document.getElementById('permModalUserInfo').textContent = `${name} (${username}) · ${ROLE_LABELS[role] || role}`;
+  renderPermRows('permModalRows', modalPerms);
+  renderAccessControls('modal');
+  document.getElementById('permModal').classList.add('open');
+}
+
+function resetModalPerms() {
+  modalPerms = Object.assign({}, DEFAULTS[modalUserRole] || {});
+  renderPermRows('permModalRows', modalPerms);
+}
+
+function resetModalAccess() {
+  modalAccess = defaultAccessForRole(modalUserRole);
+  renderAccessControls('modal');
+}
+
+async function savePermissions() {
+  const username = document.getElementById('permUsername').value;
+  const payloadAccess = cloneAccess(modalAccess);
+  const r = await api({action:'update_permissions', username, permissions: modalPerms, access: payloadAccess});
+  if (r.ok) {
+    showToast('✓ Permissions updated');
+    const idx = allUsers.findIndex(u => u.username === username);
+    if (idx >= 0) {
+      allUsers[idx].permissions = Object.assign({}, modalPerms);
+      allUsers[idx].access = payloadAccess;
+    }
+    renderUsers(allUsers);
+    closeModal('permModal');
+  } else {
+    showToast(r.msg || 'Failed', 'error');
+  }
+}
+
+['pwModal','permModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal(id);
+  });
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+allUsers = USERS_DATA;
+renderUsers(allUsers);
+// Init create form with default role permissions
+onRoleChange();
+function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
+(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+</script>
+</body>
+</html>

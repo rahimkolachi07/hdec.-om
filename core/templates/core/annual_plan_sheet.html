@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>{{ sheet.name }} — Annual Plan — HDEC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#030711;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.055);--border:rgba(255,255,255,.07);--text:#e2e8f5;--tm:rgba(226,232,245,.45);--td:rgba(226,232,245,.2);--accent:{{ sheet.color }};--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
+    canvas.bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.3}
+    .wrap{position:relative;z-index:1}
+    .topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(3,7,17,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:200}
+    .tl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .back{padding:7px 14px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12.5px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .page-title{font-family:var(--fd);font-size:16px;font-weight:700}
+    .page-title em{color:var(--accent);font-style:normal}
+    .tr{display:flex;align-items:center;gap:10px}
+    .live-badge{display:flex;align-items:center;gap:6px;padding:5px 13px;border-radius:30px;border:1px solid rgba(34,197,94,.25);background:rgba(34,197,94,.08);font-size:11.5px;font-weight:600;color:#4ade80}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 1.8s ease infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.5)}}
+    .rfbtn{display:flex;align-items:center;gap:6px;padding:7px 15px;border-radius:30px;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent);font-size:12.5px;font-weight:500;cursor:pointer;font-family:var(--fb);transition:all .2s}
+    .rfbtn:hover{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+    .rfbtn.spin svg{animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #lupd{font-size:11.5px;color:var(--td)}
+    .user-pill{padding:6px 13px;border-radius:30px;font-size:12px;font-weight:600}
+    .user-pill.admin{border:1px solid rgba(162,89,255,.3);background:rgba(162,89,255,.08);color:#c084fc}
+    .user-pill.viewer{border:1px solid var(--border);background:var(--s);color:var(--tm)}
+    .logout{padding:6px 13px;border-radius:30px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.07);color:#f87171;font-size:12px;text-decoration:none}
+    .sub-nav{display:flex;gap:8px;padding:11px 40px;border-bottom:1px solid var(--border);background:rgba(3,7,17,.5);overflow-x:auto;scrollbar-width:none}
+    .sub-nav::-webkit-scrollbar{display:none}
+    .snav{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:11.5px;white-space:nowrap;text-decoration:none;transition:all .15s}
+    .snav:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
+    .snav.active{background:color-mix(in srgb,var(--accent) 14%,transparent);border-color:var(--accent);color:var(--accent);font-weight:600}
+    .main{padding:26px 40px 60px;max-width:1500px;margin:0 auto}
+    .err{padding:13px 18px;border-radius:13px;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08);color:#f87171;font-size:13px;margin-bottom:18px;display:none}
+    /* Loading */
+    .ls{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .4s}
+    .ls.gone{opacity:0;pointer-events:none}
+    .ring{width:44px;height:44px;border:3px solid rgba(59,158,255,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+    .ls p{font-family:var(--fd);font-size:14px;color:var(--tm)}
+    /* KVs */
+    .kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+    .kv{padding:15px 17px;border-radius:14px;border:1px solid var(--border);background:var(--s);animation:up .4s ease both}
+    .kv-k{font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:5px}
+    .kv-v{font-family:var(--fd);font-size:20px;font-weight:800;color:var(--accent);letter-spacing:-1px}
+    /* Charts */
+    .charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+    .cc{border-radius:18px;border:1px solid var(--border);background:var(--s);padding:20px 22px;animation:up .45s ease both}
+    .cc h3{font-family:var(--fd);font-size:13.5px;font-weight:700;margin-bottom:14px}
+    .cw{position:relative;height:220px}
+    /* Table */
+    .tc{border-radius:18px;border:1px solid var(--border);background:var(--s);overflow:hidden}
+    .tc-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+    .tc-head h3{font-family:var(--fd);font-size:15px;font-weight:700}
+    .srch{padding:8px 13px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-size:13px;font-family:var(--fb);outline:none;width:200px;transition:all .2s}
+    .srch:focus{border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+    .srch::placeholder{color:var(--td)}
+    .tscroll{overflow-x:auto;max-height:420px;overflow-y:auto}
+    .tscroll::-webkit-scrollbar{width:3px;height:3px}
+    .tscroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    table.rt{width:100%;border-collapse:collapse}
+    table.rt thead th{padding:10px 13px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);font-weight:600;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border);position:sticky;top:0;white-space:nowrap}
+    table.rt tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+    table.rt tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+    table.rt td{padding:9px 13px;font-size:12.5px;white-space:nowrap}
+    .pg{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-top:1px solid var(--border);font-size:12px;color:var(--tm)}
+    .pbs{display:flex;gap:8px}
+    .pb{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;cursor:pointer;font-family:var(--fb);transition:all .15s}
+    .pb:hover:not(:disabled){border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent)}
+    .pb:disabled{opacity:.3;cursor:default}
+    @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:1000px){.charts-row{grid-template-columns:1fr 1fr}}
+    @media(max-width:700px){.main,.topbar,.sub-nav{padding-left:14px;padding-right:14px}.charts-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="ls" id="ls"><div class="ring"></div><p>Loading {{ sheet.name }}…</p></div>
+<canvas class="bg" id="bgcv"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/" class="back">⌂</a>
+      <a href="/annual-plan/" class="back">← Annual Plan</a>
+      <div class="page-title">{{ sheet.icon }} <em>{{ sheet.name }}</em></div>
+    </div>
+    <div class="tr">
+      <span id="lupd"></span>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <button class="rfbtn" id="rfBtn" onclick="load()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Refresh
+      </button>
+      <div class="user-pill {% if is_admin %}admin{% else %}viewer{% endif %}">{% if is_admin %}👑{% else %}👁{% endif %} {{ current_user.name }}</div>
+      <a href="/logout/" class="logout">Sign Out</a>
+    </div>
+  </header>
+  <nav class="sub-nav">
+    <a href="/annual-plan/" class="snav">📅 PM Calendar</a>
+    {% for s in sheets %}<a href="/annual-plan/sheet/{{ s.slug }}/" class="snav {% if s.slug == sheet.slug %}active{% endif %}">{{ s.icon }} {{ s.name }}</a>{% endfor %}
+  </nav>
+  <main class="main">
+    <div class="err" id="eb"></div>
+    <div class="kv-grid" id="kvGrid"></div>
+    <div class="charts-row" id="chartsArea"></div>
+    <div class="tc">
+      <div class="tc-head"><h3>📋 {{ sheet.name }} — All Records</h3><input class="srch" id="srch" type="text" placeholder="Search…" oninput="filterTbl()"></div>
+      <div class="tscroll"><table class="rt"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+      <div class="pg"><span id="pgInfo">—</span><div class="pbs"><button class="pb" id="pPrev" onclick="chPg(-1)" disabled>← Prev</button><button class="pb" id="pNext" onclick="chPg(1)">Next →</button></div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SLUG='{{ sheet.slug }}';
+const ACCENT='{{ sheet.color }}';
+const bgcv=document.getElementById('bgcv'),bgcx=bgcv.getContext('2d');let W,H;
+const dts=Array.from({length:40},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.25,dy:(Math.random()-.5)*.25,r:Math.random()*1.2+.3,a:Math.random()*.38+.07}));
+function rs(){W=bgcv.width=innerWidth;H=bgcv.height=innerHeight}rs();addEventListener('resize',rs);
+function drawBg(){bgcx.clearRect(0,0,W,H);bgcx.strokeStyle='rgba(59,158,255,.02)';bgcx.lineWidth=1;for(let x=0;x<W;x+=90){bgcx.beginPath();bgcx.moveTo(x,0);bgcx.lineTo(x,H);bgcx.stroke()}for(let y=0;y<H;y+=90){bgcx.beginPath();bgcx.moveTo(0,y);bgcx.lineTo(W,y);bgcx.stroke()}dts.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;bgcx.beginPath();bgcx.arc(d.x,d.y,d.r,0,Math.PI*2);bgcx.fillStyle=`rgba(59,158,255,${d.a})`;bgcx.fill()});requestAnimationFrame(drawBg)}
+drawBg();
+Chart.defaults.color='rgba(226,232,245,0.42)';Chart.defaults.borderColor='rgba(255,255,255,0.06)';Chart.defaults.font.family="'DM Sans',sans-serif";
+const PAL=['#3b9eff','#00e5c8','#a259ff','#fb923c','#f0c040','#22c55e','#ef4444','#e879f9','#38bdf8','#4ade80'];
+let charts={};
+function mkChart(id,type,labels,datasets,opts={}){
+  if(charts[id])charts[id].destroy();const el=document.getElementById(id);if(!el)return;
+  charts[id]=new Chart(el.getContext('2d'),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:750},plugins:{legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:11,font:{size:11}}},tooltip:{backgroundColor:'rgba(6,13,26,.95)',borderColor:'rgba(59,158,255,.2)',borderWidth:1,padding:10}},scales:opts.sc||undefined,...(opts.ex||{})}});
+}
+let allRec=[],filtRec=[],headers=[],pg=0;const PS=30;
+async function load(){
+  const btn=document.getElementById('rfBtn');btn.classList.add('spin');
+  try{
+    const res=await fetch(`/api/annual-plan/sheet/${SLUG}/`);
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const d=await res.json();
+    if(d.error)throw new Error(d.error);
+    // KVs
+    const kv=d.summary_kv||{};
+    const kvEl=document.getElementById('kvGrid');
+    const kvEnts=Object.entries(kv).filter(([k,v])=>k&&v);
+    kvEl.innerHTML=kvEnts.length?kvEnts.map(([k,v],i)=>`<div class="kv" style="animation-delay:${i*50}ms"><div class="kv-k">${k}</div><div class="kv-v">${v}</div></div>`).join(''):'';
+    // Charts
+    const agg=d.aggregates||{};
+    const ca=document.getElementById('chartsArea');
+    ca.innerHTML='';
+    Object.entries(agg).slice(0,3).forEach(([col,counts],ci)=>{
+      const labels=Object.keys(counts),vals=Object.values(counts);
+      const id=`sc_${ci}`;
+      const div=document.createElement('div');div.className='cc';
+      div.innerHTML=`<h3>${col}</h3><div class="cw"><canvas id="${id}"></canvas></div>`;
+      ca.appendChild(div);
+      setTimeout(()=>{
+        const type=labels.length<=5?'doughnut':'bar';
+        mkChart(id,type,labels,[{data:vals,backgroundColor:PAL.map(c=>c+'bb'),borderColor:PAL,borderWidth:1.5,borderRadius:type==='bar'?5:0,hoverOffset:type==='doughnut'?5:0,borderColor:type==='doughnut'?'#060d1a':PAL}],
+          {lp:'bottom',ex:type==='doughnut'?{cutout:'62%'}:{},sc:type==='bar'?{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}}}:undefined});
+      },0);
+    });
+    // Table
+    headers=d.headers||[];allRec=d.records||[];filtRec=[...allRec];pg=0;renderTbl();
+    document.getElementById('lupd').textContent='Updated: '+d.fetched_at;
+    document.getElementById('eb').style.display='none';
+    document.getElementById('ls').classList.add('gone');
+  }catch(e){
+    document.getElementById('eb').style.display='block';
+    document.getElementById('eb').textContent='⚠ '+e.message+' — retrying in 60s';
+    document.getElementById('ls').classList.add('gone');
+  }finally{btn.classList.remove('spin')}
+}
+function renderTbl(){
+  document.getElementById('thead').innerHTML='<tr>'+headers.map(h=>`<th>${h||'—'}</th>`).join('')+'</tr>';
+  const start=pg*PS,page=filtRec.slice(start,start+PS);
+  document.getElementById('tbody').innerHTML=page.map(r=>'<tr>'+headers.map(h=>`<td>${r[h]||'—'}</td>`).join('')+'</tr>').join('');
+  const tot=filtRec.length;
+  document.getElementById('pgInfo').textContent=`${start+1}–${Math.min(start+PS,tot)} of ${tot}`;
+  document.getElementById('pPrev').disabled=pg===0;
+  document.getElementById('pNext').disabled=start+PS>=tot;
+}
+function filterTbl(){const q=document.getElementById('srch').value.toLowerCase();filtRec=q?allRec.filter(r=>Object.values(r).some(v=>(v||'').toLowerCase().includes(q))):[...allRec];pg=0;renderTbl()}
+function chPg(d){pg+=d;renderTbl()}
+load();setInterval(load,60000);
+</script>
+</body>
+</html>

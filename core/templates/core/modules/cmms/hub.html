@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CMMS — {{ project.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#04060f;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--text:#e8edf5;--tm:rgba(232,237,245,.45);--td:rgba(232,237,245,.22);--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:18px}
+    body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.25}
+    .wrap{position:relative;z-index:1}
+
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 40px;border-bottom:1px solid var(--border);background:rgba(4,6,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
+    .tl{display:flex;align-items:center;gap:10px}
+    .back{padding:6px 13px;border-radius:30px;border:1px solid var(--border);background:var(--s);color:var(--tm);font-size:12px;text-decoration:none;transition:all .2s}
+    .back:hover{color:var(--text)}
+    .page-title{font-family:var(--fd);font-size:17px;font-weight:700}.page-title span{color:var(--accent)}
+    .user-chip{padding:7px 16px;border-radius:30px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.06);color:#7ec3ff;font-size:13px;font-weight:500}
+
+    .hero{padding:48px 40px 40px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
+    .hero h1{font-family:var(--fd);font-size:clamp(18px,2.8vw,26px);font-weight:800;letter-spacing:-.4px;margin-bottom:8px}
+    .hero h1 .hl{background:linear-gradient(100deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero p{font-size:14px;color:var(--tm);max-width:560px;line-height:1.6}
+
+    /* STATS */
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding:32px 40px 0}
+    .stat-card{padding:20px 22px;border-radius:14px;border:1px solid var(--border);background:var(--s);display:flex;flex-direction:column;gap:6px}
+    .stat-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--tm)}
+    .stat-val{font-family:var(--fd);font-size:26px;font-weight:800;letter-spacing:-0.8px}
+    .stat-sub{font-size:12px;color:var(--td)}
+
+    /* MODULE CARDS */
+    .modules{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:28px 40px 60px}
+    .mod-card{border-radius:var(--r);border:1px solid var(--border);background:var(--s);overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column;transition:all .25s cubic-bezier(.22,1,.36,1)}
+    .mod-card:hover{border-color:rgba(var(--rgb),.3);background:rgba(var(--rgb),.035);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+    .mod-stripe{height:3px;transition:height .2s}
+    .mod-card:hover .mod-stripe{height:4px}
+    .mod-inner{padding:22px 22px 18px;flex:1;display:flex;flex-direction:column;gap:10px}
+    .mod-icon{font-size:36px;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(var(--rgb),.1);border:1px solid rgba(var(--rgb),.2)}
+    .mod-name{font-family:var(--fd);font-size:17px;font-weight:700}
+    .mod-desc{font-size:13px;color:var(--tm);line-height:1.55;flex:1}
+    .mod-foot{padding:12px 22px;border-top:1px solid var(--border);font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+    .mod-open{display:flex;align-items:center;gap:5px;transition:gap .15s}
+    .mod-card:hover .mod-open{gap:9px}
+    .mod-count{font-size:12px;color:var(--td)}
+
+    /* ── RESPONSIVE ─────────────────────────────────── */
+    @media(max-width:768px){
+      .topbar{padding:12px 16px}
+      .page-title{font-size:14px}
+      .user-chip{display:none}
+      .hero{padding:28px 16px 24px}
+      .stats-row{padding:20px 16px 0;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+      .stat-val{font-size:26px}
+      .modules{padding:20px 16px 48px;grid-template-columns:1fr}
+    }
+    @media(max-width:480px){
+      .tl{gap:6px}
+      .back{padding:5px 10px;font-size:11px}
+      .stats-row{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="tl">
+      <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/" class="back" onclick="return goBack(event, this.href)">← {{ category|title }}</a>
+      <div class="page-title">⚙️ <span>CMMS</span> — {{ project.name }}</div>
+    </div>
+    <div class="user-chip">{{ current_user.name }}</div>
+  </header>
+
+  <div class="hero">
+    <h1>Computerised Maintenance<br><span class="hl">Management System</span></h1>
+    <p>Activities, Permits to Work, and Shift Handover — all scoped to <strong>{{ project.name }}</strong>.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Activities</div>
+      <div class="stat-val" style="color:var(--accent)">{{ total_activities }}</div>
+      <div class="stat-sub">Defined maintenance tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Permits</div>
+      <div class="stat-val" style="color:#4ade80">{{ active_permits }}</div>
+      <div class="stat-sub">of {{ total_permits }} total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Open Handovers</div>
+      <div class="stat-val" style="color:#fbbf24">{{ open_handovers }}</div>
+      <div class="stat-sub">of {{ total_handovers }} total</div>
+    </div>
+  </div>
+
+  <div class="modules">
+    <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/activities/" class="mod-card" style="--rgb:59,158,255">
+      <div class="mod-stripe" style="background:#3b9eff"></div>
+      <div class="mod-inner">
+        <div class="mod-icon">📋</div>
+        <div class="mod-name">Activities</div>
+        <div class="mod-desc">Define and manage maintenance tasks, checklists, and inspection schedules. Import from Excel or add individually.</div>
+      </div>
+      <div class="mod-foot">
+        <span class="mod-open" style="color:#3b9eff">Open module →</span>
+        <span class="mod-count">{{ total_activities }} activities</span>
+      </div>
+    </a>
+    <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/permits/" class="mod-card" style="--rgb:162,89,255">
+      <div class="mod-stripe" style="background:#a259ff"></div>
+      <div class="mod-inner">
+        <div class="mod-icon">🔐</div>
+        <div class="mod-name">Work Permits</div>
+        <div class="mod-desc">Full Permit to Work workflow — application, issuance, HSE sign-off, and closure with digital signatures.</div>
+      </div>
+      <div class="mod-foot">
+        <span class="mod-open" style="color:#a259ff">Open module →</span>
+        <span class="mod-count">{{ total_permits }} permits</span>
+      </div>
+    </a>
+    <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="mod-card" style="--rgb:0,229,200">
+      <div class="mod-stripe" style="background:#00e5c8"></div>
+      <div class="mod-inner">
+        <div class="mod-icon">📝</div>
+        <div class="mod-name">Shift Handover</div>
+        <div class="mod-desc">Log shift handover entries, record alarms, breakdowns, pending work, and get digital sign-off from both shifts.</div>
+      </div>
+      <div class="mod-foot">
+        <span class="mod-open" style="color:#00e5c8">Open module →</span>
+        <span class="mod-count">{{ total_handovers }} entries</span>
+      </div>
+    </a>
+  </div>
+</div>
+<script>
+const canvas=document.getElementById('cv'),c=canvas.getContext('2d');let W,H;
+const DOTS=Array.from({length:35},()=>({x:Math.random()*2000,y:Math.random()*1200,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:Math.random()*1.2+.3,a:Math.random()*.12+.03}));
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}resize();window.addEventListener('resize',resize);
+(function draw(){c.clearRect(0,0,W,H);DOTS.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle=`rgba(59,158,255,${p.a})`;c.fill()});requestAnimationFrame(draw)})();
+function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
+</script>
+</body>
+</html>
