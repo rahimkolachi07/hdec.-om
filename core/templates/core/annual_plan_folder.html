@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>{{ folder.name }} — Annual Plan — HDEC</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#030711;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.055);--border:rgba(255,255,255,.07);--text:#e2e8f5;--tm:rgba(226,232,245,.45);--td:rgba(226,232,245,.2);--accent:{{ folder.color }};--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif}
+    :root{--bg:#030711;--s:rgba(255,255,255,.03);--s2:rgba(255,255,255,.055);--border:rgba(255,255,255,.07);--text:#e2e8f5;--tm:rgba(226,232,245,.45);--td:rgba(226,232,245,.2);--accent:{{ folder.color }};--fd:'Plus Jakarta Sans',sans-serif;--fb:'Inter',sans-serif}
     body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
     canvas.bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.3}
     .wrap{position:relative;z-index:1}
@@ -197,7 +197,10 @@ function rs(){W=bgcv.width=innerWidth;H=bgcv.height=innerHeight}rs();addEventLis
 function drawBg(){bgcx.clearRect(0,0,W,H);bgcx.strokeStyle='rgba(59,158,255,.02)';bgcx.lineWidth=1;for(let x=0;x<W;x+=90){bgcx.beginPath();bgcx.moveTo(x,0);bgcx.lineTo(x,H);bgcx.stroke()}for(let y=0;y<H;y+=90){bgcx.beginPath();bgcx.moveTo(0,y);bgcx.lineTo(W,y);bgcx.stroke()}dts.forEach(d=>{d.x+=d.dx;d.y+=d.dy;if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;bgcx.beginPath();bgcx.arc(d.x,d.y,d.r,0,Math.PI*2);bgcx.fillStyle=`rgba(59,158,255,${d.a})`;bgcx.fill()});requestAnimationFrame(drawBg)}
 drawBg();
 
-Chart.defaults.color='rgba(226,232,245,0.42)';Chart.defaults.borderColor='rgba(255,255,255,0.06)';Chart.defaults.font.family="'DM Sans',sans-serif";
+function _isLight(){return document.documentElement.getAttribute('data-theme')==='light';}
+function _ct(){const l=_isLight();return{text:l?'rgba(10,21,37,.65)':'rgba(226,232,245,.55)',grid:l?'rgba(0,0,0,.08)':'rgba(255,255,255,.06)',tooltipBg:l?'rgba(255,255,255,.97)':'rgba(6,13,26,.95)',tooltipBd:l?'rgba(59,158,255,.3)':'rgba(59,158,255,.2)',tooltipClr:l?'#0a1525':'#e2e8f5',doughnutBd:l?'#f5f7ff':'#060d1a'};}
+function _applyChartDefaults(){const t=_ct();Chart.defaults.color=t.text;Chart.defaults.borderColor=t.grid;Chart.defaults.font.family="'Inter',sans-serif";}
+_applyChartDefaults();
 const PAL=['#3b9eff','#00e5c8','#a259ff','#fb923c','#f0c040','#22c55e','#ef4444','#e879f9'];
 const FREQ_COLORS={'Daily':'#3b9eff','Weekly':'#00e5c8','Monthly':'#a259ff','Quarterly':'#f0c040','Half Yearly':'#22c55e','Yearly':'#fb923c','2 Yearly':'#ef4444'};
 const FREQ_CHIP={'Daily':'gc-daily','Weekly':'gc-weekly','Monthly':'gc-monthly','Quarterly':'gc-quarterly','Half Yearly':'gc-halfyearly','Yearly':'gc-yearly','2 Yearly':'gc-2yearly'};
@@ -209,7 +212,7 @@ function mkChart(id,type,labels,datasets,opts={}){
   charts[id]=new Chart(el.getContext('2d'),{type,data:{labels,datasets},options:{
     responsive:true,maintainAspectRatio:false,animation:{duration:750},
     plugins:{legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:11,font:{size:11}}},
-    tooltip:{backgroundColor:'rgba(6,13,26,.95)',borderColor:'rgba(59,158,255,.2)',borderWidth:1,padding:10}},
+    tooltip:{backgroundColor:_ct().tooltipBg,titleColor:_ct().tooltipClr,bodyColor:_ct().tooltipClr,borderColor:_ct().tooltipBd,borderWidth:1,padding:10}},
     scales:opts.sc||undefined,...(opts.ex||{})
   }});
 }
@@ -255,7 +258,7 @@ function render(d){
   // Frequency bar
   const fl=Object.keys(freqCnt),fv=Object.values(freqCnt);
   mkChart('cFreq','bar',fl,[{label:'Tasks',data:fv,backgroundColor:fl.map(l=>FREQ_COLORS[l]||ACCENT+'99'),borderColor:fl.map(l=>FREQ_COLORS[l]||ACCENT),borderWidth:1.5,borderRadius:6}],
-    {lp:false,sc:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10},stepSize:1}}}});
+    {lp:false,sc:{x:{grid:{color:_ct().grid},ticks:{font:{size:10}}},y:{grid:{color:_ct().grid},ticks:{font:{size:10},stepSize:1}}}});
 
   // Timeline — horizontal scatter of tasks by start date
   const tLabels=tasks.map(t=>t.sno);
@@ -264,7 +267,7 @@ function render(d){
     {lp:false,ex:{indexAxis:'y'},sc:{x:{display:false},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}}}});
 
   // Donut
-  mkChart('cDonut','doughnut',fl,[{data:fv,backgroundColor:fl.map(l=>(FREQ_COLORS[l]||ACCENT)+'bb'),borderColor:'#060d1a',borderWidth:2,hoverOffset:6}],
+  mkChart('cDonut','doughnut',fl,[{data:fv,backgroundColor:fl.map(l=>(FREQ_COLORS[l]||ACCENT)+'bb'),borderColor:_ct().doughnutBd,borderWidth:2,hoverOffset:6}],
     {lp:'right',ex:{cutout:'65%'}});
 
   // Gantt table

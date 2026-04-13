@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Man Power — HDEC 1100MW Al Henakiya</title>
   <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -14,7 +14,7 @@
       --accent:#3b9eff;--a2:#00e5c8;--a3:#a259ff;--a4:#f0c040;
       --day:#3b9eff;--night:#a259ff;--rest:#374151;--general:#00e5c8;
       --off:#ef4444;--leave:#f0c040;--eid:#fb923c;
-      --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;
+      --fd:'Plus Jakarta Sans',sans-serif;--fb:'Inter',sans-serif;
       --px:40px; /* page horizontal padding */
     }
     html{scroll-behavior:smooth}
@@ -920,11 +920,30 @@ function buildTechStats(){
 }
 
 /* ── CHARTS ── */
-Chart.defaults.color='rgba(226,232,245,0.4)';Chart.defaults.borderColor='rgba(255,255,255,0.06)';Chart.defaults.font.family="'DM Sans',sans-serif";
+function _isLight(){return document.documentElement.getAttribute('data-theme')==='light';}
+function _ct(){
+  const l=_isLight();
+  return{
+    text:       l?'rgba(10,21,37,.65)' :'rgba(226,232,245,.55)',
+    grid:       l?'rgba(0,0,0,.08)'    :'rgba(255,255,255,.06)',
+    tooltipBg:  l?'rgba(255,255,255,.97)':'rgba(6,13,26,.95)',
+    tooltipBd:  l?'rgba(59,158,255,.3)' :'rgba(59,158,255,.22)',
+    tooltipClr: l?'#0a1525'            :'#e2e8f5',
+    doughnutBd: l?'#f5f7ff'            :'#060d1a',
+  };
+}
+function _applyChartDefaults(){
+  const t=_ct();
+  Chart.defaults.color=t.text;
+  Chart.defaults.borderColor=t.grid;
+  Chart.defaults.font.family="'Inter',sans-serif";
+}
+_applyChartDefaults();
 let chs={};
 function mk(id,type,labels,datasets,opts={}){
   if(chs[id])chs[id].destroy();
-  chs[id]=new Chart(document.getElementById(id).getContext('2d'),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:700},plugins:{legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:10,font:{size:11}}},tooltip:{backgroundColor:'rgba(6,13,26,.95)',borderColor:'rgba(59,158,255,.2)',borderWidth:1,padding:10}},scales:opts.sc||undefined,...(opts.ex||{})}});
+  const t=_ct();
+  chs[id]=new Chart(document.getElementById(id).getContext('2d'),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,animation:{duration:700},plugins:{legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:10,font:{size:11}}},tooltip:{backgroundColor:t.tooltipBg,borderColor:t.tooltipBd,borderWidth:1,padding:10,titleColor:t.tooltipClr,bodyColor:t.tooltipClr}},scales:opts.sc||undefined,...(opts.ex||{})}});
 }
 
 function buildEngCharts(){
@@ -935,13 +954,14 @@ function buildEngCharts(){
     else if(v==='rest')rest++;else if(v==='general')general++;
     else if(v.includes('leave'))leave++;
   }));
-  mk('engPie','doughnut',['Day','Night','Rest','General','Leave'],[{data:[day,night,rest,general,leave],backgroundColor:['rgba(59,158,255,.7)','rgba(162,89,255,.7)','rgba(107,114,128,.5)','rgba(0,229,200,.6)','rgba(240,192,64,.6)'],borderWidth:2,borderColor:'#060d1a',hoverOffset:5}],{lp:'bottom',ex:{cutout:'60%'}});
+  const _t0=_ct();
+  mk('engPie','doughnut',['Day','Night','Rest','General','Leave'],[{data:[day,night,rest,general,leave],backgroundColor:['rgba(59,158,255,.75)','rgba(162,89,255,.75)','rgba(107,114,128,.55)','rgba(0,229,200,.65)','rgba(240,192,64,.65)'],borderWidth:2,borderColor:_t0.doughnutBd,hoverOffset:6}],{lp:'bottom',ex:{cutout:'60%'}});
 
   // Today bar — use selectedDate
   const names=engData.map(p=>p.name.split(' ')[0]);
   const vals=engData.map(p=>{const v=(p.schedule[selectedDate]||'').toLowerCase();return v==='day'?1:v==='night'?2:v.includes('leave')?3:0;});
-  const colors=engData.map(p=>{const v=(p.schedule[selectedDate]||'').toLowerCase();return v==='day'?'rgba(59,158,255,.7)':v==='night'?'rgba(162,89,255,.7)':v.includes('leave')?'rgba(240,192,64,.6)':'rgba(107,114,128,.4)';});
-  mk('engBar','bar',names,[{label:'Shift',data:vals.map(v=>v||0.2),backgroundColor:colors,borderWidth:0,borderRadius:4}],{lp:false,sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{display:false}},ex:{indexAxis:'y'}});
+  const colors=engData.map(p=>{const v=(p.schedule[selectedDate]||'').toLowerCase();return v==='day'?'rgba(59,158,255,.75)':v==='night'?'rgba(162,89,255,.75)':v.includes('leave')?'rgba(240,192,64,.65)':'rgba(107,114,128,.5)';});
+  mk('engBar','bar',names,[{label:'Shift',data:vals.map(v=>v||0.2),backgroundColor:colors,borderWidth:0,borderRadius:4}],{lp:false,sc:{x:{grid:{color:_t0.grid},ticks:{font:{size:9}}},y:{display:false}},ex:{indexAxis:'y'}});
 
   // Line chart: day vs night per date sample (every 3rd)
   const sampledDates=ENG_DATES.filter((_,i)=>i%3===0);
@@ -949,9 +969,9 @@ function buildEngCharts(){
   const nightLine=sampledDates.map(d=>engData.filter(p=>(p.schedule[d]||'').toLowerCase()==='night').length);
   const labels2=sampledDates.map(d=>{const dt=new Date(d+'T00:00:00');return`${dt.getDate()}/${dt.getMonth()+1}`;});
   mk('engLine','line',labels2,[
-    {label:'Day',data:dayLine,borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
-    {label:'Night',data:nightLine,borderColor:'#a259ff',backgroundColor:'rgba(162,89,255,.06)',fill:true,tension:.4,pointRadius:3,borderWidth:2}
-  ],{lp:'bottom',sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:10},stepSize:1}}}});
+    {label:'Day',data:dayLine,borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,.1)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
+    {label:'Night',data:nightLine,borderColor:'#a259ff',backgroundColor:'rgba(162,89,255,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2}
+  ],{lp:'bottom',sc:{x:{grid:{color:_t0.grid},ticks:{font:{size:9}}},y:{grid:{color:_t0.grid},ticks:{font:{size:10},stepSize:1}}}});
 }
 
 function buildTechCharts(){
@@ -961,24 +981,25 @@ function buildTechCharts(){
     if(v==='day')day++;else if(v==='night')night++;
     else if(v.includes('leave'))leave++;else if(v)other++;
   }));
-  mk('techPie','doughnut',['Day','Night','Leave','Other'],[{data:[day,night,leave,other],backgroundColor:['rgba(59,158,255,.7)','rgba(162,89,255,.7)','rgba(240,192,64,.6)','rgba(107,114,128,.5)'],borderWidth:2,borderColor:'#060d1a',hoverOffset:5}],{lp:'bottom',ex:{cutout:'60%'}});
+  const _t1=_ct();
+  mk('techPie','doughnut',['Day','Night','Leave','Other'],[{data:[day,night,leave,other],backgroundColor:['rgba(59,158,255,.75)','rgba(162,89,255,.75)','rgba(240,192,64,.65)','rgba(107,114,128,.55)'],borderWidth:2,borderColor:_t1.doughnutBd,hoverOffset:6}],{lp:'bottom',ex:{cutout:'60%'}});
 
   const names=techData.map(p=>p.name);
   const today=new Date().toISOString().split('T')[0];
   const dayC=techData.map(p=>TECH_DATES.filter(d=>(p.schedule[d]||'').toLowerCase()==='day').length);
   const nightC=techData.map(p=>TECH_DATES.filter(d=>(p.schedule[d]||'').toLowerCase()==='night').length);
   mk('techBar','bar',names,[
-    {label:'Day Shifts',data:dayC,backgroundColor:'rgba(59,158,255,.6)',borderRadius:4,borderWidth:0},
-    {label:'Night Shifts',data:nightC,backgroundColor:'rgba(162,89,255,.6)',borderRadius:4,borderWidth:0}
-  ],{lp:'bottom',sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:10}}}}});
+    {label:'Day Shifts',data:dayC,backgroundColor:'rgba(59,158,255,.7)',borderRadius:4,borderWidth:0},
+    {label:'Night Shifts',data:nightC,backgroundColor:'rgba(162,89,255,.7)',borderRadius:4,borderWidth:0}
+  ],{lp:'bottom',sc:{x:{grid:{color:_t1.grid},ticks:{font:{size:9}}},y:{grid:{color:_t1.grid},ticks:{font:{size:10}}}}});
 
   const dayLine2=TECH_DATES.map(d=>techData.filter(p=>(p.schedule[d]||'').toLowerCase()==='day').length);
   const nightLine2=TECH_DATES.map(d=>techData.filter(p=>(p.schedule[d]||'').toLowerCase()==='night').length);
   const labels3=TECH_DATES.map(d=>{const dt=new Date(d+'T00:00:00');return`${dt.getDate()}/${dt.getMonth()+1}`;});
   mk('techLine','line',labels3,[
-    {label:'Day',data:dayLine2,borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,.07)',fill:true,tension:.4,pointRadius:2,borderWidth:2},
-    {label:'Night',data:nightLine2,borderColor:'#a259ff',backgroundColor:'rgba(162,89,255,.06)',fill:true,tension:.4,pointRadius:2,borderWidth:2}
-  ],{lp:'bottom',sc:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{font:{size:10},stepSize:1}}}});
+    {label:'Day',data:dayLine2,borderColor:'#3b9eff',backgroundColor:'rgba(59,158,255,.1)',fill:true,tension:.4,pointRadius:2,borderWidth:2},
+    {label:'Night',data:nightLine2,borderColor:'#a259ff',backgroundColor:'rgba(162,89,255,.08)',fill:true,tension:.4,pointRadius:2,borderWidth:2}
+  ],{lp:'bottom',sc:{x:{grid:{color:_t1.grid},ticks:{font:{size:9}}},y:{grid:{color:_t1.grid},ticks:{font:{size:10},stepSize:1}}}});
 }
 
 /* ── INLINE EDIT ── */
@@ -2040,7 +2061,7 @@ async function preloadFacePhotos(){
 // Load photos eagerly so they're ready when attendance list is shown
 preloadFacePhotos();
 function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
-function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
+function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';_applyChartDefaults();if(typeof buildEngCharts==='function')buildEngCharts();if(typeof buildTechCharts==='function')buildTechCharts();}
 (function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
 </script>
 

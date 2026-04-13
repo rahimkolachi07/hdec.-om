@@ -1,5 +1,18 @@
 [
   {
+    "id": "b0b7958e-fd5",
+    "equipment_name": "power dril",
+    "date": "2026-04-11",
+    "details": "",
+    "quantity": "1",
+    "status": "returned",
+    "pictures": [
+      "/media/store/saudi_arabia/henakiya_1/b0b7958e-fd5/4626d7c51203.jpg"
+    ],
+    "created_at": "2026-04-11T11:42:40.340853",
+    "updated_at": "2026-04-11T11:42:40.340853"
+  },
+  {
     "id": "dcf88934-652",
     "equipment_name": "Multimeter",
     "date": "2026-04-11",

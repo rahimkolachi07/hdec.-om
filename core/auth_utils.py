@@ -50,6 +50,7 @@ MODULES = {
     'annual_plan':  '📅 Annual Plan',
     'documents':    '📄 Documents',
     'daily_report': '📊 Daily Report',
+    'sjn_portal':   '🌿 SJN Portal (HSE)',
 }
 
 DEFAULT_ACCESS = {
@@ -71,6 +72,7 @@ DEFAULT_PERMISSIONS = {
         'annual_plan':  'view',
         'documents':    'view',
         'daily_report': 'view',
+        'sjn_portal':   'view',
     },
     'operation_engineer': {
         'activities':   'view',
@@ -82,6 +84,7 @@ DEFAULT_PERMISSIONS = {
         'annual_plan':  'view',
         'documents':    'view',
         'daily_report': 'view',
+        'sjn_portal':   'view',
     },
     'hse_engineer': {
         'activities':   'view',
@@ -93,6 +96,7 @@ DEFAULT_PERMISSIONS = {
         'annual_plan':  'view',
         'documents':    'view',
         'daily_report': 'view',
+        'sjn_portal':   'edit',
     },
     'technician': {
         'activities':   'edit',
@@ -104,6 +108,7 @@ DEFAULT_PERMISSIONS = {
         'annual_plan':  'none',
         'documents':    'view',
         'daily_report': 'none',
+        'sjn_portal':   'view',
     },
     'viewer': {m: 'view' for m in MODULES},
 }

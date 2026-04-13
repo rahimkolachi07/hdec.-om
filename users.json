@@ -24,5 +24,27 @@
       "documents": "view",
       "daily_report": "view"
     }
+  },
+  "engineer": {
+    "password": "7826b958b79c70626801b880405eb5111557dadceb2fee2b1ed69a18eed0c6dc",
+    "role": "maintenance_engineer",
+    "name": "Engineer",
+    "email": "",
+    "permissions": {
+      "activities": "edit",
+      "permits": "edit",
+      "handover": "edit",
+      "manpower": "view",
+      "store": "edit",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
   }
 }

@@ -2,8 +2,18 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'hdec-1100mw-alhenakiya-secret-2025-xK9p'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+DEBUG = False
+ALLOWED_HOSTS = ['hdec-om.live', 'www.hdec-om.live', '93.127.141.7', '127.0.0.1', 'localhost']
+
+# ── HTTPS / PROXY SETTINGS ───────────────────────────────────────────────────
+# Tell Django it's behind Caddy (HTTPS reverse proxy)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# Secure cookies over HTTPS
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ['https://hdec-om.live', 'https://www.hdec-om.live']
 
 INSTALLED_APPS = [
     'django.contrib.staticfiles',

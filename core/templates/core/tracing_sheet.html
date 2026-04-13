@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>{{ sheet.name }} — HDEC Tracing</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -11,7 +11,7 @@
       --bg:#030711;--bg2:#060d1a;--surface:rgba(255,255,255,.03);--surface2:rgba(255,255,255,.055);
       --border:rgba(255,255,255,.07);--text:#e2e8f5;--text-muted:rgba(226,232,245,.45);--text-dim:rgba(226,232,245,.2);
       --accent:{{ sheet.color }};--accent2:#00e5c8;
-      --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--r:16px;--rl:22px;
+      --fd:'Plus Jakarta Sans',sans-serif;--fb:'Inter',sans-serif;--r:16px;--rl:22px;
     }
     html{scroll-behavior:smooth}
     body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
@@ -190,7 +190,7 @@ drawBg();
 const ACCENT = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3b9eff';
 Chart.defaults.color='rgba(226,232,245,0.45)';
 Chart.defaults.borderColor='rgba(255,255,255,0.07)';
-Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.font.family="'Inter',sans-serif";
 const PAL=['#3b9eff','#00e5c8','#a259ff','#ff6b35','#f0c040','#22c55e','#ef4444','#e879f9','#38bdf8','#fb923c','#84cc16','#ec4899'];
 const PALH=PAL.map(c=>c+'99');
 

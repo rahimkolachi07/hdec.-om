@@ -1819,3 +1819,15 @@ def attendance_face_photos_all(request):
     if err:
         return err
     return JsonResponse(_load_photos())
+
+
+# ── HSE: SJN Portal ────────────────────────────────────────────────────────
+
+@login_required
+def hse_sjn_portal(request):
+    """Serve the SJN O&M portal inside the HDEC shell."""
+    user = get_user(request)
+    return render(request, 'core/hse_sjn_portal.html', _ctx(request, {
+        'page_title': 'SJN Portal',
+        'category_color': '#22c55e',
+    }))

@@ -59,9 +59,16 @@ CATEGORY_META = {
         'color_rgb': '240,192,64',
         'desc': 'Construction activities, documents and progress tracking',
     },
+    'hse': {
+        'label': 'HSE',
+        'icon': '🦺',
+        'color': '#22c55e',
+        'color_rgb': '34,197,94',
+        'desc': 'Health, Safety and Environment management, permits and KPI tracking',
+    },
 }
 
-ALL_CATEGORY_IDS = ['maintenance', 'operation', 'construction']
+ALL_CATEGORY_IDS = ['maintenance', 'operation', 'construction', 'hse']
 
 # ── Module metadata ────────────────────────────────────────────────────────────
 MODULE_META = {
@@ -146,6 +153,15 @@ MODULE_META = {
         'hub_route': '/daily-report/',
         'category': 'maintenance',
     },
+    'sjn_portal': {
+        'label': 'SJN Portal',
+        'icon': '🌿',
+        'color': '#22c55e',
+        'desc': 'O&M portal — Permits, DPR, Gate Pass, LOTO, SCADA, HSSE KPI and Asset Management',
+        'route': '/hse/sjn-portal/',
+        'hub_route': '/hse/sjn-portal/',
+        'category': 'hse',
+    },
 }
 
 ALL_MODULE_IDS = list(MODULE_META.keys())
@@ -202,6 +218,7 @@ def _migrate_project_categories(project: dict) -> dict:
         'maintenance': {'modules': project.get('modules', [])},
         'operation':   {'modules': []},
         'construction': {'modules': []},
+        'hse':         {'modules': []},
     }
 
 
@@ -380,6 +397,7 @@ def get_project_module_cards(project: dict, user_permissions: dict = None,
             'annual_plan': None,
             'documents':   None,
             'daily_report': None,
+            'sjn_portal':  '/hse/sjn-portal/',
         }
         return routes.get(mod_id)
 

@@ -83,6 +83,9 @@ urlpatterns = [
     path('p/<str:country_id>/<str:project_id>/<str:category>/cmms/handover/<str:handover_id>/', project_views.project_handover_detail, name='project_handover_detail'),
     path('api/p/<str:country_id>/<str:project_id>/<str:category>/handover/', project_views.project_handover_api, name='project_handover_api'),
 
+    # ── HSE ──────────────────────────────────────────────────────────────
+    path('hse/sjn-portal/', views.hse_sjn_portal, name='hse_sjn_portal'),
+
     # ── CMMS ─────────────────────────────────────────────────────────────
     path('cmms/', cmms_views.cmms_hub, name='cmms_hub'),
 
