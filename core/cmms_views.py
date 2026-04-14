@@ -1,52 +1,64 @@
 """
-CMMS Views — Activities, Checklists, Permits, PDF, ZIP
+CMMS Views — monthly schedule, activity work page, and API endpoints.
 """
-import json, os
+import json
+import re
 from datetime import datetime
-from pathlib import Path
+from urllib.parse import urlparse
 from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-
 from .auth_utils import (
-    get_all_users, get_users_by_role, get_user_detail, ROLE_LABELS,
-    normalize_user_state, has_permission,
-    can_access_country, can_access_project,
+    get_user_detail,
+    get_users_by_role,
+    has_permission,
+    normalize_user_state,
+    can_access_country,
+    can_access_project,
 )
 from .project_utils import get_countries
-from .cmms_utils import (
-    WORK_TYPES,
-    get_activities, get_activity, get_activities_for_user,
-    create_activity, update_activity, delete_activity,
-    # Records
-    get_records, get_record, get_or_create_record,
-    get_records_for_activity, update_record, save_photo,
-    generate_record_zip, generate_activity_month_zip,
-    # Permits
-    get_permits, get_permit, get_permits_for_user,
-    create_permit, update_permit,
-    get_next_permit_number, get_next_isolation_number,
-    generate_permit_pdf, generate_icc_pdf, generate_permit_docx,
-    PERMIT_STATUSES, CHECKLISTS_DIR, MEDIA_ROOT,
-    # Manpower
-    get_duty_staff,
-    # Daily auto-records
-    auto_create_daily_records, get_today_records_for_user,
-    # Smart dashboard
-    get_today_tasks_for_dashboard,
-    # Schedule import
-    import_activities_from_schedule,
-    # Technicians from schedule
-    get_all_technicians_from_schedule,
-    # Handover / Shift Log
-    get_handovers, get_handover, get_handovers_by_date, get_handover_dates,
-    create_handover, update_handover, save_handover_image,
-)
 from .email_utils import (
-    notify_permit_created, notify_permit_issued,
-    notify_permit_approved, notify_activity_assigned,
+    notify_permit_closed,
+    notify_permit_closure_hse_required,
+    notify_permit_closure_requested,
+    notify_permit_created,
+    notify_permit_issued,
+    notify_permit_ready_to_proceed,
 )
+
+from .cmms_utils import (
+    get_activity, get_activities_for_month,
+    activity_occurs_on_date,
+    create_activity, update_activity, delete_activity, delete_activity_occurrence,
+    get_record, get_record_for_activity_date, start_record, update_record,
+    save_photo, delete_photo,
+    parse_excel_checklist, generate_zip,
+    get_checklist_files, resolve_checklist_path, ensure_activity_checklist, save_checklist_file,
+    get_checklist_link, get_all_checklist_activities, get_activity_permit_options,
+)
+from .cmms_ptw_utils import (
+    annotate_permit,
+    application_is_active,
+    build_permit_docx,
+    can_close_hse,
+    can_close_issuer,
+    can_close_receiver,
+    can_edit_application,
+    can_hse_approve,
+    can_issue_permit,
+    can_receiver_unlock,
+    create_or_get_record_permit,
+    get_permit,
+    get_permit_for_record,
+    is_cmms_permit,
+    list_permits,
+    permit_filename,
+    update_permit,
+)
+
+
+# ── Auth helpers ──────────────────────────────────────────────────────────────
+_MAINTENANCE_PATH_RE = re.compile(r'^/p/([^/]+)/([^/]+)/maintenance/?$')
 
 
 def _get_user(request):
@@ -57,24 +69,16 @@ def _get_user(request):
     return user
 
 
-def _ctx(request, extra=None):
-    user = _get_user(request)
-    ctx = {
-        'current_user': user or {},
-        'is_admin': bool(user and user.get('role') == 'admin'),
-    }
-    if extra:
-        ctx.update(extra)
-    return ctx
+def _is_api_request(request) -> bool:
+    return bool(
+        request.path.startswith('/api/')
+        or request.method != 'GET'
+        or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or 'application/json' in request.headers.get('Accept', '')
+    )
 
 
-def _require_login(request):
-    if not _get_user(request):
-        return redirect('/login/')
-    return None
-
-
-def _has_any_project_access(user):
+def _has_any_project_access(user: dict | None) -> bool:
     if not user:
         return False
     if user.get('role') == 'admin':
@@ -89,1063 +93,827 @@ def _has_any_project_access(user):
     return False
 
 
-def _require_module(request, module_id=None, level='view', api=False, any_of=None):
-    user = _get_user(request)
-    if not user:
-        if api:
+def _require_login(request):
+    if not _get_user(request):
+        if _is_api_request(request):
             return JsonResponse({'error': 'Login required'}, status=401)
         return redirect('/login/')
-    if not _has_any_project_access(user):
-        if api:
-            return JsonResponse({'error': 'Forbidden'}, status=403)
-        return redirect('/')
-    allowed = True
-    if any_of:
-        allowed = any(has_permission(user, mid, level) for mid in any_of)
-    elif module_id:
-        allowed = has_permission(user, module_id, level)
-    if not allowed:
-        if api:
-            return JsonResponse({'error': 'Forbidden'}, status=403)
-        return redirect('/')
     return None
 
 
-def _require_roles(request, *roles):
+def _require_module_access(request, module_id: str, level: str = 'view'):
+    redir = _require_login(request)
+    if redir:
+        return redir
+    user = _get_user(request) or {}
+    if _has_any_project_access(user) and has_permission(user, module_id, level):
+        return None
+    if _is_api_request(request):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    return redirect('/')
+
+
+def _maintenance_url(country_id: str, project_id: str) -> str:
+    return f'/p/{country_id}/{project_id}/maintenance/'
+
+
+def _accessible_maintenance_url(user: dict | None, raw_value: str) -> str:
+    if not raw_value:
+        return ''
+    try:
+        path = urlparse(raw_value).path or ''
+    except Exception:
+        path = str(raw_value or '')
+    match = _MAINTENANCE_PATH_RE.match(path)
+    if not match:
+        return ''
+    country_id, project_id = match.groups()
+    if user and user.get('role') == 'admin':
+        return _maintenance_url(country_id, project_id)
+    if user and can_access_country(user, country_id) and can_access_project(user, country_id, project_id):
+        return _maintenance_url(country_id, project_id)
+    return ''
+
+
+def _default_maintenance_url(user: dict | None) -> str:
+    for country in get_countries():
+        country_id = country.get('id', '')
+        if user and user.get('role') != 'admin' and not can_access_country(user, country_id):
+            continue
+        for project in country.get('projects', []):
+            project_id = project.get('id', '')
+            if user and user.get('role') != 'admin' and not can_access_project(user, country_id, project_id):
+                continue
+            return _maintenance_url(country_id, project_id)
+    return '/'
+
+
+def _default_project_cmms_url(user: dict | None, suffix: str = '') -> str:
+    clean_suffix = str(suffix or '').lstrip('/')
+    for country in get_countries():
+        country_id = country.get('id', '')
+        if user and user.get('role') != 'admin' and not can_access_country(user, country_id):
+            continue
+        for project in country.get('projects', []):
+            project_id = project.get('id', '')
+            if user and user.get('role') != 'admin' and not can_access_project(user, country_id, project_id):
+                continue
+            base = f'/p/{country_id}/{project_id}/maintenance/cmms/'
+            return f'{base}{clean_suffix}' if clean_suffix else base
+    return '/cmms/'
+
+
+def _cmms_back_url(request, user: dict | None) -> str:
+    for raw_value in (
+        request.GET.get('back', ''),
+        request.META.get('HTTP_REFERER', ''),
+        request.session.get('cmms_back_url', ''),
+    ):
+        resolved = _accessible_maintenance_url(user, raw_value)
+        if resolved:
+            if request.session.get('cmms_back_url') != resolved:
+                request.session['cmms_back_url'] = resolved
+                request.session.modified = True
+            return resolved
+    fallback = _default_maintenance_url(user)
+    if request.session.get('cmms_back_url') != fallback:
+        request.session['cmms_back_url'] = fallback
+        request.session.modified = True
+    return fallback
+
+
+def _ctx(request, extra=None):
     user = _get_user(request)
-    if not user:
-        return redirect('/login/')
-    if user.get('role') not in roles:
-        return HttpResponse('Forbidden — insufficient role', status=403)
-    return None
+    ctx = {
+        'user': user,
+        'csrf_token': request.META.get('CSRF_COOKIE', ''),
+        'cmms_back_url': _cmms_back_url(request, user),
+    }
+    if extra:
+        ctx.update(extra)
+    return ctx
 
 
-# ── CMMS HUB ─────────────────────────────────────────────────────────────
+def _user_email(username: str) -> str:
+    if not username:
+        return ''
+    user = get_user_detail(username)
+    return (user or {}).get('email', '')
 
+
+def _dedupe_users(users: list) -> list:
+    seen = set()
+    result = []
+    for user in users:
+        username = str((user or {}).get('username', '')).strip().lower()
+        email = str((user or {}).get('email', '')).strip().lower()
+        key = username or email
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        result.append(user)
+    return result
+
+
+def _issuer_notification_users() -> list:
+    users = [u for u in get_users_by_role('operation_engineer') if u.get('email')]
+    if users:
+        return _dedupe_users(users)
+    return _dedupe_users([u for u in get_users_by_role('admin') if u.get('email')])
+
+
+def _hse_notification_users() -> list:
+    users = [u for u in get_users_by_role('hse_engineer') if u.get('email')]
+    if users:
+        return _dedupe_users(users)
+    return _dedupe_users([u for u in get_users_by_role('admin') if u.get('email')])
+
+
+def _receiver_and_maintenance_emails(receiver_username: str) -> list:
+    emails = []
+    receiver_email = _user_email(receiver_username)
+    if receiver_email:
+        emails.append(receiver_email)
+    emails.extend(
+        u.get('email', '')
+        for u in get_users_by_role('maintenance_engineer')
+        if u.get('email')
+    )
+    return list(dict.fromkeys(
+        str(email).strip()
+        for email in emails
+        if email and '@' in str(email)
+    ))
+
+
+# ── Hub: monthly schedule ─────────────────────────────────────────────────────
 def cmms_hub(request):
-    redir = _require_login(request)
+    redir = _require_module_access(request, 'activities', 'view')
     if redir:
         return redir
-    redir = _require_module(request, any_of=('activities', 'permits', 'handover'))
+    user = _get_user(request) or {}
+    # Pass current month; calendar is rendered in JS
+    today = datetime.now()
+    return render(request, 'core/cmms_hub.html', _ctx(request, {
+        'today': today.strftime('%Y-%m-%d'),
+        'current_month': today.strftime('%Y-%m'),
+        'can_edit_activities': has_permission(user, 'activities', 'edit'),
+        'can_view_permits': has_permission(user, 'permits', 'view'),
+    }))
+
+
+# ── Work page: Excel editor + photos for a specific record ────────────────────
+def cmms_handover_legacy(request):
+    redir = _require_module_access(request, 'handover', 'view')
     if redir:
         return redir
-    user = _get_user(request)
-    role = user.get('role', '')
-    today = datetime.now().strftime('%Y-%m-%d')
-
-    # Auto-create records for duty staff
-    auto_create_daily_records(today)
-
-    activities  = get_activities_for_user(user['username'], role)
-    records     = get_records()
-    permits     = get_permits_for_user(user['username'], role)
-
-    # Smart today's task list (scheduling engine)
-    today_tasks = get_today_tasks_for_dashboard(today)
-
-    completed_records  = [r for r in records if r.get('completed')]
-    active_permits     = [p for p in permits if p.get('status') in ('active', 'waiting_for_close')]
-    pending_permits    = [p for p in permits if p.get('status') in ('pending_issue', 'pending_hse')]
-
-    # Counts for stat cards
-    tasks_done    = sum(1 for t in today_tasks if t['status'] == 'done')
-    tasks_pending = sum(1 for t in today_tasks if t['status'] == 'pending')
-    tasks_total   = len(today_tasks)
-
-    from datetime import date as _date
-    _td = _date.today()
-    today_weekday  = _td.strftime('%A')
-    today_date_str = _td.strftime('%d %B %Y')
-
-    # Handover stats
-    today_handovers = get_handovers_by_date(today)
-    today_handover_count = sum(1 for v in today_handovers.values() if v)
-
-    # today_records used in template (tasks list for current user)
-    today_records = get_today_records_for_user(user['username'], role, today)
-
-    ctx = _ctx(request, {
-        'today':           today,
-        'today_weekday':   today_weekday,
-        'today_date_str':  today_date_str,
-        'today_tasks':     today_tasks,
-        'tasks_total':     tasks_total,
-        'tasks_done':      tasks_done,
-        'tasks_pending':   tasks_pending,
-        'total_activities': len(activities),
-        'total_records':   len(records),
-        'completed_records': len(completed_records),
-        'total_permits':   len(permits),
-        'active_permits':  len(active_permits),
-        'pending_permits': len(pending_permits),
-        'recent_permits':  sorted(permits, key=lambda p: p.get('created_at', ''), reverse=True)[:5],
-        'today_records':   today_records,
-        'today_handovers': today_handovers,
-        'today_handover_count': today_handover_count,
-    })
-    return render(request, 'core/cmms_hub.html', ctx)
+    return redirect(_default_project_cmms_url(_get_user(request), 'handover/'))
 
 
-# ── ACTIVITIES ────────────────────────────────────────────────────────────
-
-def cmms_activities(request):
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'activities', 'view')
+def cmms_work(request, record_id):
+    redir = _require_module_access(request, 'activities', 'view')
     if redir:
         return redir
     user = _get_user(request)
-    role = user.get('role', '')
-    today = datetime.now().strftime('%Y-%m-%d')
-
-    month_filter = request.GET.get('month', datetime.now().strftime('%Y-%m'))
-
-    # Auto-create today's records whenever this page is visited
-    auto_create_daily_records(today)
-
-    all_acts = get_activities_for_user(user['username'], role)
-    activities = [a for a in all_acts if a.get('month', '').startswith(month_filter)] if month_filter else all_acts
-
-    # Enrich with record completion status and today's record
-    for a in activities:
-        recs = get_records_for_activity(a['id'])
-        a['record_count'] = len(recs)
-        a['completed_count'] = len([r for r in recs if r.get('completed')])
-        # Find today's record for this user
-        today_rec = next((r for r in recs
-                          if r['date'] == today and
-                          (role == 'admin' or r.get('engineer') == user['username']
-                           or r.get('technician') == user['username'])), None)
-        a['has_today_record'] = today_rec is not None
-        a['today_record_id'] = today_rec['id'] if today_rec else None
-        a['today_completed'] = today_rec.get('completed', False) if today_rec else False
-
-    engineers   = get_users_by_role('maintenance_engineer')
-    # Technicians come from schedule_store (all 19), on-duty ones listed first
-    technicians = get_all_technicians_from_schedule(today)
-
-    ctx = _ctx(request, {
-        'activities':   activities,
-        'month_filter': month_filter,
-        'today':        today,
-        'engineers':    engineers,
-        'technicians':  technicians,
-        'role_labels':  ROLE_LABELS,
-    })
-    return render(request, 'core/cmms_activities.html', ctx)
-
-
-@csrf_exempt
-def cmms_activity_api(request):
-    """Admin: create / delete activities."""
-    user = _get_user(request)
-    if not user or user.get('role') != 'admin':
-        return JsonResponse({'error': 'Admin only'}, status=403)
-
-    if request.method == 'POST':
-        # Supports multipart (with file upload) or JSON
-        if request.content_type and 'multipart' in request.content_type:
-            data = request.POST
-            checklist_file_path = ''
-            if 'checklist_file' in request.FILES:
-                f = request.FILES['checklist_file']
-                ext = Path(f.name).suffix.lower()
-                safe_name = f"checklist_{datetime.now().strftime('%Y%m%d%H%M%S')}{ext}"
-                dest = CHECKLISTS_DIR / safe_name
-                with open(dest, 'wb') as out:
-                    for chunk in f.chunks():
-                        out.write(chunk)
-                checklist_file_path = f"cmms/checklists/{safe_name}"
-
-            # Parse checklist items from JSON string field
-            raw_items = data.get('checklist_items', '[]')
-            try:
-                checklist_items = json.loads(raw_items)
-            except Exception:
-                checklist_items = []
-
-            scheduled_date = data.get('scheduled_date', '')
-            # Derive month from scheduled_date if provided, otherwise use month field
-            month = scheduled_date[:7] if scheduled_date else data.get('month', '')
-            act = create_activity({
-                'month':               month,
-                'scheduled_date':      scheduled_date,
-                'name':                data.get('name', ''),
-                'equipment':           data.get('equipment', ''),
-                'location':            data.get('location', ''),
-                'frequency':           data.get('frequency', 'once'),
-                'assigned_engineer':   data.get('assigned_engineer', ''),
-                'assigned_technician': data.get('assigned_technician', ''),
-                'checklist_items':     checklist_items,
-                'checklist_file':      checklist_file_path,
-                'notes':               data.get('notes', ''),
-                'created_by':          user['username'],
-            })
-            # Send email to assigned engineer
-            eng = get_user_detail(act.get('assigned_engineer', ''))
-            if eng and eng.get('email'):
-                notify_activity_assigned(act, eng['email'])
-
-            return JsonResponse({'ok': True, 'activity': act})
-        else:
-            try:
-                data = json.loads(request.body)
-            except Exception:
-                return JsonResponse({'error': 'Invalid JSON'}, status=400)
-
-            action = data.get('action')
-            if action == 'delete':
-                delete_activity(data.get('id', ''))
-                return JsonResponse({'ok': True})
-            if action == 'import_schedule':
-                month = data.get('month', datetime.now().strftime('%Y-%m'))
-                try:
-                    result = import_activities_from_schedule(month)
-                    return JsonResponse({'ok': True,
-                                        'created': len(result['created']),
-                                        'skipped': result['skipped']})
-                except FileNotFoundError as e:
-                    return JsonResponse({'error': str(e)}, status=404)
-                except Exception as e:
-                    return JsonResponse({'error': str(e)}, status=500)
-            if action == 'reset_all':
-                # Delete all activities and all records
-                from .cmms_utils import _save, ACTIVITIES_FILE, RECORDS_FILE
-                _save(ACTIVITIES_FILE, [])
-                _save(RECORDS_FILE, [])
-                return JsonResponse({'ok': True, 'message': 'All activities and records cleared'})
-            if action == 'update':
-                act = update_activity(data.get('id', ''), data.get('updates', {}))
-                return JsonResponse({'ok': bool(act), 'activity': act})
-
-    return JsonResponse({'error': 'Bad request'}, status=400)
-
-
-def cmms_activity_detail(request, activity_id):
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'activities', 'view')
-    if redir:
-        return redir
-    user = _get_user(request)
-    role = user.get('role', '')
-
-    activity = get_activity(activity_id)
-    if not activity:
-        raise Http404('Activity not found')
-
-    # Determine viewing date
-    date = request.GET.get('date', datetime.now().strftime('%Y-%m-%d'))
-
-    # Get or create a record for this engineer+date (only for engineers)
-    record = None
-    if role in ('maintenance_engineer', 'admin'):
-        record = get_or_create_record(
-            activity_id, date,
-            user['username'], user['name']
-        )
-    elif role == 'technician':
-        # Technician: find record for today
-        recs = get_records_for_activity(activity_id)
-        record = next((r for r in recs if r['date'] == date), None)
-
-    all_records = get_records_for_activity(activity_id)
-
-    # Attach photo URL prefixes
-    media_url = getattr(settings, 'MEDIA_URL', '/media/')
-    if record:
-        record['before_photo_urls'] = [
-            f"{media_url}{p}" for p in record.get('before_photos', [])
-        ]
-        record['after_photo_urls'] = [
-            f"{media_url}{p}" for p in record.get('after_photos', [])
-        ]
-
-    ctx = _ctx(request, {
-        'activity': activity,
-        'record': record,
-        'all_records': all_records,
-        'selected_date': date,
-        'media_url': media_url,
-    })
-    return render(request, 'core/cmms_activity_detail.html', ctx)
-
-
-@csrf_exempt
-def cmms_checklist_api(request, record_id):
-    """Engineer: submit checklist items + signature."""
-    redir = _require_module(request, 'activities', 'view', api=True)
-    if redir:
-        return redir
-    user = _get_user(request)
-    if not user:
-        return JsonResponse({'error': 'Login required'}, status=401)
-    if user.get('role') not in ('maintenance_engineer', 'admin'):
-        return JsonResponse({'error': 'Engineer role required'}, status=403)
-
     record = get_record(record_id)
     if not record:
-        return JsonResponse({'error': 'Record not found'}, status=404)
+        raise Http404('Record not found')
+    activity = ensure_activity_checklist(get_activity(record['activity_id']))
+    if not activity:
+        raise Http404('Activity not found')
+    permit = annotate_permit(get_permit_for_record(record_id))
+    if not permit and not record.get('completed'):
+        permit = annotate_permit(create_or_get_record_permit(record, activity, user or {}))
+    if permit and not application_is_active(permit):
+        return redirect(f"/cmms/ptw/{permit['id']}/")
+
+    media_url = getattr(__import__('django.conf', fromlist=['settings']).settings, 'MEDIA_URL', '/media/')
+    before_urls = [f"{media_url}{p}" for p in record.get('before_photos', [])]
+    after_urls  = [f"{media_url}{p}" for p in record.get('after_photos', [])]
+    checklist_path = resolve_checklist_path(activity.get('checklist_file', ''))
+    checklist_link = get_checklist_link(activity.get('name', ''))
+
+    return render(request, 'core/cmms_work.html', _ctx(request, {
+        'record':          record,
+        'activity':        activity,
+        'before_urls':     before_urls,
+        'after_urls':      after_urls,
+        'has_checklist':   bool(checklist_path) and not checklist_link,
+        'checklist_link':  checklist_link or '',
+        'media_url':       media_url,
+        'permit':          permit,
+        'can_edit_activities': has_permission(user or {}, 'activities', 'edit'),
+        'can_view_permits': has_permission(user or {}, 'permits', 'view'),
+    }))
+
+
+def cmms_ptw_list(request):
+    redir = _require_module_access(request, 'permits', 'view')
+    if redir:
+        return redir
+    user = _get_user(request) or {}
+    permits = [annotate_permit(permit) for permit in list_permits() if is_cmms_permit(permit)]
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter:
+        permits = [permit for permit in permits if permit.get('status') == status_filter]
+    for permit in permits:
+        permit['work_url'] = f"/cmms/work/{permit['record_id']}/" if permit.get('record_id') else ''
+        permit['ptw_url'] = f"/cmms/ptw/{permit['id']}/"
+        permit['work_accessible'] = bool(permit.get('record_id') and application_is_active(permit))
+    status_counts = {}
+    for permit in list_permits():
+        if not is_cmms_permit(permit):
+            continue
+        key = permit.get('status', '')
+        status_counts[key] = status_counts.get(key, 0) + 1
+    return render(request, 'core/cmms_ptw_list.html', _ctx(request, {
+        'permits': permits,
+        'status_filter': status_filter,
+        'status_counts': status_counts,
+        'can_view_activities': has_permission(user, 'activities', 'view'),
+    }))
+
+
+def cmms_ptw_detail(request, permit_id):
+    redir = _require_module_access(request, 'permits', 'view')
+    if redir:
+        return redir
+    user = _get_user(request)
+    permit = annotate_permit(get_permit(permit_id))
+    if not permit:
+        raise Http404('Permit not found')
+    permit['work_accessible'] = bool(permit.get('record_id') and application_is_active(permit))
+    record = get_record(permit.get('record_id', ''))
+    activity = ensure_activity_checklist(get_activity(permit.get('activity_id', '')))
+    can_permit_edit = has_permission(user or {}, 'permits', 'edit')
+    can_application = can_permit_edit and can_edit_application(permit, user)
+    can_issuer = can_permit_edit and can_issue_permit(permit, user)
+    can_hse = can_permit_edit and can_hse_approve(permit, user)
+    can_unlock = can_permit_edit and can_receiver_unlock(permit, user)
+    can_close_receiver_flag = can_permit_edit and can_close_receiver(permit, user)
+    can_close_issuer_flag = can_permit_edit and can_close_issuer(permit, user)
+    can_close_hse_flag = can_permit_edit and can_close_hse(permit, user)
+    return render(request, 'core/cmms_ptw.html', _ctx(request, {
+        'permit': permit,
+        'record': record,
+        'activity': activity,
+        'can_edit_application': can_application,
+        'can_issue_permit': can_issuer,
+        'can_hse_approve': can_hse,
+        'can_receiver_unlock': can_unlock,
+        'can_close_receiver': can_close_receiver_flag,
+        'can_close_issuer': can_close_issuer_flag,
+        'can_close_hse': can_close_hse_flag,
+        'show_close_mode': request.GET.get('mode', '') == 'close',
+        'can_view_activities': has_permission(user or {}, 'activities', 'view'),
+    }))
+
+
+def cmms_ptw_download(request, permit_id):
+    redir = _require_module_access(request, 'permits', 'view')
+    if redir:
+        return redir
+    permit = get_permit(permit_id)
+    if not permit:
+        raise Http404('Permit not found')
+    if permit.get('document_link'):
+        return redirect(permit['document_link'])
+    buffer = build_permit_docx(permit)
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{permit_filename(permit)}"'
+    return response
+
+
+def _clean_document_values(payload) -> dict:
+    if not isinstance(payload, dict):
+        return {}
+    cleaned = {}
+    for key, value in payload.items():
+        clean_key = str(key or '').strip()
+        if not clean_key.startswith('t'):
+            continue
+        cleaned[clean_key] = str(value or '')[:5000]
+    return cleaned
+
+
+def _clean_external_link(value) -> str:
+    link = str(value or '').strip()
+    if not link:
+        return ''
+    if link.startswith('http://') or link.startswith('https://'):
+        return link
+    return ''
+
+
+@csrf_exempt
+def cmms_api_ptw(request, permit_id):
+    redir = _require_module_access(request, 'permits', 'view')
+    if redir:
+        return redir
+    user = _get_user(request)
+    permit = get_permit(permit_id)
+    if not permit:
+        return JsonResponse({'error': 'Permit not found'}, status=404)
+
+    if request.method == 'GET':
+        annotated = annotate_permit(permit)
+        return JsonResponse({'permit': annotated})
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    if not has_permission(user or {}, 'permits', 'edit'):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    action = data.get('action', '').strip()
+    now = datetime.now().isoformat()
+
+    if action == 'save_document':
+        if not can_edit_application(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        permit = update_permit(permit_id, {'document_link': document_link})
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'submit_application':
+        if not can_edit_application(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        permit = update_permit(permit_id, {
+            'document_link': document_link,
+            'receiver_name': user.get('name', ''),
+            'receiver_username': user.get('username', ''),
+            'submitted_at': now,
+            'status': 'pending_issue',
+        })
+        notify_permit_created(permit, _issuer_notification_users())
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'issue':
+        if not can_issue_permit(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        payload = {
+            'document_link': document_link,
+            'issuer_name': user.get('name', ''),
+            'issuer_username': user.get('username', ''),
+            'issued_at': now,
+            'status': 'pending_hse',
+        }
+        permit = update_permit(permit_id, payload)
+        notify_permit_issued(permit, _hse_notification_users())
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'hse_approve':
+        if not can_hse_approve(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        permit_number = str(data.get('permit_number', '') or '').strip()
+        if not permit_number:
+            return JsonResponse({'error': 'Permit number is required'}, status=400)
+        isolation_number = str(data.get('isolation_cert_number', '') or '').strip()
+        permit = update_permit(permit_id, {
+            'document_link': document_link,
+            'permit_number': permit_number,
+            'isolation_cert_number': isolation_number,
+            'hse_name': user.get('name', ''),
+            'hse_username': user.get('username', ''),
+            'hse_signed_at': now,
+            'status': 'pending_receiver_number',
+        })
+        notify_permit_ready_to_proceed(
+            permit,
+            _receiver_and_maintenance_emails(permit.get('receiver_username', '')),
+        )
+        return JsonResponse({
+            'ok': True,
+            'permit': annotate_permit(permit),
+            'next_url': f"/cmms/ptw/{permit_id}/",
+        })
+
+    if action == 'receiver_unlock':
+        if not can_receiver_unlock(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        entered_permit_number = str(data.get('entered_permit_number', '') or '').strip()
+        issued_permit_number = str(permit.get('permit_number', '') or '').strip()
+        if not issued_permit_number:
+            return JsonResponse({'error': 'Permit number is not assigned yet'}, status=400)
+        if entered_permit_number != issued_permit_number:
+            return JsonResponse({'error': 'Permit number does not match the HSE-issued number'}, status=400)
+        permit = update_permit(permit_id, {
+            'receiver_confirmed_permit_number': entered_permit_number,
+            'receiver_confirmed_at': now,
+            'active_at': now,
+            'status': 'active',
+        })
+        return JsonResponse({
+            'ok': True,
+            'permit': annotate_permit(permit),
+            'next_url': f"/cmms/work/{permit.get('record_id', '')}/",
+        })
+
+    if action == 'submit_closure':
+        if not can_close_receiver(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        closure_status_text = str(data.get('closure_status_text', '') or '').strip()
+        payload = {
+            'document_link': document_link,
+            'closure_status_text': closure_status_text,
+            'closure_requested_at': now,
+            'closure_receiver_name': user.get('name', ''),
+            'closure_receiver_signed_at': now,
+            'status': 'pending_closure_issuer',
+        }
+        permit = update_permit(permit_id, payload)
+        issuer_email = _user_email(permit.get('issuer_username', ''))
+        closure_recipients = [issuer_email] if issuer_email else [
+            u.get('email', '') for u in _issuer_notification_users()
+        ]
+        notify_permit_closure_requested(permit, closure_recipients)
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'issuer_close':
+        if not can_close_issuer(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        payload = {
+            'document_link': document_link,
+            'closure_issuer_name': user.get('name', ''),
+            'closure_issuer_signed_at': now,
+            'status': 'pending_closure_hse',
+        }
+        permit = update_permit(permit_id, payload)
+        notify_permit_closure_hse_required(permit, _hse_notification_users())
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'hse_close':
+        if not can_close_hse(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        if not document_link:
+            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
+        payload = {
+            'document_link': document_link,
+            'closure_hse_name': user.get('name', ''),
+            'closure_hse_signed_at': now,
+            'closed_at': now,
+            'status': 'closed',
+        }
+        permit = update_permit(permit_id, payload)
+        if permit.get('record_id'):
+            update_record(permit['record_id'], {
+                'completed': True,
+                'completed_at': now,
+            })
+        close_emails = [
+            _user_email(permit.get('receiver_username', '')),
+            _user_email(permit.get('issuer_username', '')),
+            _user_email(permit.get('hse_username', '')),
+        ]
+        notify_permit_closed(permit, close_emails)
+        return JsonResponse({
+            'ok': True,
+            'permit': annotate_permit(permit),
+            'next_url': f"/cmms/work/{permit.get('record_id', '')}/",
+        })
+
+    return JsonResponse({'error': 'Unknown action'}, status=400)
+
+
+# ── API: Activities schedule ──────────────────────────────────────────────────
+@csrf_exempt
+def cmms_api_activities(request):
+    """
+    GET  ?month=YYYY-MM  → list activities for that month
+    POST                 → create a new scheduled activity
+    """
+    redir = _require_module_access(request, 'activities', 'view')
+    if redir:
+        return redir
+    user = _get_user(request)
+
+    if request.method == 'GET':
+        month = request.GET.get('month', datetime.now().strftime('%Y-%m'))
+        activities = []
+        for activity in get_activities_for_month(month):
+            activity = ensure_activity_checklist(activity)
+            record = get_record_for_activity_date(activity.get('id', ''), activity.get('scheduled_date', ''))
+            permit = annotate_permit(get_permit_for_record(record.get('id', ''))) if record else None
+            status = 'planned'
+            if record:
+                status = 'completed' if record.get('completed') else 'in_progress'
+            permit_required = bool(
+                record and not record.get('completed') and (not permit or not application_is_active(permit))
+            )
+            activities.append({
+                **activity,
+                'record_id': record.get('id') if record else '',
+                'record_started': bool(record),
+                'record_completed': bool(record and record.get('completed')),
+                'record_completed_at': record.get('completed_at') if record else None,
+                'record_status': status,
+                'record_url': f"/cmms/work/{record.get('id')}/" if record else '',
+                'permit_id': permit.get('id') if permit else '',
+                'permit_status': permit.get('status') if permit else '',
+                'permit_status_label': permit.get('status_label') if permit else '',
+                'permit_required': permit_required,
+                'permit_url': f"/cmms/ptw/{permit.get('id')}/" if permit else '',
+            })
+        return JsonResponse({'activities': activities})
+
+    if request.method == 'POST':
+        if not has_permission(user or {}, 'activities', 'edit'):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        # Derive month from scheduled_date
+        scheduled_date = data.get('scheduled_date', '')
+        if scheduled_date and len(scheduled_date) >= 7:
+            data['month'] = scheduled_date[:7]
+        data['created_by'] = user.get('username', '')
+        activity = create_activity(data)
+        return JsonResponse({'activity': activity}, status=201)
+
+    if request.method == 'DELETE':
+        if not has_permission(user or {}, 'activities', 'edit'):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        activity_id = data.get('id', '')
+        if delete_activity(activity_id):
+            return JsonResponse({'ok': True})
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def cmms_api_activity(request, activity_id):
+    """PATCH/DELETE for a single activity."""
+    redir = _require_module_access(request, 'activities', 'edit')
+    if redir:
+        return redir
+    user = _get_user(request)
+
+    if request.method == 'PATCH':
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        activity = update_activity(activity_id, data)
+        if not activity:
+            return JsonResponse({'error': 'Not found'}, status=404)
+        return JsonResponse({'activity': activity})
+
+    if request.method == 'DELETE':
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except Exception:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        scheduled_date = str(data.get('scheduled_date', '') or '').strip()
+        deleted = (
+            delete_activity_occurrence(activity_id, scheduled_date)
+            if scheduled_date else
+            delete_activity(activity_id)
+        )
+        if deleted:
+            return JsonResponse({'ok': True})
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+# ── API: Start / get record ───────────────────────────────────────────────────
+@csrf_exempt
+def cmms_api_start(request):
+    """
+    POST {activity_id, date} → start (or resume) a record, return record_id
+    """
+    redir = _require_module_access(request, 'activities', 'edit')
+    if redir:
+        return redir
+    user = _get_user(request)
 
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
         except Exception:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
-
-        updates = {}
-        if 'checkpoints' in data:
-            updates['checkpoints'] = data['checkpoints']
-        if 'remarks' in data:
-            updates['remarks'] = data['remarks']
-        if 'engineer_signature' in data:
-            updates['engineer_signature'] = data['engineer_signature']
-        if data.get('complete'):
-            updates['completed'] = True
-            updates['completed_at'] = datetime.now().isoformat()
-
-        updated = update_record(record_id, updates)
-        return JsonResponse({'ok': True, 'record': updated})
+        activity_id = data.get('activity_id', '')
+        date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+        selected_permit_name = str(data.get('selected_permit_name', '') or '').strip()
+        selected_permit_link = str(data.get('selected_permit_link', '') or '').strip()
+        if not activity_id:
+            return JsonResponse({'error': 'activity_id required'}, status=400)
+        activity = ensure_activity_checklist(get_activity(activity_id))
+        if not activity:
+            return JsonResponse({'error': 'Activity not found'}, status=404)
+        if not activity_occurs_on_date(activity, date):
+            return JsonResponse({'error': 'Activity can only be started on its planned schedule'}, status=400)
+        permit_options = get_activity_permit_options(activity.get('name', ''))
+        if permit_options and not selected_permit_name:
+            return JsonResponse({'error': 'Permit selection required'}, status=400)
+        if selected_permit_name and not selected_permit_link:
+            normalized_name = selected_permit_name.strip().lower()
+            for option in permit_options:
+                if str(option.get('name', '')).strip().lower() == normalized_name:
+                    selected_permit_link = str(option.get('link', '') or '').strip()
+                    break
+        record = start_record(activity_id, date, user.get('username', ''), user.get('name', ''))
+        permit = create_or_get_record_permit(
+            record,
+            activity,
+            user,
+            permit_name=selected_permit_name,
+            permit_link=selected_permit_link,
+        )
+        next_url = f"/cmms/work/{record['id']}/" if application_is_active(permit) else f"/cmms/ptw/{permit['id']}/"
+        return JsonResponse({
+            'record_id': record['id'],
+            'permit_id': permit.get('id'),
+            'permit_status': permit.get('status'),
+            'next_url': next_url,
+            'permit_required': not application_is_active(permit),
+        })
 
     return JsonResponse({'error': 'POST only'}, status=405)
 
 
+# ── API: Excel checklist (GET parse + saved values, POST save) ────────────────
 @csrf_exempt
-def cmms_photo_api(request, record_id):
-    """Technician / engineer: upload before/after photos."""
-    redir = _require_module(request, 'activities', 'view', api=True)
+def cmms_api_excel(request, record_id):
+    redir = _require_module_access(request, 'activities', 'view')
     if redir:
         return redir
-    user = _get_user(request)
-    if not user:
-        return JsonResponse({'error': 'Login required'}, status=401)
 
     record = get_record(record_id)
     if not record:
         return JsonResponse({'error': 'Record not found'}, status=404)
-
-    if request.method == 'POST':
-        phase = request.POST.get('phase', 'before')  # 'before' or 'after'
-        if phase not in ('before', 'after'):
-            return JsonResponse({'error': 'phase must be before or after'}, status=400)
-
-        uploaded = []
-        for f in request.FILES.getlist('photos'):
-            # Validate file type
-            ext = Path(f.name).suffix.lower()
-            if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.heic'):
-                continue
-            rel_path = save_photo(record_id, phase, f)
-            uploaded.append(rel_path)
-
-        if uploaded:
-            key = f'{phase}_photos'
-            existing = record.get(key, [])
-            update_record(record_id, {key: existing + uploaded})
-
-        media_url = getattr(settings, 'MEDIA_URL', '/media/')
-        return JsonResponse({
-            'ok': True,
-            'uploaded': uploaded,
-            'urls': [f"{media_url}{p}" for p in uploaded],
-        })
-
-    if request.method == 'DELETE':
-        data = json.loads(request.body)
-        phase = data.get('phase', 'before')
-        filename = data.get('filename', '')
-        # Remove from record
-        key = f'{phase}_photos'
-        existing = record.get(key, [])
-        updated_list = [p for p in existing if not p.endswith(filename)]
-        update_record(record_id, {key: updated_list})
-        return JsonResponse({'ok': True})
-
-    return JsonResponse({'error': 'Bad request'}, status=400)
-
-
-def cmms_download_zip(request, record_id):
-    """Download ZIP for a single record (one day's activity)."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'activities', 'view')
-    if redir:
-        return redir
-
-    buf = generate_record_zip(record_id)
-    if not buf:
-        raise Http404('Record not found or no data')
-
-    record = get_record(record_id)
-    filename = f"activity_{record.get('activity_name','record')}_{record.get('date','')}.zip".replace(' ', '_')
-    resp = HttpResponse(buf.read(), content_type='application/zip')
-    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return resp
-
-
-def cmms_download_activity_zip(request, activity_id):
-    """Download combined ZIP for all records of an activity."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'activities', 'view')
-    if redir:
-        return redir
-
-    buf = generate_activity_month_zip(activity_id)
-    if not buf:
-        raise Http404('Activity not found or no data')
-
-    activity = get_activity(activity_id)
-    filename = f"activity_{activity['name']}_{activity['month']}.zip".replace(' ', '_')
-    resp = HttpResponse(buf.read(), content_type='application/zip')
-    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return resp
-
-
-# ── PERMITS ───────────────────────────────────────────────────────────────
-
-def cmms_permits(request):
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'permits', 'view')
-    if redir:
-        return redir
-    user = _get_user(request)
-    role = user.get('role', '')
-
-    status_filter = request.GET.get('status', '')
-    permits = get_permits_for_user(user['username'], role)
-
-    if status_filter:
-        permits = [p for p in permits if p.get('status') == status_filter]
-
-    permits = sorted(permits, key=lambda p: p.get('created_at', ''), reverse=True)
-
-    # Enrich with labels
-    work_types = {
-        'cold_work': 'Cold Work', 'hot_work': 'Hot Work',
-        'electrical': 'Electrical', 'confined_space': 'Confined Space',
-        'mechanical': 'Mechanical', 'civil': 'Civil', 'at_height': 'At Height',
-    }
-    for p in permits:
-        p['status_label'] = PERMIT_STATUSES.get(p.get('status', ''), p.get('status', ''))
-        p['work_type_label'] = work_types.get(p.get('work_type', ''), p.get('work_type', ''))
-
-    ctx = _ctx(request, {
-        'permits': permits,
-        'status_filter': status_filter,
-        'permit_statuses': PERMIT_STATUSES,
-        'can_create': role in ('maintenance_engineer', 'admin'),
-    })
-    return render(request, 'core/cmms_permits.html', ctx)
-
-
-def cmms_permit_detail(request, permit_id=None):
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'permits', 'view')
-    if redir:
-        return redir
-    user = _get_user(request)
-    role = user.get('role', '')
-
-    permit = get_permit(permit_id) if permit_id else None
-
-    work_types = {
-        'cold_work': 'Cold Work', 'hot_work': 'Hot Work',
-        'electrical': 'Electrical Work', 'confined_space': 'Confined Space Entry',
-        'mechanical': 'Mechanical Work', 'civil': 'Civil Work', 'at_height': 'Work at Height',
-    }
-
-    precaution_items = [
-        {'key': 'safe_distance',     'label': 'Safe Working Distance',          'default': 'N/A'},
-        {'key': 'loto_required',     'label': 'LOTO / Isolation Required',       'default': 'No'},
-        {'key': 'confined_space',    'label': 'Confined Space Entry',            'default': 'No'},
-        {'key': 'power_isolated',    'label': 'Power Isolated',                  'default': 'Yes'},
-        {'key': 'lines_de_energized','label': 'Lines / Equipment De-Energized',  'default': 'Yes'},
-        {'key': 'tools_tested',      'label': 'Tools / Instruments Tested',      'default': 'Yes'},
-    ]
-
-    sig_triples = []
-    if permit:
-        sig_triples = [
-            ('Receiver',    permit.get('receiver_name'), permit.get('receiver_signature'), permit.get('created_at')),
-            ('Issuer',      permit.get('issuer_name'),   permit.get('issuer_signature'),   permit.get('issued_at')),
-            ('HSE Officer', permit.get('hse_name'),      permit.get('hse_signature'),      permit.get('hse_signed_at')),
-        ]
-
-    ctx = _ctx(request, {
-        'permit': permit,
-        'work_types': work_types,
-        'permit_statuses': PERMIT_STATUSES,
-        'role': role,
-        'can_issue':     role in ('operation_engineer', 'admin'),
-        'can_hse_sign':  role in ('hse_engineer', 'admin'),
-        'can_close':     role in ('operation_engineer', 'admin', 'hse_engineer'),
-        'precaution_items': precaution_items,
-        'sig_triples':      sig_triples,
-    })
-    return render(request, 'core/cmms_permit_detail.html', ctx)
-
-
-@csrf_exempt
-def cmms_permit_api(request):
-    """Create permit / workflow actions via JSON API."""
-    redir = _require_module(request, 'permits', 'view', api=True)
-    if redir:
-        return redir
-    user = _get_user(request)
-    if not user:
-        return JsonResponse({'error': 'Login required'}, status=401)
-    role = user.get('role', '')
-
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-        except Exception:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-
-        action = data.get('action')
-
-        # ── CREATE ──────────────────────────────────────────────────────
-        if action == 'create':
-            if role not in ('maintenance_engineer', 'admin'):
-                return JsonResponse({'error': 'Maintenance engineer role required'}, status=403)
-            permit = create_permit({
-                'receiver':               user['username'],
-                'receiver_name':          user['name'],
-                'receiver_company':       data.get('receiver_company', 'POWERCHINA'),
-                'receiver_id':            data.get('receiver_id', ''),
-                'job_description':        data.get('job_description', ''),
-                'location':               data.get('location', ''),
-                'equipment':              data.get('equipment', ''),
-                'work_type':              data.get('work_type', 'electrical'),
-                'tools_equipment':        data.get('tools_equipment', ''),
-                'expected_duration':      data.get('expected_duration', ''),
-                'num_employees':          data.get('num_employees', ''),
-                'sld_drawing_no':         data.get('sld_drawing_no', ''),
-                'energized_lines':        data.get('energized_lines', False),
-                'de_energized_lines':     data.get('de_energized_lines', True),
-                'risks':                  data.get('risks', {}),
-                'docs_to_attach':         data.get('docs_to_attach', {}),
-                'precaution_checks':      data.get('precaution_checks', {}),
-                'inspected_areas':        data.get('inspected_areas', {}),
-                'ppe_required':           data.get('ppe_required', {}),
-                'hazards':                data.get('hazards', ''),
-                'precautions':            data.get('precautions', ''),
-                'additional_precautions': data.get('additional_precautions', []),
-                'isolation_required':     data.get('isolation_required', False),
-                'isolation_details':      data.get('isolation_details', ''),
-                'isolation_type':         data.get('isolation_type', {}),
-                'isolation_sequence':     data.get('isolation_sequence', []),
-                'valid_from':             data.get('valid_from', ''),
-                'valid_until':            data.get('valid_until', ''),
-                'application_datetime':   data.get('application_datetime', ''),
-                'workers':                data.get('workers', ''),
-                'workers_list':           data.get('workers_list', []),
-                'receiver_signature':     data.get('receiver_signature'),
-            })
-            # Notify operation engineers (issuers) + HSE for awareness
-            op_engineers = get_users_by_role('operation_engineer')
-            hse_officers = get_users_by_role('hse_engineer')
-            notify_permit_created(permit, op_engineers, hse_officers)
-            return JsonResponse({'ok': True, 'permit_id': permit['id']})
-
-        # ── ISSUE (Operation Engineer) ───────────────────────────────────
-        elif action == 'issue':
-            if role not in ('operation_engineer', 'admin'):
-                return JsonResponse({'error': 'Operation engineer role required'}, status=403)
-            permit = get_permit(data.get('permit_id', ''))
-            if not permit:
-                return JsonResponse({'error': 'Permit not found'}, status=404)
-            if permit['status'] != 'pending_issue':
-                return JsonResponse({'error': 'Permit is not in pending_issue state'}, status=400)
-
-            updates = {
-                'status':           'pending_hse',
-                'issuer':           user['username'],
-                'issuer_name':      user['name'],
-                'issuer_signature': data.get('issuer_signature'),
-                'issued_at':        datetime.now().isoformat(),
-            }
-            updated = update_permit(permit['id'], updates)
-            # Notify HSE
-            hse_list = get_users_by_role('hse_engineer')
-            notify_permit_issued(updated, hse_list)
-            return JsonResponse({'ok': True, 'permit': updated})
-
-        # ── HSE SIGN-OFF ─────────────────────────────────────────────────
-        elif action == 'hse_sign':
-            if role not in ('hse_engineer', 'admin'):
-                return JsonResponse({'error': 'HSE engineer role required'}, status=403)
-            permit = get_permit(data.get('permit_id', ''))
-            if not permit:
-                return JsonResponse({'error': 'Permit not found'}, status=404)
-            if permit['status'] != 'pending_hse':
-                return JsonResponse({'error': 'Permit is not awaiting HSE sign-off'}, status=400)
-
-            permit_number = data.get('permit_number') or get_next_permit_number()
-            isolation_number = data.get('isolation_cert_number') or (
-                get_next_isolation_number() if permit.get('isolation_required') else None
-            )
-            updates = {
-                'status':                'waiting_for_close',
-                'permit_number':         permit_number,
-                'isolation_cert_number': isolation_number,
-                'hse_officer':           user['username'],
-                'hse_name':              user['name'],
-                'hse_signature':         data.get('hse_signature'),
-                'hse_signed_at':         datetime.now().isoformat(),
-            }
-            updated = update_permit(permit['id'], updates)
-
-            # Notify all duty maintenance engineers
-            duty_engineers = _get_duty_engineers()
-            notify_permit_approved(updated, duty_engineers)
-            return JsonResponse({'ok': True, 'permit': updated})
-
-        # ── CLOSE ────────────────────────────────────────────────────────
-        elif action == 'close':
-            if role not in ('operation_engineer', 'admin', 'hse_engineer'):
-                return JsonResponse({'error': 'Insufficient role'}, status=403)
-            permit = get_permit(data.get('permit_id', ''))
-            if not permit:
-                return JsonResponse({'error': 'Permit not found'}, status=404)
-            if permit['status'] not in ('active', 'waiting_for_close'):
-                return JsonResponse({'error': 'Permit is not in a closeable state'}, status=400)
-
-            # For waiting_for_close permits, require all uploads
-            if permit['status'] == 'waiting_for_close':
-                activity_images = data.get('activity_images', [])
-                if not activity_images:
-                    return JsonResponse({'error': 'Activity images are required before closing'}, status=400)
-                # Work Started signatures must exist from earlier workflow steps
-                if not permit.get('receiver_signature'):
-                    return JsonResponse({'error': 'Receiver work-started signature is missing'}, status=400)
-                if not permit.get('issuer_signature'):
-                    return JsonResponse({'error': 'Issuer work-started signature is missing'}, status=400)
-                if not permit.get('hse_signature'):
-                    return JsonResponse({'error': 'HSE work-started signature is missing'}, status=400)
-                # Closure signatures must be uploaded now
-                closure_rcv = data.get('closure_receiver_signature')
-                closure_iss = data.get('closure_issuer_signature')
-                closure_hse = data.get('closure_hse_signature')
-                if not closure_rcv:
-                    return JsonResponse({'error': 'Closure receiver signature is required'}, status=400)
-                if not closure_iss:
-                    return JsonResponse({'error': 'Closure issuer signature is required'}, status=400)
-                if not closure_hse:
-                    return JsonResponse({'error': 'Closure HSE signature is required'}, status=400)
-                updated = update_permit(permit['id'], {
-                    'status': 'closed',
-                    'closed_at':      datetime.now().isoformat(),
-                    'closed_by':      user['username'],
-                    'closed_by_name': user['name'],
-                    'activity_images':            activity_images,
-                    'closure_receiver_signature': closure_rcv,
-                    'closure_issuer_signature':   closure_iss,
-                    'closure_hse_signature':      closure_hse,
-                })
-            else:
-                updated = update_permit(permit['id'], {
-                    'status': 'closed',
-                    'closed_at': datetime.now().isoformat(),
-                })
-            return JsonResponse({'ok': True, 'permit': updated})
-
-        # ── CANCEL ───────────────────────────────────────────────────────
-        elif action == 'cancel':
-            permit = get_permit(data.get('permit_id', ''))
-            if not permit:
-                return JsonResponse({'error': 'Permit not found'}, status=404)
-            if permit.get('receiver') != user['username'] and role not in ('admin',):
-                return JsonResponse({'error': 'Not authorized'}, status=403)
-            if permit['status'] not in ('pending_issue',):
-                return JsonResponse({'error': 'Can only cancel pending permits'}, status=400)
-            updated = update_permit(permit['id'], {'status': 'cancelled'})
-            return JsonResponse({'ok': True, 'permit': updated})
-
-    return JsonResponse({'error': 'Bad request'}, status=400)
-
-
-def cmms_permit_pdf(request, permit_id):
-    """Export permit as PDF."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'permits', 'view')
-    if redir:
-        return redir
-
-    buf = generate_permit_pdf(permit_id)
-    if not buf:
-        return HttpResponse('PDF generation failed or reportlab not installed.', status=500)
-
-    permit = get_permit(permit_id)
-    pnum = permit.get('permit_number') or permit_id[:8]
-    filename = f"permit_{pnum}.pdf".replace(' ', '_')
-
-    resp = HttpResponse(buf.read(), content_type='application/pdf')
-    resp['Content-Disposition'] = f'inline; filename="{filename}"'
-    return resp
-
-
-# ── EMAIL CONFIG API (admin only) ─────────────────────────────────────────
-
-@csrf_exempt
-def cmms_email_config_api(request):
-    """Admin: update email settings."""
-    user = _get_user(request)
-    if not user or user.get('role') != 'admin':
-        return JsonResponse({'error': 'Admin only'}, status=403)
-
-    config_file = Path(settings.BASE_DIR) / 'cmms_email_config.json'
-
-    if request.method == 'GET':
-        if config_file.exists():
-            with open(config_file) as f:
-                cfg = json.load(f)
-            # Mask password
-            cfg['password'] = '••••••••' if cfg.get('password') else ''
-            return JsonResponse({'ok': True, 'config': cfg})
-        return JsonResponse({'ok': True, 'config': {}})
-
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-        except Exception:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        # Save config (password only updated if not masked)
-        existing = {}
-        if config_file.exists():
-            with open(config_file) as f:
-                existing = json.load(f)
-        cfg = {
-            'host':     data.get('host', existing.get('host', 'smtp.gmail.com')),
-            'port':     data.get('port', existing.get('port', 587)),
-            'use_tls':  data.get('use_tls', existing.get('use_tls', True)),
-            'username': data.get('username', existing.get('username', '')),
-            'password': data.get('password', existing.get('password', ''))
-                        if data.get('password') and data['password'] != '••••••••'
-                        else existing.get('password', ''),
-            'from_email': data.get('from_email', existing.get('from_email', '')),
-        }
-        with open(config_file, 'w') as f:
-            json.dump(cfg, f, indent=2)
-        return JsonResponse({'ok': True})
-
-    return JsonResponse({'error': 'Bad request'}, status=400)
-
-
-# ── HELPERS ───────────────────────────────────────────────────────────────
-
-def _get_duty_engineers():
-    """
-    Return list of maintenance engineers on duty today
-    based on schedule_store.json (Day or Night shift).
-    Falls back to all maintenance engineers if schedule unavailable.
-    """
-    from pathlib import Path
-    import json as _json
-
-    schedule_file = Path(settings.BASE_DIR) / 'schedule_store.json'
-    today = datetime.now().strftime('%Y-%m-%d')
-
-    try:
-        with open(schedule_file, 'r') as f:
-            store = _json.load(f)
-        engineers_on_duty = []
-        for eng in store.get('engineers', []):
-            shifts = eng.get('schedule', {})
-            shift_today = shifts.get(today, '')
-            if shift_today and shift_today.upper() not in ('R', 'REST', '', 'OFF'):
-                # Look up by name
-                all_users = get_all_users()
-                matched = next(
-                    (u for u in all_users
-                     if u['name'].strip().lower() == eng.get('name', '').strip().lower()
-                     and u['role'] == 'maintenance_engineer'),
-                    None
-                )
-                if matched:
-                    engineers_on_duty.append(matched)
-        if engineers_on_duty:
-            return engineers_on_duty
-    except Exception:
-        pass
-
-    # Fallback: all maintenance engineers
-    return get_users_by_role('maintenance_engineer')
-
-
-# ── MANPOWER DUTY API ─────────────────────────────────────────────────────
-
-def cmms_duty_staff_api(request):
-    """Return engineers and technicians on duty for a given date from schedule."""
-    redir = _require_module(request, any_of=('activities', 'permits', 'handover'), api=True)
-    if redir:
-        return redir
-    date_str = request.GET.get('date', datetime.now().strftime('%Y-%m-%d'))
-    staff = get_duty_staff(date_str)
-    return JsonResponse({'ok': True, 'date': date_str, **staff})
-
-
-# ── ICC PDF DOWNLOAD ──────────────────────────────────────────────────────
-
-def cmms_icc_pdf(request, permit_id):
-    """Download the Isolation Confirmation Certificate PDF."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'permits', 'view')
-    if redir:
-        return redir
-    buf = generate_icc_pdf(permit_id)
-    if not buf:
-        return HttpResponse('ICC PDF failed or isolation not required.', status=400)
-    permit = get_permit(permit_id)
-    icc_no = permit.get('isolation_cert_number') or permit_id[:8]
-    filename = f"ICC_{icc_no}.pdf".replace(' ', '_')
-    resp = HttpResponse(buf.read(), content_type='application/pdf')
-    resp['Content-Disposition'] = f'inline; filename="{filename}"'
-    return resp
-
-
-# ── PERMIT WORD EXPORT ────────────────────────────────────────────────────
-
-def cmms_permit_docx(request, permit_id):
-    """Download the filled MP-10 General Work Permit as a Word (.docx) file."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'permits', 'view')
-    if redir:
-        return redir
-    try:
-        buf = generate_permit_docx(permit_id)
-    except FileNotFoundError as e:
-        return HttpResponse(str(e), status=404)
-    except ValueError as e:
-        return HttpResponse(str(e), status=404)
-    except Exception as e:
-        return HttpResponse(f'Error generating Word document: {e}', status=500)
-    permit = get_permit(permit_id)
-    permit_no = (permit or {}).get('permit_no') or permit_id[:8].upper()
-    filename = f"Permit_{permit_no}.docx".replace(' ', '_')
-    resp = HttpResponse(
-        buf.read(),
-        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    )
-    resp['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return resp
-
-
-# ── ACTIVITY EMAIL TRIGGER ────────────────────────────────────────────────
-
-@csrf_exempt
-def cmms_send_activity_email(request, record_id):
-    """
-    Manually or auto-trigger email to engineer for today's activity.
-    Called from the activity detail page on first load for today.
-    """
-    redir = _require_module(request, 'activities', 'view', api=True)
-    if redir:
-        return redir
-    user = _get_user(request)
-
-    record = get_record(record_id)
-    if not record:
-        return JsonResponse({'error': 'Record not found'}, status=404)
-
-    if record.get('email_sent'):
-        return JsonResponse({'ok': True, 'skipped': True})
-
-    activity = get_activity(record['activity_id'])
+    activity = ensure_activity_checklist(get_activity(record['activity_id']))
     if not activity:
         return JsonResponse({'error': 'Activity not found'}, status=404)
 
-    # Find engineer's email
-    from .auth_utils import get_user_detail
-    from .email_utils import notify_activity_assigned
-    eng = get_user_detail(record.get('engineer', ''))
-    if eng and eng.get('email'):
-        notify_activity_assigned(activity, eng['email'], record.get('date'))
-
-    update_record(record_id, {'email_sent': True})
-    return JsonResponse({'ok': True, 'sent': True})
-
-
-# ── HANDOVER / SHIFT LOG ──────────────────────────────────────────────────
-
-def cmms_handovers(request):
-    """List all handover reports, grouped by date (newest first)."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'handover', 'view')
-    if redir:
-        return redir
-    user = _get_user(request)
-
-    dates = get_handover_dates()
-    # Build day-wise pairs
-    date_groups = []
-    for d in dates:
-        pair = get_handovers_by_date(d)
-        from datetime import date as _date, datetime as _dt
+    if request.method == 'GET':
+        checklist_path = resolve_checklist_path(activity.get('checklist_file', ''))
+        if not checklist_path:
+            return JsonResponse({'sheets': [], 'values': {}})
+        if not checklist_path.exists():
+            return JsonResponse({'error': 'Checklist file not found'}, status=404)
         try:
-            d_obj = _date.fromisoformat(d)
-            label = d_obj.strftime('%A, %d %B %Y')
-        except Exception:
-            label = d
-        date_groups.append({'date': d, 'label': label,
-                             'day': pair['day'], 'night': pair['night']})
-
-    ctx = _ctx(request, {
-        'date_groups': date_groups,
-        'today': datetime.now().strftime('%Y-%m-%d'),
-    })
-    return render(request, 'core/cmms_handovers.html', ctx)
-
-
-def cmms_handover_detail(request, handover_id=None):
-    """Create new or view/edit existing handover report."""
-    redir = _require_login(request)
-    if redir:
-        return redir
-    redir = _require_module(request, 'handover', 'view')
-    if redir:
-        return redir
-    user = _get_user(request)
-
-    handover = get_handover(handover_id) if handover_id else None
-
-    today = datetime.now().strftime('%Y-%m-%d')
-    # Duty staff for dropdowns
-    duty = get_duty_staff(today)
-    from .cmms_utils import get_all_technicians_from_schedule
-    all_techs = get_all_technicians_from_schedule(today)
-    # All engineers from schedule_store
-    from pathlib import Path as _P
-    import json as _j
-    _sf = _P(settings.BASE_DIR) / 'schedule_store.json'
-    all_engineers = []
-    if _sf.exists():
-        _store = _j.loads(_sf.read_text(encoding='utf-8'))
-        all_engineers = [e.get('name', '') for e in _store.get('engineers', [])]
-
-    ctx = _ctx(request, {
-        'handover': handover,
-        'today': today,
-        'all_engineers': all_engineers,
-        'all_techs': all_techs,
-        'duty_engineers': duty.get('engineers', []),
-        'duty_technicians': duty.get('technicians', []),
-    })
-    return render(request, 'core/cmms_handover_detail.html', ctx)
-
-
-@csrf_exempt
-def cmms_handover_api(request):
-    """Create / update handover records."""
-    redir = _require_login(request)
-    if redir:
-        return JsonResponse({'error': 'Login required'}, status=401)
-    redir = _require_module(request, 'handover', 'view', api=True)
-    if redir:
-        return redir
-    user = _get_user(request)
+            sheets = parse_excel_checklist(checklist_path)
+        except Exception as e:
+            return JsonResponse({'error': f'Parse error: {e}'}, status=500)
+        return JsonResponse({'sheets': sheets, 'values': record.get('excel_values', {})})
 
     if request.method == 'POST':
-        # Multipart (image upload) handled separately
+        user = _get_user(request)
+        if not has_permission(user or {}, 'activities', 'edit'):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
         try:
             data = json.loads(request.body)
         except Exception:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        update_record(record_id, {'excel_values': data.get('excel_values', {})})
+        return JsonResponse({'ok': True})
 
-        action = data.get('action', 'create')
-
-        if action == 'create':
-            # Prevent duplicate (same date+shift)
-            existing = get_handovers_by_date(data.get('date', ''))
-            shift = data.get('shift', 'day')
-            if existing.get(shift):
-                # Update instead of duplicate
-                updated = update_handover(existing[shift]['id'], {
-                    k: v for k, v in data.items() if k not in ('action',)
-                })
-                return JsonResponse({'ok': True, 'handover_id': updated['id'], 'action': 'updated'})
-            data['created_by'] = user['username']
-            h = create_handover(data)
-            return JsonResponse({'ok': True, 'handover_id': h['id'], 'action': 'created'})
-
-        elif action == 'update':
-            hid = data.get('handover_id', '')
-            updates = {k: v for k, v in data.items() if k not in ('action', 'handover_id')}
-            h = update_handover(hid, updates)
-            if not h:
-                return JsonResponse({'error': 'Not found'}, status=404)
-            return JsonResponse({'ok': True, 'handover_id': h['id']})
-
-        elif action == 'submit':
-            hid = data.get('handover_id', '')
-            h = update_handover(hid, {
-                'status': 'submitted',
-                'submitted_at': datetime.now().isoformat(),
-                'shift_engineer_sig': data.get('shift_engineer_sig', ''),
-                'incoming_engineer_sig': data.get('incoming_engineer_sig', ''),
-            })
-            if not h:
-                return JsonResponse({'error': 'Not found'}, status=404)
-            return JsonResponse({'ok': True})
-
-        elif action == 'delete':
-            hid = data.get('handover_id', '')
-            from .cmms_utils import HANDOVERS_FILE, _save
-            all_h = get_handovers()
-            all_h = [h for h in all_h if h['id'] != hid]
-            _save(HANDOVERS_FILE, all_h)
-            return JsonResponse({'ok': True})
-
-    return JsonResponse({'error': 'Bad request'}, status=400)
+    return JsonResponse({'error': 'GET or POST only'}, status=405)
 
 
+# ── API: Photo upload / delete ────────────────────────────────────────────────
 @csrf_exempt
-def cmms_handover_image_api(request, handover_id):
-    """Upload observation images for a handover."""
-    redir = _require_login(request)
-    if redir:
-        return JsonResponse({'error': 'Login required'}, status=401)
-    redir = _require_module(request, 'handover', 'view', api=True)
+def cmms_api_photos(request, record_id):
+    redir = _require_module_access(request, 'activities', 'view')
     if redir:
         return redir
 
+    record = get_record(record_id)
+    if not record:
+        return JsonResponse({'error': 'Record not found'}, status=404)
+
     if request.method == 'POST':
-        imgs = []
-        for key in request.FILES:
-            f = request.FILES[key]
-            rel = save_handover_image(handover_id, f)
-            imgs.append(rel)
-        return JsonResponse({'ok': True, 'images': imgs})
+        user = _get_user(request)
+        if not has_permission(user or {}, 'activities', 'edit'):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        phase = request.POST.get('phase', 'before')
+        if phase not in ('before', 'after'):
+            return JsonResponse({'error': 'phase must be before or after'}, status=400)
+        uploaded = request.FILES.getlist('photos')
+        if not uploaded:
+            return JsonResponse({'error': 'No files uploaded'}, status=400)
+        media_url = getattr(__import__('django.conf', fromlist=['settings']).settings, 'MEDIA_URL', '/media/')
+        saved = []
+        for f in uploaded:
+            rel = save_photo(record_id, phase, f)
+            saved.append({'rel': rel, 'url': f"{media_url}{rel}"})
+        return JsonResponse({'saved': saved})
 
     if request.method == 'DELETE':
-        import urllib.parse
-        rel = request.GET.get('img', '')
-        h = get_handover(handover_id)
-        if h and rel:
-            imgs = [i for i in h.get('observation_images', []) if i != rel]
-            update_handover(handover_id, {'observation_images': imgs})
-            # Delete file
-            from .cmms_utils import MEDIA_ROOT as _MR
-            fpath = _MR / rel
-            if fpath.exists():
-                fpath.unlink()
+        user = _get_user(request)
+        if not has_permission(user or {}, 'activities', 'edit'):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        try:
+            data = json.loads(request.body)
+        except Exception:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        phase = data.get('phase', 'before')
+        rel   = data.get('rel', '')
+        if delete_photo(record_id, phase, rel):
+            return JsonResponse({'ok': True})
+        return JsonResponse({'error': 'Not found'}, status=404)
+
+    return JsonResponse({'error': 'POST or DELETE only'}, status=405)
+
+
+# ── API: Mark complete ────────────────────────────────────────────────────────
+@csrf_exempt
+def cmms_api_complete(request, record_id):
+    redir = _require_module_access(request, 'activities', 'edit')
+    if redir:
+        return redir
+    if request.method == 'POST':
+        record = get_record(record_id)
+        if not record:
+            return JsonResponse({'error': 'Not found'}, status=404)
+        update_record(record_id, {
+            'completed':    True,
+            'completed_at': datetime.now().isoformat(),
+        })
         return JsonResponse({'ok': True})
+    return JsonResponse({'error': 'POST only'}, status=405)
+
+
+# ── Download ZIP ──────────────────────────────────────────────────────────────
+def cmms_download_zip(request, record_id):
+    redir = _require_module_access(request, 'activities', 'view')
+    if redir:
+        return redir
+    buf = generate_zip(record_id)
+    if not buf:
+        raise Http404('Record not found or no data')
+    record = get_record(record_id)
+    fname = f"{record.get('activity_name','report')}_{record.get('date','')}.zip".replace(' ', '_')
+    resp = HttpResponse(buf, content_type='application/zip')
+    resp['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return resp
+
+
+# ── API: Available checklist files ────────────────────────────────────────────
+def cmms_api_checklists(request):
+    redir = _require_module_access(request, 'activities', 'view')
+    if redir:
+        return redir
+    user = _get_user(request)
+
+    if request.method == 'GET':
+        return JsonResponse({'files': get_checklist_files()})
+
+    if request.method == 'POST':
+        if not has_permission(user or {}, 'activities', 'edit'):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        uploaded = request.FILES.get('checklist')
+        if not uploaded:
+            return JsonResponse({'error': 'Checklist file is required'}, status=400)
+        try:
+            file_info = save_checklist_file(uploaded)
+        except ValueError as exc:
+            return JsonResponse({'error': str(exc)}, status=400)
+        return JsonResponse({'file': file_info}, status=201)
+
+
+# ── API: Activity list from live Google Sheet ─────────────────────────────────
+def cmms_api_checklist_activities(request):
+    """
+    GET /api/cmms/checklist-activities/
+    Returns all activity names + links from the configured live Google Sheet.
+    Used by the hub modal to populate the activity name dropdown.
+    """
+    redir = _require_module_access(request, 'activities', 'view')
+    if redir:
+        return redir
+    return JsonResponse({'activities': get_all_checklist_activities()})
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)

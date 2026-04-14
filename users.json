@@ -46,5 +46,51 @@
       "countries": [],
       "projects": []
     }
+  },
+  "kareem": {
+    "password": "87d58d91ad138cdd2c4c1ef27245b3c22b187cb944a6cd365569e63f8ebcdc88",
+    "role": "operation_engineer",
+    "name": "kareem",
+    "email": "karimkolachi@gmail.com",
+    "permissions": {
+      "activities": "view",
+      "permits": "edit",
+      "handover": "view",
+      "manpower": "view",
+      "store": "view",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
+  },
+  "raheem": {
+    "password": "87d58d91ad138cdd2c4c1ef27245b3c22b187cb944a6cd365569e63f8ebcdc88",
+    "role": "maintenance_engineer",
+    "name": "Raheem",
+    "email": "raheemkolachi7@gmail.com",
+    "permissions": {
+      "activities": "edit",
+      "permits": "edit",
+      "handover": "edit",
+      "manpower": "view",
+      "store": "edit",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
   }
 }

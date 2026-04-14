@@ -86,6 +86,67 @@ def _require_module_api(request, module_id: str, level: str = 'view'):
         return None, JsonResponse({'error': 'Forbidden'}, status=403)
     return user, None
 
+
+def _normalize_person_name(value: str) -> str:
+    return ' '.join(str(value or '').strip().lower().split())
+
+
+def _user_person_names(user: dict | None) -> list[str]:
+    names = []
+    seen = set()
+    for raw in ((user or {}).get('name', ''), (user or {}).get('username', '')):
+        clean = ' '.join(str(raw or '').strip().split())
+        norm = _normalize_person_name(clean)
+        if not norm or norm in seen:
+            continue
+        seen.add(norm)
+        names.append(clean)
+    return names
+
+
+def _is_self_manpower_only(user: dict | None) -> bool:
+    return bool(
+        user
+        and not has_permission(user, 'manpower', 'edit')
+        and user.get('role') in ('viewer', 'technician')
+    )
+
+
+def _filter_people_for_user(people: list, user: dict | None) -> list:
+    if not _is_self_manpower_only(user):
+        return list(people or [])
+    allowed = {_normalize_person_name(name) for name in _user_person_names(user)}
+    return [
+        person for person in (people or [])
+        if _normalize_person_name(person.get('name', '')) in allowed
+    ]
+
+
+def _filter_attendance_people_for_user(people: list, user: dict | None) -> list:
+    if not _is_self_manpower_only(user):
+        return list(people or [])
+    allowed = {_normalize_person_name(name) for name in _user_person_names(user)}
+    filtered = [
+        person for person in (people or [])
+        if _normalize_person_name(person.get('name', '')) in allowed
+    ]
+    if filtered:
+        return filtered
+    fallback_names = _user_person_names(user)
+    if not fallback_names:
+        return []
+    return [{'name': fallback_names[0], 'role': 'Self'}]
+
+
+def _filter_attendance_records_for_user(records: dict, user: dict | None) -> dict:
+    if not _is_self_manpower_only(user):
+        return dict(records or {})
+    allowed = {_normalize_person_name(name) for name in _user_person_names(user)}
+    return {
+        name: rec for name, rec in (records or {}).items()
+        if _normalize_person_name(name) in allowed
+    }
+
 # ── AUTH VIEWS ─────────────────────────────────────────────────────────────
 
 def login_view(request):
@@ -189,10 +250,129 @@ TRACING_SHEETS = [
 ]
 SLUG_MAP = {s["slug"]: s for s in TRACING_SHEETS}
 
+# ── GID DISCOVERY (numeric tab IDs, more reliable than sheet names) ─────────
+_GID_MAP_CACHE: dict = {}
+_GID_MAP_TS: float = 0.0
 
-def fetch_sheet_csv(sheet_name):
-    url = (f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
-           f"/export?format=csv&sheet={urllib.parse.quote(sheet_name)}")
+
+def _fetch_gid_map_fresh() -> dict:
+    """
+    Fetch {sheet_name: gid_str} by parsing the spreadsheet's htmlview page.
+    /htmlview is Google's embeddable read-only URL — it's publicly accessible
+    and its HTML contains tab anchor links with ?gid= params we can parse.
+    Falls back to the edit page and gdata API.
+    """
+    import re as _re
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0 Safari/537.36"
+        )
+    }
+
+    # ── Method 1: parse /htmlview — tab links contain gid= ───────────────────
+    # The htmlview page has links like:
+    #   <a ... href="...htmlview?gid=123456...">Sheet Name</a>
+    try:
+        url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/htmlview"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as r:
+            html = r.read().decode("utf-8", errors="replace")
+        result = {}
+        # Tab links: href="...?gid=NNN" or ...#gid=NNN
+        for m in _re.finditer(
+            r'href="[^"]*[?#]gid=(\d+)[^"]*"[^>]*>\s*([^<]{1,80})\s*<',
+            html,
+        ):
+            name = m.group(2).strip()
+            if name and not name.startswith('<'):
+                result[name] = m.group(1)
+        if result:
+            return result
+        # Alternate pattern: data-sheet-id or similar
+        for m in _re.finditer(r'"sheetId"\s*:\s*(\d+)[^}]{0,200}"title"\s*:\s*"([^"]+)"', html):
+            result[m.group(2)] = m.group(1)
+        if result:
+            return result
+    except Exception:
+        pass
+
+    # ── Method 2: old gdata worksheets feed ──────────────────────────────────
+    try:
+        feed_url = (
+            f"https://spreadsheets.google.com/feeds/worksheets/"
+            f"{SHEET_ID}/public/basic?alt=json"
+        )
+        req = urllib.request.Request(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        result = {}
+        for entry in data.get("feed", {}).get("entry", []):
+            title = entry.get("title", {}).get("$t", "").strip()
+            for link in entry.get("link", []):
+                m = _re.search(r"gid=(\d+)", link.get("href", ""))
+                if m:
+                    result[title] = m.group(1)
+                    break
+        if result:
+            return result
+    except Exception:
+        pass
+
+    # ── Method 3: parse the edit page HTML ───────────────────────────────────
+    try:
+        html_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/"
+        req = urllib.request.Request(html_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as r:
+            html = r.read().decode("utf-8", errors="replace")
+        result = {}
+        for m in _re.finditer(r'"sheetId"\s*:\s*(\d+).*?"title"\s*:\s*"([^"]+)"', html):
+            result[m.group(2)] = m.group(1)
+        if result:
+            return result
+        for m in _re.finditer(
+            r'\[null,"([^"]+)"(?:,(?:null|\d+|"[^"]*")){6,},(\d{6,})\]', html
+        ):
+            result[m.group(1)] = m.group(2)
+        if result:
+            return result
+    except Exception:
+        pass
+
+    return {}
+
+
+def _get_gid_map() -> dict:
+    """Return {sheet_name: gid_str} with a 2-hour in-process cache."""
+    import time
+    global _GID_MAP_CACHE, _GID_MAP_TS
+    now = time.time()
+    if _GID_MAP_CACHE and (now - _GID_MAP_TS) < 7200:
+        return _GID_MAP_CACHE
+    fresh = _fetch_gid_map_fresh()
+    if fresh:
+        _GID_MAP_CACHE = fresh
+        _GID_MAP_TS = now
+    elif not _GID_MAP_CACHE:
+        _GID_MAP_CACHE = {}
+    return _GID_MAP_CACHE
+
+
+def fetch_sheet_csv(sheet_name, gid: str = None):
+    """Fetch CSV for a sheet tab. Uses GID (numeric) when available for
+    reliable tab selection; falls back to sheet name parameter."""
+    if gid:
+        url = (
+            f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+            f"/export?format=csv&gid={gid}"
+        )
+    else:
+        url = (
+            f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+            f"/export?format=csv&sheet={urllib.parse.quote(sheet_name)}"
+        )
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=15) as r:
@@ -367,10 +547,6 @@ def category_hub_view(request, country_id, project_id, category):
     for card in all_cards:
         card['color_rgb'] = hex_to_rgb(card['color'])
 
-    cmms_ids = {'activities', 'permits', 'handover'}
-    cmms_cards = [c for c in all_cards if c['id'] in cmms_ids]
-    other_cards = [c for c in all_cards if c['id'] not in cmms_ids]
-
     cat_meta = CATEGORY_META[category]
 
     return render(request, 'core/category_hub.html', _ctx(request, {
@@ -379,14 +555,15 @@ def category_hub_view(request, country_id, project_id, category):
         'category': category,
         'cat_meta': cat_meta,
         'module_cards': all_cards,
-        'cmms_cards': cmms_cards,
-        'other_cards': other_cards,
     }))
 
 
 @login_required
 def legacy_store_redirect(request):
     """Redirect old/global Store entry points to the first configured project store."""
+    redir = _require_module_page(request, 'store', 'view')
+    if redir:
+        return redir
     user = get_user(request)
     countries = get_countries()
     for country in countries:
@@ -498,6 +675,7 @@ def manpower(request):
     redir = _require_module_page(request, 'manpower', 'view')
     if redir:
         return redir
+    user = get_user(request)
     import json as _j
     from pathlib import Path as _P
     sf = _P(__file__).resolve().parent.parent / 'schedule_store.json'
@@ -539,6 +717,25 @@ def manpower(request):
         ctx['eng_dates_json']   = _jd.dumps(_default_eng_dates)
         ctx['tech_dates_json']  = _jd.dumps(_default_tech_dates)
         ctx['data_source'] = 'default'
+    visible_engineers = _filter_people_for_user(_j.loads(ctx.get('engineers_json', '[]')), user)
+    visible_technicians = _filter_people_for_user(_j.loads(ctx.get('technicians_json', '[]')), user)
+    visible_eng_dates = sorted({
+        date
+        for person in visible_engineers
+        for date in person.get('schedule', {})
+    })
+    visible_tech_dates = sorted({
+        date
+        for person in visible_technicians
+        for date in person.get('schedule', {})
+    })
+    ctx['engineers_json'] = _j.dumps(visible_engineers)
+    ctx['technicians_json'] = _j.dumps(visible_technicians)
+    ctx['eng_dates_json'] = _j.dumps(visible_eng_dates)
+    ctx['tech_dates_json'] = _j.dumps(visible_tech_dates)
+    ctx['can_edit_manpower'] = has_permission(user, 'manpower', 'edit')
+    ctx['self_manpower_only'] = _is_self_manpower_only(user)
+    ctx['attendance_self_name'] = (_user_person_names(user) or [''])[0]
     return render(request, "core/manpower.html", ctx)
 
 @login_required
@@ -546,7 +743,11 @@ def tracing_hub(request):
     redir = _require_module_page(request, 'tracing', 'view')
     if redir:
         return redir
-    return render(request, "core/tracing_hub.html", _ctx(request, {"sheets": TRACING_SHEETS}))
+    return render(request, "core/tracing_hub.html", _ctx(request, {
+        "sheets": TRACING_SHEETS,
+        "SHEET_ID": SHEET_ID,
+        "sheets_json": json.dumps(TRACING_SHEETS),
+    }))
 
 @login_required
 def tracing_sheet(request, slug):
@@ -568,12 +769,51 @@ def tracing_sheet_api(request, slug):
     sheet_info = SLUG_MAP.get(slug)
     if not sheet_info:
         return JsonResponse({"error": "Unknown sheet"}, status=404)
-    raw, err = fetch_sheet_csv(sheet_info["sheet"])
+    # Use GID when available for reliable tab selection
+    gid_map = _get_gid_map()
+    gid = gid_map.get(sheet_info["sheet"])
+    raw, err = fetch_sheet_csv(sheet_info["sheet"], gid=gid)
     if err:
         return JsonResponse({"error": err}, status=500)
     data = parse_generic_sheet(raw)
-    data.update(sheet_name=sheet_info["name"], color=sheet_info["color"])
+    data.update(
+        sheet_name=sheet_info["name"],
+        color=sheet_info["color"],
+        gid=gid,
+        sheet_id=SHEET_ID,
+    )
     return JsonResponse(data)
+
+
+@login_required
+def tracing_gids_api(request):
+    """Return {slug: gid} map for all tracing sheets plus the spreadsheet ID.
+    The frontend uses this to build iframe embed URLs pointing at the exact tab."""
+    _, err = _require_module_api(request, 'tracing', 'view')
+    if err:
+        return err
+    gid_map = _get_gid_map()
+    sheets_out = []
+    for s in TRACING_SHEETS:
+        gid = gid_map.get(s["sheet"])
+        sheets_out.append({
+            "slug":  s["slug"],
+            "name":  s["name"],
+            "sheet": s["sheet"],
+            "gid":   gid,
+            "embed_url": (
+                f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+                f"/edit?embedded=true#gid={gid}"
+                if gid else
+                f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+                f"/edit?embedded=true"
+            ),
+        })
+    return JsonResponse({
+        "sheet_id": SHEET_ID,
+        "sheets":   sheets_out,
+        "gid_map":  gid_map,
+    })
 
 @login_required
 def documents(request):
@@ -1348,16 +1588,22 @@ def _save_attendance(data):
 @csrf_exempt
 def attendance_face_api(request):
     """GET: list trained faces. POST: save a new face descriptor."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
 
     if request.method == 'GET':
         faces = _load_faces()
+        if _is_self_manpower_only(user):
+            allowed = {_normalize_person_name(name) for name in _user_person_names(user)}
+            faces = {
+                name: payload for name, payload in faces.items()
+                if _normalize_person_name(name) in allowed
+            }
         return JsonResponse({'faces': list(faces.keys()), 'count': len(faces)})
 
     if request.method == 'POST':
-        _, err = _api_auth(request, admin_only=True)
+        _, err = _api_auth(request, admin_only=True, module_id='manpower', level='edit')
         if err:
             return err
         data = _json.loads(request.body)
@@ -1388,7 +1634,7 @@ def attendance_face_api(request):
 @csrf_exempt
 def attendance_face_delete(request):
     """DELETE a person's face data."""
-    _, err = _api_auth(request, admin_only=True)
+    _, err = _api_auth(request, admin_only=True, module_id='manpower', level='edit')
     if err:
         return err
     if request.method != 'POST':
@@ -1406,7 +1652,7 @@ def attendance_face_delete(request):
 @csrf_exempt
 def attendance_mark(request):
     """Mark time-in or time-out for a person."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
     if request.method != 'POST':
@@ -1426,6 +1672,10 @@ def attendance_mark(request):
 
     if not name:
         return JsonResponse({'error': 'name required'}, status=400)
+    if _is_self_manpower_only(user):
+        allowed = {_normalize_person_name(person_name) for person_name in _user_person_names(user)}
+        if _normalize_person_name(name) not in allowed:
+            return JsonResponse({'error': 'You can only submit attendance for your own name'}, status=403)
 
     records = _load_attendance()
     if date_str not in records:
@@ -1473,7 +1723,7 @@ def attendance_mark(request):
 
 def attendance_get(request):
     """GET attendance for a date or month."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
 
@@ -1481,20 +1731,28 @@ def attendance_get(request):
     month = request.GET.get('month', '')   # YYYY-MM
 
     records = _load_attendance()
+    self_only = _is_self_manpower_only(user)
 
     if month:
         # Return all records for the month
         month_records = {d: v for d, v in records.items() if d.startswith(month)}
+        if self_only:
+            month_records = {
+                day: _filter_attendance_records_for_user(day_records, user)
+                for day, day_records in month_records.items()
+            }
         return JsonResponse({'records': month_records, 'month': month})
 
     day_records = records.get(date, {})
+    if self_only:
+        day_records = _filter_attendance_records_for_user(day_records, user)
     return JsonResponse({'records': day_records, 'date': date,
                          'fetched_at': _dt.now().strftime('%Y-%m-%d %H:%M:%S')})
 
 
 def attendance_export(request):
     """Export attendance to Excel — daily or monthly."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
 
@@ -1511,6 +1769,7 @@ def attendance_export(request):
     mode  = 'monthly' if month else 'daily'
 
     records = _load_attendance()
+    self_only = _is_self_manpower_only(user)
 
     wb = Workbook()
     ws = wb.active
@@ -1534,6 +1793,8 @@ def attendance_export(request):
     if mode == 'daily':
         ws.title = f'Attendance {date}'
         day_recs = records.get(date, {})
+        if self_only:
+            day_recs = _filter_attendance_records_for_user(day_recs, user)
 
         hdr(ws['A1'], 'S.No',          6)
         hdr(ws['B1'], 'Name',          22)
@@ -1550,6 +1811,8 @@ def attendance_export(request):
         # Get all technician names
         # Use people roster (attendance_people.json) — falls back to schedule
         people_roster = _load_people()
+        if self_only:
+            people_roster = _filter_attendance_people_for_user(people_roster, user)
         tech_names = [p['name'] for p in people_roster] if people_roster else sorted(day_recs.keys())
         if not tech_names:
             tech_names = sorted(day_recs.keys())
@@ -1593,10 +1856,17 @@ def attendance_export(request):
         all_dates = [f'{yr:04d}-{mo:02d}-{d:02d}' for d in range(1, days_in_month + 1)]
 
         month_recs = {d: v for d, v in records.items() if d.startswith(month)}
+        if self_only:
+            month_recs = {
+                day: _filter_attendance_records_for_user(day_records, user)
+                for day, day_records in month_recs.items()
+            }
 
         ws.title = f'Att {month}'
 
         people_roster = _load_people()
+        if self_only:
+            people_roster = _filter_attendance_people_for_user(people_roster, user)
         tech_names = [p['name'] for p in people_roster] if people_roster else []
         if not tech_names:
             names_set = set()
@@ -1688,10 +1958,17 @@ def attendance_export(request):
 
 def attendance_face_descriptors(request):
     """Return full face descriptors (needed for FaceMatcher in browser)."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
-    return JsonResponse(_load_faces())
+    faces = _load_faces()
+    if _is_self_manpower_only(user):
+        allowed = {_normalize_person_name(name) for name in _user_person_names(user)}
+        faces = {
+            name: payload for name, payload in faces.items()
+            if _normalize_person_name(name) in allowed
+        }
+    return JsonResponse(faces)
 
 # ── ATTENDANCE PEOPLE MANAGEMENT ──────────────────────────────────────────
 
@@ -1720,14 +1997,14 @@ def _save_people(data):
 @csrf_exempt
 def attendance_people(request):
     """GET: list people. POST: add. DELETE via POST with action=delete."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
 
     if request.method == 'GET':
-        return JsonResponse({'people': _load_people()})
+        return JsonResponse({'people': _filter_attendance_people_for_user(_load_people(), user)})
 
-    _, err = _api_auth(request, admin_only=True)
+    _, err = _api_auth(request, admin_only=True, module_id='manpower', level='edit')
     if err:
         return err
 
@@ -1786,7 +2063,7 @@ def _save_photos(data):
 @csrf_exempt
 def attendance_face_photo_save(request):
     """Save a face photo (base64 JPEG) for a person during training."""
-    _, err = _api_auth(request, admin_only=True)
+    _, err = _api_auth(request, admin_only=True, module_id='manpower', level='edit')
     if err:
         return err
     if request.method != 'POST':
@@ -1804,9 +2081,13 @@ def attendance_face_photo_save(request):
 
 def attendance_face_photo_get(request, name):
     """Return the stored face photo for a person."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
+    if _is_self_manpower_only(user):
+        allowed = {_normalize_person_name(person_name) for person_name in _user_person_names(user)}
+        if _normalize_person_name(name) not in allowed:
+            return JsonResponse({'error': 'Forbidden'}, status=403)
     photos = _load_photos()
     if name not in photos:
         return JsonResponse({'error': 'No photo'}, status=404)
@@ -1815,10 +2096,17 @@ def attendance_face_photo_get(request, name):
 
 def attendance_face_photos_all(request):
     """Return all face photos as {name: dataURL}."""
-    _, err = _api_auth(request)
+    user, err = _api_auth(request, module_id='manpower', level='view')
     if err:
         return err
-    return JsonResponse(_load_photos())
+    photos = _load_photos()
+    if _is_self_manpower_only(user):
+        allowed = {_normalize_person_name(name) for name in _user_person_names(user)}
+        photos = {
+            name: payload for name, payload in photos.items()
+            if _normalize_person_name(name) in allowed
+        }
+    return JsonResponse(photos)
 
 
 # ── HSE: SJN Portal ────────────────────────────────────────────────────────
@@ -1826,6 +2114,9 @@ def attendance_face_photos_all(request):
 @login_required
 def hse_sjn_portal(request):
     """Serve the SJN O&M portal inside the HDEC shell."""
+    redir = _require_module_page(request, 'sjn_portal', 'view')
+    if redir:
+        return redir
     user = get_user(request)
     return render(request, 'core/hse_sjn_portal.html', _ctx(request, {
         'page_title': 'SJN Portal',

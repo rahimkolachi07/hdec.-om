@@ -1,0 +1,28 @@
+{
+  "id": "647e1163-a373-4093-be8c-90e73c8e8576",
+  "date": "2026-04-15",
+  "shift": "Day",
+  "timing": "08:00 - 20:00",
+  "shift_incharge": "Admin",
+  "technicians": [
+    "Tech A"
+  ],
+  "status": "draft",
+  "created_at": "2026-04-15T01:52:07.323037",
+  "created_by": "Administrator",
+  "updated_at": "2026-04-15T01:52:07.323037",
+  "updated_by": "Administrator",
+  "submitted_at": "",
+  "major_alarms": "",
+  "equipment_breakdown": "",
+  "maintenance_activities": "",
+  "inverter_faults": "",
+  "scb_faults": "",
+  "spare_parts": "",
+  "key_issues": "",
+  "pending_work": "",
+  "instructions_next_shift": "",
+  "observation_text": "",
+  "shift_engineer_sig": "",
+  "incoming_engineer_sig": ""
+}

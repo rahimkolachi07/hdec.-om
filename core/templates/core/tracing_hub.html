@@ -2,216 +2,606 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Tracing Hub — HDEC 1100MW Al Henakiya</title>
+  <title>Tracing Dashboard — HDEC 1100MW Al Henakiya</title>
   <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --bg:#030711;--surface:rgba(255,255,255,.03);--surface2:rgba(255,255,255,.055);
-      --border:rgba(255,255,255,.07);--text:#e2e8f5;--text-muted:rgba(226,232,245,.45);
-      --text-dim:rgba(226,232,245,.2);--accent:#3b9eff;--accent2:#00e5c8;
+      --bg:#030711;--bg2:#060d1a;
+      --surface:rgba(255,255,255,.035);--surface2:rgba(255,255,255,.06);
+      --border:rgba(255,255,255,.08);--text:#e2e8f5;
+      --text-muted:rgba(226,232,245,.48);--text-dim:rgba(226,232,245,.22);
+      --accent:#3b9eff;
       --fd:'Plus Jakarta Sans',sans-serif;--fb:'Inter',sans-serif;
+      --r:14px;--rl:18px;
     }
     html{scroll-behavior:smooth}
     body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;overflow-x:hidden}
-    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.35}
+    #cv{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.28}
     .wrap{position:relative;z-index:1}
-
-    /* TOPBAR */
-    .topbar{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:16px 44px;border-bottom:1px solid var(--border);
-      background:rgba(3,7,17,.8);backdrop-filter:blur(20px);
-      position:sticky;top:0;z-index:100;
-    }
-    .logo{font-family:var(--fd);font-size:20px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:center;gap:10px}
-    .logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#3b9eff,#00e5c8);display:flex;align-items:center;justify-content:center;font-size:17px}
-    .logo span{color:var(--accent)}
-    .back{padding:8px 16px;border-radius:30px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:13px;text-decoration:none;transition:all .2s}
-    .back:hover{color:var(--text);border-color:rgba(59,158,255,.3)}
-
-    /* HERO */
-    .hero{padding:64px 44px 48px;text-align:center}
-    .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:30px;border:1px solid rgba(59,158,255,.2);background:rgba(59,158,255,.07);font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.8px;text-transform:uppercase;margin-bottom:24px}
-    .pulse{width:7px;height:7px;border-radius:50%;background:#00e5c8;animation:pulse 2s ease infinite}
     @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.5)}}
-    .hero h1{font-family:var(--fd);font-size:clamp(36px,5vw,58px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:14px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes up{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── TOPBAR ── */
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      padding:11px 32px;border-bottom:1px solid var(--border);
+      background:rgba(3,7,17,.9);backdrop-filter:blur(22px);
+      position:sticky;top:0;z-index:300;
+    }
+    .tl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .logo{font-family:var(--fd);font-size:17px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:center;gap:8px}
+    .logo-icon{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#3b9eff,#00e5c8);display:flex;align-items:center;justify-content:center;font-size:14px}
+    .logo span{color:var(--accent)}
+    .back{padding:5px 12px;border-radius:30px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:11.5px;text-decoration:none;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+    .back:hover{color:var(--text);border-color:rgba(59,158,255,.35);background:var(--surface2)}
+    .tr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .live-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:30px;border:1px solid rgba(34,197,94,.25);background:rgba(34,197,94,.08);font-size:10.5px;font-weight:600;color:#4ade80}
+    .live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 1.8s ease infinite}
+    .user-chip{padding:4px 11px;border-radius:30px;font-size:11px;font-weight:600}
+
+    /* ── HERO ── */
+    .hero{padding:18px 32px 14px;border-bottom:1px solid var(--border);background:rgba(6,13,26,.3)}
+    .hero-inner{max-width:1600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .hero h1{font-family:var(--fd);font-size:clamp(20px,2.5vw,30px);font-weight:800;letter-spacing:-1px;margin-bottom:3px}
     .hero h1 .g{background:linear-gradient(90deg,#3b9eff,#00e5c8,#a259ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .hero p{font-size:16px;color:var(--text-muted);font-weight:300;max-width:480px;margin:0 auto 0}
+    .hero p{font-size:12.5px;color:var(--text-muted)}
+    .hero-btns{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:30px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--fb);border:none;transition:all .2s;text-decoration:none;white-space:nowrap}
+    .btn-primary{background:linear-gradient(135deg,#3b9eff,#00b8d9);color:#fff}
+    .btn-primary:hover{opacity:.88}
+    .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--text-muted)}
+    .btn-ghost:hover{border-color:rgba(59,158,255,.35);color:var(--text)}
+    .btn-green{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.22);color:#4ade80}
+    .btn-green:hover{background:rgba(34,197,94,.18)}
+    #last-upd{font-size:10.5px;color:var(--text-dim)}
 
-    /* STATS ROW */
-    .stats-row{display:flex;justify-content:center;gap:40px;padding:32px 44px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-    .stat{text-align:center}
-    .stat-n{font-family:var(--fd);font-size:32px;font-weight:800;color:var(--accent);letter-spacing:-1px}
-    .stat-l{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
-
-    /* GRID */
-    .grid-section{padding:40px 44px 80px;max-width:1400px;margin:0 auto}
-    .grid-section h2{font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:28px;letter-spacing:-.3px}
-    .grid-section h2 span{color:var(--text-muted);font-weight:400;font-size:15px;margin-left:10px}
-    .sheets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
-
-    /* SHEET CARD */
-    .sheet-card{
-      position:relative;border-radius:20px;border:1px solid var(--border);
-      background:var(--surface);padding:30px 26px;
-      text-decoration:none;color:inherit;
-      display:flex;flex-direction:column;gap:0;
-      overflow:hidden;cursor:pointer;
-      transition:all .3s cubic-bezier(.34,1.56,.64,1);
-      animation:up .5s ease both;
-    }
-    .sheet-card:hover{
-      transform:translateY(-7px) scale(1.015);
-      border-color:var(--card-color);
-      box-shadow:0 0 40px var(--card-glow),0 20px 60px rgba(0,0,0,.35);
-    }
-    .card-glow-orb{
-      position:absolute;top:-30px;right:-30px;
-      width:110px;height:110px;border-radius:50%;
-      filter:blur(40px);background:var(--card-color);
-      opacity:.12;transition:opacity .3s;
-    }
-    .sheet-card:hover .card-glow-orb{opacity:.35}
-    .card-stripe{
-      position:absolute;top:0;left:0;right:0;height:3px;
-      background:var(--card-color);opacity:.7;
-      border-radius:20px 20px 0 0;
-    }
-    .card-icon{font-size:34px;margin-bottom:18px;line-height:1;position:relative;z-index:1}
-    .card-name{font-family:var(--fd);font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px;position:relative;z-index:1}
-    .card-desc{font-size:12.5px;color:var(--text-muted);font-weight:300;line-height:1.55;position:relative;z-index:1;flex:1}
-    .card-footer{
-      display:flex;align-items:center;justify-content:space-between;
-      margin-top:22px;padding-top:16px;border-top:1px solid var(--border);
-      position:relative;z-index:1;
-    }
-    .card-tag{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;
-      background:color-mix(in srgb,var(--card-color) 12%,transparent);
-      color:var(--card-color);border:1px solid color-mix(in srgb,var(--card-color) 25%,transparent);
-    }
-    .card-arrow{
-      width:30px;height:30px;border-radius:9px;
-      background:var(--surface2);display:flex;align-items:center;justify-content:center;
-      font-size:15px;transition:all .25s;
-    }
-    .sheet-card:hover .card-arrow{background:var(--card-color);transform:translate(2px,-2px)}
-
-    @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-    @media(max-width:700px){.topbar,.hero,.grid-section,.stats-row{padding-left:16px;padding-right:16px}}
-    /* ── DAY MODE ── */
-    html[data-theme="light"]{--bg:#030711;--surface:rgba(0,0,0,.028);--surface2:rgba(0,0,0,.055);--border:rgba(0,0,0,.09);--text:#0d1728;--text-muted:rgba(13,23,40,.5);--text-dim:rgba(13,23,40,.28);}
-    html[data-theme="light"]{--bg:#f4f6fd}
-    html[data-theme="light"] body{background:#f4f6fd}
-    html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important;border-bottom-color:rgba(0,0,0,.09)}
-    html[data-theme="light"] #cv{opacity:.05!important}
-    html[data-theme="light"] .sheet-card{background:#fff;border-color:rgba(0,0,0,.08)}
-    html[data-theme="light"] .sheet-card:hover{box-shadow:0 0 40px var(--card-glow,rgba(59,158,255,.15)),0 20px 60px rgba(0,0,0,.1)}
-    html[data-theme="light"] .hero{background:rgba(248,249,255,.5)}
-    html[data-theme="light"] .stats-row{border-bottom-color:rgba(0,0,0,.09)}
-    html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
-    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
-    .tt-label{font-size:10.5px;font-weight:700;color:var(--text-muted);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
-    .theme-toggle:hover .tt-label{color:var(--text)}
-    .tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
+    /* ── THEME TOGGLE ── */
+    .tt{display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:3px}
+    .tt-lbl{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:.7px;text-transform:uppercase;user-select:none}
+    .tt:hover .tt-lbl{color:var(--text)}
+    .tt-track{width:40px;height:22px;border-radius:11px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:all .4s;flex-shrink:0}
     html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
-    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
-    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
+    .tt-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;transition:transform .34s cubic-bezier(.34,1.56,.64,1),background .34s}
+    html[data-theme="light"] .tt-thumb{transform:translateX(18px);background:linear-gradient(135deg,#fbbf24,#fb923c)}
+
+    /* ── TAB BAR ── */
+    .tab-bar-wrap{
+      background:rgba(3,7,17,.72);border-bottom:2px solid var(--border);
+      position:sticky;top:51px;z-index:200;backdrop-filter:blur(14px);
+    }
+    .tab-bar{display:flex;padding:0 32px;overflow-x:auto;scrollbar-width:none;max-width:1600px;margin:0 auto}
+    .tab-bar::-webkit-scrollbar{display:none}
+    .tab-pill{
+      display:flex;align-items:center;gap:6px;padding:11px 14px;
+      border-bottom:3px solid transparent;color:var(--text-muted);
+      font-size:11.5px;font-weight:500;cursor:pointer;white-space:nowrap;
+      transition:color .2s,border-color .2s,background .2s;
+      background:none;border-top:none;border-left:none;border-right:none;
+      font-family:var(--fb);position:relative;bottom:-2px;
+    }
+    .tab-pill:hover{color:var(--text);background:rgba(255,255,255,.03)}
+    .tab-pill.active{
+      color:var(--tab-color,var(--accent));
+      border-bottom-color:var(--tab-color,var(--accent));
+      font-weight:700;
+      background:color-mix(in srgb,var(--tab-color,var(--accent)) 6%,transparent);
+    }
+
+    /* ── CONTENT ── */
+    .content{max-width:1600px;margin:0 auto;padding:20px 32px 50px}
+    .err-bar{display:none;padding:10px 14px;border-radius:var(--r);border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.07);color:#f87171;font-size:12px;margin-bottom:14px}
+    .data-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:50px 20px;color:var(--text-muted)}
+    .ring{width:34px;height:34px;border:3px solid rgba(59,158,255,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+    .data-loading p{font-size:13px}
+
+    /* ── KPI ── */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+    .kpi{padding:17px 20px;border-radius:var(--rl);border:1px solid var(--border);background:var(--surface);position:relative;overflow:hidden;animation:up .4s ease both;transition:border-color .2s}
+    .kpi::after{content:'';position:absolute;top:-22px;right:-22px;width:65px;height:65px;border-radius:50%;filter:blur(22px);background:var(--kc,var(--accent));opacity:.14}
+    .kpi:hover{border-color:var(--kc,var(--accent))}
+    .kpi-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--text-muted);font-weight:600;margin-bottom:6px}
+    .kpi-val{font-family:var(--fd);font-size:28px;font-weight:800;letter-spacing:-1.5px;color:var(--kc,var(--accent));line-height:1}
+    .kpi-sub{font-size:10px;color:var(--text-dim);margin-top:4px}
+    .kpi-ico{position:absolute;bottom:10px;right:13px;font-size:22px;opacity:.13}
+
+    /* ── CHARTS ── */
+    .chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
+    .chart-full{margin-bottom:12px}
+    .cc{border-radius:var(--rl);border:1px solid var(--border);background:var(--surface);padding:16px 18px;animation:up .4s ease both;overflow:hidden}
+    .cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .cc-head h3{font-family:var(--fd);font-size:12px;font-weight:700}
+    .tag{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);font-weight:600}
+    .cw{position:relative;height:200px}
+    .cw.wide{height:230px}
+
+    /* ── SHEET EMBED ── */
+    .embed-section{margin-top:24px;border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;animation:up .5s ease both}
+
+    /* Toolbar above iframe */
+    .embed-toolbar{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      padding:10px 16px;
+      background:var(--surface2);border-bottom:1px solid var(--border);
+    }
+    .embed-toolbar-left{display:flex;align-items:center;gap:8px}
+    .embed-tab-icon{font-size:15px;line-height:1}
+    .embed-name{font-family:var(--fd);font-size:13px;font-weight:700}
+    .embed-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#4ade80;font-weight:600}
+    .embed-toolbar-right{display:flex;align-items:center;gap:7px}
+    .embed-hint{font-size:10.5px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* The iframe wrapper — fixed height so the sheet fills it */
+    .embed-frame-wrap{
+      position:relative;
+      height:720px;
+      background:#fff;   /* white matches Google Sheets bg */
+    }
+
+    /* iframe fills the wrapper */
+    .embed-frame-wrap iframe{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      border:none;display:block;
+    }
+
+    /* Spinner overlay — fades out after load */
+    .embed-spinner{
+      position:absolute;inset:0;z-index:5;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+      background:rgba(3,7,17,.7);
+      transition:opacity .5s ease;
+    }
+    .embed-spinner p{font-size:12.5px;color:var(--text-muted)}
+    .embed-spinner small{font-size:11px;color:var(--text-dim)}
+    .embed-spinner.done{opacity:0;pointer-events:none}
+
+    /* THEME */
+    html[data-theme="light"]{--bg:#f4f6fd;--bg2:#edf0fb;--surface:rgba(255,255,255,.88);--surface2:#fff;--border:rgba(0,0,0,.09);--text:#0d1728;--text-muted:rgba(13,23,40,.52);--text-dim:rgba(13,23,40,.3)}
+    html[data-theme="light"] body{background:#f4f6fd}
+    html[data-theme="light"] .topbar{background:rgba(244,246,253,.96)!important}
+    html[data-theme="light"] #cv{opacity:.03!important}
+    html[data-theme="light"] .tab-bar-wrap{background:rgba(244,246,253,.96)}
+    html[data-theme="light"] .hero{background:rgba(244,246,253,.5)}
+    html[data-theme="light"] .embed-spinner{background:rgba(244,246,253,.8)}
+
+    @media(max-width:1100px){.chart-grid{grid-template-columns:1fr 1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:700px){
+      .content,.topbar,.hero{padding-left:14px;padding-right:14px}
+      .tab-bar{padding:0 14px}
+      .chart-grid{grid-template-columns:1fr}.kpi-row{grid-template-columns:1fr 1fr}
+      .embed-frame-wrap{height:480px}
+    }
   </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
 <div class="wrap">
 
-  <header class="topbar">
-    <div class="logo"><div class="logo-icon">⚡</div>HDEC <span>· 1100MW Al Henakiya</span></div>
-    <a href="/" class="back">← Dashboard</a>
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="padding:6px 13px;border-radius:30px;font-size:12px;font-weight:600;{% if is_admin %}border:1px solid rgba(162,89,255,.3);background:rgba(162,89,255,.08);color:#c084fc{% else %}border:1px solid var(--border);background:var(--s);color:var(--tm){% endif %}">{% if is_admin %}👑{% else %}👁{% endif %} {{ current_user.name }}</div>
-      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-        <span class="tt-label" id="tt-label">Night</span>
-        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
-      </button>
-      <a href="/logout/" style="padding:6px 13px;border-radius:30px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.07);color:#f87171;font-size:12px;text-decoration:none">Sign Out</a>
-    </div>
-  </header>
-
-  <section class="hero">
-    <div class="hero-badge"><div class="pulse"></div>Live · Auto-Refresh Every 60s</div>
-    <h1>Maintenance <span class="g">Tracing Hub</span></h1>
-    <p>11 live data modules, each fetching directly from Google Sheets and updating automatically.</p>
-  </section>
-
-  <div class="stats-row">
-    <div class="stat"><div class="stat-n">11</div><div class="stat-l">Active Modules</div></div>
-    <div class="stat"><div class="stat-n">60s</div><div class="stat-l">Refresh Rate</div></div>
-    <div class="stat"><div class="stat-n">Live</div><div class="stat-l">Google Sheets Sync</div></div>
-    <div class="stat"><div class="stat-n">270+</div><div class="stat-l">PM Tracing Records</div></div>
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="tl">
+    <div class="logo"><div class="logo-icon">⚡</div>HDEC <span>· 1100MW</span></div>
+    <a href="/" class="back">⌂ Home</a>
+    <a href="/p/saudi_arabia/henakiya_1/maintenance/" class="back">← Maintenance</a>
   </div>
-
-  <section class="grid-section">
-    <h2>Tracing Modules <span>— click any to open live dashboard</span></h2>
-    <div class="sheets-grid">
-      {% for s in sheets %}
-      <a href="/tracing/{{ s.slug }}/" class="sheet-card"
-         style="--card-color:{{ s.color }};--card-glow:{{ s.color }}40"
-         {% if forloop.counter %}style="animation-delay:{{ forloop.counter0 }}00ms"{% endif %}>
-        <div class="card-stripe"></div>
-        <div class="card-glow-orb"></div>
-        <div class="card-icon">{{ s.icon }}</div>
-        <div class="card-name">{{ s.name }}</div>
-        <div class="card-desc">
-          {% if s.slug == 'statistics-pm' %}Preventive maintenance KPIs, completion rates & summary statistics{% endif %}
-          {% if s.slug == 'statistics-cm' %}Corrective maintenance aggregates, trends & performance metrics{% endif %}
-          {% if s.slug == 'pm-tracing' %}Detailed PM issue log — block, SCB, string, action & rectification{% endif %}
-          {% if s.slug == 'scb' %}String Combiner Box tracking, fault distribution & status{% endif %}
-          {% if s.slug == 'trackers' %}Solar tracker issues, alignment faults & operational status{% endif %}
-          {% if s.slug == 'inverter-mvps' %}Inverter & MVPS alarms, downtime and performance tracking{% endif %}
-          {% if s.slug == 'strings-pv-modules' %}String & PV module issues, damage reports & replacements{% endif %}
-          {% if s.slug == 'pv-equipment-failure' %}PV equipment failure log with root causes & resolution tracking{% endif %}
-          {% if s.slug == 'ss-equipment-failure' %}Substation equipment failures, fault types & repair status{% endif %}
-          {% if s.slug == 'ss-observations' %}Substation field observations, inspection findings & actions{% endif %}
-          {% if s.slug == 'pv-observations' %}PV field observations, site inspection records & findings{% endif %}
-        </div>
-        <div class="card-footer">
-          <span class="card-tag">Live Data</span>
-          <div class="card-arrow">→</div>
-        </div>
-      </a>
-      {% endfor %}
+  <div class="tr">
+    <span id="last-upd"></span>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="user-chip {% if is_admin %}style="border:1px solid rgba(162,89,255,.3);background:rgba(162,89,255,.08);color:#c084fc"{% else %}style="border:1px solid var(--border);background:var(--surface);color:var(--text-muted)"{% endif %}">
+      {% if is_admin %}👑{% else %}👁{% endif %} {{ current_user.name }}
     </div>
-  </section>
+    <button class="tt" onclick="toggleTheme()">
+      <span class="tt-lbl" id="tt-label">Night</span>
+      <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
+    </button>
+    <a href="/logout/" class="back" style="border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.06);color:#f87171">Sign Out</a>
+  </div>
+</header>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <h1>Maintenance <span class="g">Tracing</span></h1>
+      <p>Select a tab — KPIs, charts and the live sheet update automatically</p>
+    </div>
+    <div class="hero-btns">
+      <button class="btn btn-green" onclick="downloadCSV()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Tab CSV
+      </button>
+      <a class="btn btn-primary" href="https://docs.google.com/spreadsheets/d/{{ SHEET_ID }}/export?format=xlsx" target="_blank">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Full Workbook
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── TABS ── -->
+<div class="tab-bar-wrap">
+  <div class="tab-bar" id="tabBar">
+    {% for s in sheets %}
+    <button
+      class="tab-pill {% if forloop.first %}active{% endif %}"
+      style="--tab-color:{{ s.color }}"
+      data-slug="{{ s.slug }}"
+      data-color="{{ s.color }}"
+      data-sheet="{{ s.sheet }}"
+      data-name="{{ s.name }}"
+      data-icon="{{ s.icon }}"
+      onclick="switchTab(this)"
+    ><span style="font-size:13px">{{ s.icon }}</span><span>{{ s.name }}</span></button>
+    {% endfor %}
+  </div>
 </div>
 
+<!-- ── CONTENT ── -->
+<div class="content">
+  <div class="err-bar" id="eb"></div>
+  <div class="data-loading" id="dataLoad"><div class="ring"></div><p>Loading data…</p></div>
+
+  <!-- KPIs -->
+  <div class="kpi-row" id="kpiRow" style="display:none"></div>
+  <!-- Charts -->
+  <div id="chartsArea"></div>
+
+  <!-- ── GOOGLE SHEET EMBED ─────────────────────────────────────────────── -->
+  <!--
+    We use /htmlview which is Google's officially-embeddable read-only URL.
+    It works in all browsers without needing Google sign-in or third-party
+    cookies (unlike /edit which is blocked in modern Chrome/Edge).
+    Tab navigation uses ?gid=NNN when a GID is available, otherwise the
+    full spreadsheet is shown and users can click the correct tab inside it.
+    To EDIT, the toolbar has an "Edit in Google Sheets" button (new tab).
+  -->
+  <div class="embed-section" id="embedSection" style="display:none">
+
+    <div class="embed-toolbar">
+      <div class="embed-toolbar-left">
+        <span class="embed-tab-icon" id="embedIcon">📋</span>
+        <span class="embed-name" id="embedName">Sheet</span>
+        <span class="embed-badge">Live View</span>
+      </div>
+      <div class="embed-toolbar-right">
+        <span class="embed-hint" id="embedHint"></span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="reloadEmbed()">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          Reload
+        </button>
+        <a class="btn btn-primary" id="editBtn" href="#" target="_blank" style="font-size:11px;padding:5px 11px">
+          ✏️ Edit in Google Sheets ↗
+        </a>
+      </div>
+    </div>
+
+    <div class="embed-frame-wrap" id="embedFrameWrap">
+      <div class="embed-spinner" id="embedSpinner">
+        <div class="ring"></div>
+        <p id="spinMsg">Opening sheet…</p>
+        <small id="spinSub">Loading Google Sheets — this may take a few seconds…</small>
+      </div>
+      <!-- iframe injected here by JS -->
+    </div>
+  </div>
+
+</div><!-- /content -->
+</div><!-- /wrap -->
+
+<!-- Config passed from Django -->
 <script>
+const SHEETS_CFG = {{ sheets_json|safe }};
+const SHEET_ID   = '{{ SHEET_ID }}';
+const SLUG_MAP   = Object.fromEntries(SHEETS_CFG.map(s=>[s.slug, s]));
+</script>
+
+<script>
+/* ── BG ── */
 const cv=document.getElementById('cv'),cx=cv.getContext('2d');
 let W,H;
-const dots=Array.from({length:55},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.28,dy:(Math.random()-.5)*.28,r:Math.random()*1.3+.3,a:Math.random()*.45+.08}));
-function rs(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight}rs();window.addEventListener('resize',rs);
-function draw(){
+const dots=Array.from({length:38},()=>({x:Math.random()*2000,y:Math.random()*1200,dx:(Math.random()-.5)*.22,dy:(Math.random()-.5)*.22,r:Math.random()*1.1+.3,a:Math.random()*.32+.07}));
+function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}rs();addEventListener('resize',rs);
+(function bgLoop(){
   cx.clearRect(0,0,W,H);
-  cx.strokeStyle='rgba(59,158,255,0.022)';cx.lineWidth=1;
+  cx.strokeStyle='rgba(59,158,255,0.016)';cx.lineWidth=1;
   for(let x=0;x<W;x+=90){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke()}
   for(let y=0;y<H;y+=90){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
   dots.forEach(d=>{
     d.x+=d.dx;d.y+=d.dy;
     if(d.x<0)d.x=W;if(d.x>W)d.x=0;if(d.y<0)d.y=H;if(d.y>H)d.y=0;
-    cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);
-    cx.fillStyle=`rgba(59,158,255,${d.a})`;cx.fill();
+    cx.beginPath();cx.arc(d.x,d.y,d.r,0,Math.PI*2);cx.fillStyle=`rgba(59,158,255,${d.a})`;cx.fill();
   });
-  // connections
-  for(let i=0;i<dots.length;i++)for(let j=i+1;j<dots.length;j++){
-    const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<140){cx.beginPath();cx.moveTo(dots[i].x,dots[i].y);cx.lineTo(dots[j].x,dots[j].y);cx.strokeStyle=`rgba(59,158,255,${.05*(1-dist/140)})`;cx.lineWidth=.6;cx.stroke()}
-  }
-  requestAnimationFrame(draw);
+  requestAnimationFrame(bgLoop);
+})();
+
+/* ── CHART SETUP ── */
+Chart.defaults.color='rgba(226,232,245,0.45)';
+Chart.defaults.borderColor='rgba(255,255,255,0.07)';
+Chart.defaults.font.family="'Inter',sans-serif";
+const PAL=['#3b9eff','#00e5c8','#a259ff','#ff6b35','#f0c040','#22c55e','#ef4444','#e879f9','#38bdf8','#fb923c','#84cc16','#ec4899'];
+let _ch={};
+function mkChart(id,type,labels,datasets,opts={}){
+  if(_ch[id]){try{_ch[id].destroy()}catch(e){}}
+  const el=document.getElementById(id);if(!el)return;
+  _ch[id]=new Chart(el.getContext('2d'),{type,data:{labels,datasets},options:{
+    responsive:true,maintainAspectRatio:false,
+    animation:{duration:480,easing:'easeInOutQuart'},
+    plugins:{
+      legend:{position:opts.lp||'bottom',labels:{boxWidth:11,padding:10,font:{size:11}}},
+      tooltip:{backgroundColor:'rgba(6,13,26,.96)',borderColor:'rgba(59,158,255,.22)',borderWidth:1,padding:10,titleFont:{size:12,weight:'bold'},bodyFont:{size:11}}
+    },
+    scales:opts.scales||undefined,...(opts.extra||{})
+  }});
 }
-draw();
-// stagger card animations
-document.querySelectorAll('.sheet-card').forEach((c,i)=>{c.style.animationDelay=`${i*60}ms`});
-function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
-(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+function killCharts(){Object.values(_ch).forEach(c=>{try{c.destroy()}catch(e){}});_ch={};}
+
+/* ── STATE ── */
+let activeSlug='',activeColor='#3b9eff';
+let cachedRec={},cachedHdr={},gidCache={};
+let embedTimer=null,autoTimer=null;
+
+/* ── TAB SWITCH ── */
+function switchTab(btn){
+  const slug=btn.dataset.slug;
+  if(slug===activeSlug)return;
+  document.querySelectorAll('.tab-pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  activeSlug=slug;
+  activeColor=btn.dataset.color||'#3b9eff';
+  document.documentElement.style.setProperty('--accent',activeColor);
+  clearInterval(autoTimer);
+  document.getElementById('kpiRow').style.display='none';
+  document.getElementById('chartsArea').innerHTML='';
+  killCharts();
+  document.getElementById('eb').style.display='none';
+  loadData(slug);
+  loadEmbed(slug,btn);
+  autoTimer=setInterval(()=>loadData(slug),60000);
+}
+
+/* ── DATA (KPIs + charts) ── */
+async function loadData(slug){
+  document.getElementById('dataLoad').style.display='flex';
+  try{
+    const r=await fetch(`/api/tracing/${slug}/`);
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    cachedRec[slug]=d.records||[];
+    cachedHdr[slug]=d.headers||[];
+    if(d.gid)gidCache[slug]=d.gid;
+    renderKPIs(d);
+    renderCharts(d.aggregates||{});
+    document.getElementById('last-upd').textContent='Updated '+d.fetched_at;
+    document.getElementById('eb').style.display='none';
+    document.getElementById('kpiRow').style.display='';
+  }catch(e){
+    document.getElementById('eb').style.display='block';
+    document.getElementById('eb').textContent='⚠ '+e.message;
+    document.getElementById('kpiRow').style.display='none';
+  }finally{
+    document.getElementById('dataLoad').style.display='none';
+  }
+}
+
+/* ── KPIs ── */
+function renderKPIs(d){
+  const r=d.records||[],ac=activeColor;
+  const ks=[
+    {l:'Total Records',v:d.total_records||r.length,s:'Rows in sheet',i:'📋',c:ac},
+    {l:'Unique Dates',v:uniq(r,'Date')||uniq(r,'DATE')||'—',s:'Date entries',i:'📅',c:'#00e5c8'},
+    {l:'Completion',v:pct(r),s:'Done vs total',i:'✅',c:'#22c55e'},
+    {l:'Unique Blocks',v:uniq(r,'BLOCK')||uniq(r,'Block')||'—',s:'Block refs',i:'🏗️',c:'#a259ff'},
+  ];
+  document.getElementById('kpiRow').innerHTML=ks.map((k,i)=>`
+    <div class="kpi" style="--kc:${k.c};animation-delay:${i*55}ms">
+      <div class="kpi-label">${k.l}</div><div class="kpi-val">${k.v}</div>
+      <div class="kpi-sub">${k.s}</div><div class="kpi-ico">${k.i}</div>
+    </div>`).join('');
+}
+function uniq(r,c){if(!r.length||!r.find(x=>c in x))return'—';return new Set(r.map(x=>x[c]).filter(Boolean)).size;}
+function pct(r){
+  if(!r.length)return'—';
+  const sk=Object.keys(r[0]).find(k=>k.toLowerCase().includes('status'));
+  if(!sk)return'—';
+  return Math.round(r.filter(x=>(x[sk]||'').toLowerCase().includes('done')).length/r.length*100)+'%';
+}
+
+/* ── CHARTS ── */
+function renderCharts(agg){
+  const area=document.getElementById('chartsArea');
+  area.innerHTML='';killCharts();
+  const entries=Object.entries(agg);
+  if(!entries.length)return;
+  const small=entries.filter(([,v])=>Object.keys(v).length<=8);
+  const large=entries.filter(([,v])=>Object.keys(v).length>8);
+
+  if(small.length){
+    const g=document.createElement('div');g.className='chart-grid';
+    small.forEach(([col,counts],ci)=>{
+      const labels=Object.keys(counts),vals=Object.values(counts);
+      const id=`cs${ci}_${col.replace(/\W/g,'_')}`;
+      const isDn=labels.length<=5;
+      const card=document.createElement('div');
+      card.className='cc';card.style.animationDelay=`${ci*50}ms`;
+      card.innerHTML=`<div class="cc-head"><h3>${col}</h3><span class="tag">${isDn?'Donut':'Bar'} · ${labels.length}</span></div><div class="cw"><canvas id="${id}"></canvas></div>`;
+      g.appendChild(card);
+      setTimeout(()=>{
+        if(isDn){mkChart(id,'doughnut',labels,[{data:vals,backgroundColor:PAL.map(c=>c+'bb'),borderColor:'#060d1a',borderWidth:2,hoverOffset:4}],{lp:'bottom',extra:{cutout:'60%'}});}
+        else{mkChart(id,'bar',labels,[{label:'Count',data:vals,backgroundColor:PAL.map(c=>c+'88'),borderColor:PAL,borderWidth:1.5,borderRadius:4}],{lp:false,scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10},maxRotation:40}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:11},stepSize:1}}}});}
+      },0);
+    });
+    area.appendChild(g);
+  }
+  large.forEach(([col,counts],ci)=>{
+    const labels=Object.keys(counts),vals=Object.values(counts);
+    const id=`cl${ci}_${col.replace(/\W/g,'_')}`;
+    const card=document.createElement('div');card.className='cc chart-full';card.style.animationDelay=`${(small.length+ci)*50}ms`;
+    card.innerHTML=`<div class="cc-head"><h3>${col}</h3><span class="tag">Bar · ${labels.length}</span></div><div class="cw wide"><canvas id="${id}"></canvas></div>`;
+    area.appendChild(card);
+    setTimeout(()=>{
+      mkChart(id,'bar',labels,[{label:'Count',data:vals,backgroundColor:vals.map((_,i)=>PAL[i%PAL.length]+'88'),borderColor:vals.map((_,i)=>PAL[i%PAL.length]),borderWidth:1.5,borderRadius:4}],
+        {lp:false,extra:{indexAxis:'y'},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10}}}}});
+    },0);
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GOOGLE SHEET EMBED
+   ─────────────────────────────────────────────────────────────────────────
+   WHY /htmlview instead of /edit:
+   - Modern Chrome/Edge block /edit in iframes (third-party cookie restrictions)
+   - /htmlview is Google's official embeddable URL — no login required,
+     works in all browsers, shows full sheet with tab bar at bottom
+   - Tab navigation: append ?gid=NNN to jump directly to the right tab
+   - GID is fetched from /api/tracing/gids/ on page load (cached 2h server-side)
+   - Without GID: show full sheet; user can see/click the correct tab inside
+
+   To EDIT the sheet, the toolbar "Edit in Google Sheets ↗" opens a new tab
+   with the full editable /edit URL.
+───────────────────────────────────────────────────────────────────────── */
+
+function embedUrl(slug){
+  const gid=gidCache[slug];
+  const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+  // edit?embedded=true is the official Google Sites embed URL — works in all
+  // modern browsers without third-party cookie restrictions.
+  // #gid=NNN jumps directly to the correct tab when GID is known.
+  return gid
+    ? `${base}/edit?embedded=true#gid=${gid}`
+    : `${base}/edit?embedded=true`;
+}
+
+function editUrl(slug){
+  const gid=gidCache[slug];
+  const base=`https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+  return gid ? `${base}/edit#gid=${gid}` : `${base}/edit`;
+}
+
+function loadEmbed(slug,btn){
+  const sec     = document.getElementById('embedSection');
+  const wrap    = document.getElementById('embedFrameWrap');
+  const spinner = document.getElementById('embedSpinner');
+  const nameEl  = document.getElementById('embedName');
+  const iconEl  = document.getElementById('embedIcon');
+  const hintEl  = document.getElementById('embedHint');
+  const editEl  = document.getElementById('editBtn');
+  const spinMsg = document.getElementById('spinMsg');
+
+  const cfg   = SLUG_MAP[slug]||{};
+  const icon  = btn ? btn.querySelector('span').textContent : (cfg.icon||'📋');
+  const name  = cfg.name||slug;
+  const sheet = cfg.sheet||slug;
+
+  iconEl.textContent = icon;
+  nameEl.textContent = name;
+  editEl.href        = editUrl(slug);
+  hintEl.textContent = gidCache[slug] ? `GID: ${gidCache[slug]}` : `Tab: "${sheet}"`;
+  spinMsg.textContent= `Opening "${name}"…`;
+
+  // Show section + spinner
+  sec.style.display='';
+  spinner.classList.remove('done');
+  clearTimeout(embedTimer);
+
+  // Remove any existing iframe and inject a fresh one
+  // (DOM replacement guarantees a full HTTP reload of the new URL)
+  const old=wrap.querySelector('iframe');
+  if(old)old.remove();
+
+  const fr=document.createElement('iframe');
+  fr.src=embedUrl(slug);
+  fr.allow='clipboard-read; clipboard-write; fullscreen';
+  fr.allowFullscreen=true;
+  fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:none;display:block';
+  wrap.appendChild(fr);
+
+  // Try onload first (fires if the browser allows cross-origin load events)
+  fr.onload=()=>{ clearTimeout(embedTimer); spinner.classList.add('done'); };
+  // Hard fallback: hide spinner after 6 s regardless (cross-origin onload
+  // may not fire in all browsers due to security restrictions)
+  embedTimer=setTimeout(()=>spinner.classList.add('done'),6000);
+}
+
+function reloadEmbed(){
+  const btn=document.querySelector(`.tab-pill[data-slug="${activeSlug}"]`);
+  if(btn)loadEmbed(activeSlug,btn);
+}
+
+/* ── GID PREFETCH ── */
+async function prefetchGIDs(){
+  try{
+    const r=await fetch('/api/tracing/gids/');
+    if(!r.ok)return;
+    const d=await r.json();
+    let updated=false;
+    (d.sheets||[]).forEach(s=>{
+      if(s.gid&&!gidCache[s.slug]){gidCache[s.slug]=s.gid;updated=true;}
+    });
+    // If active tab just got a GID, reload embed with correct tab
+    if(updated&&gidCache[activeSlug]){
+      document.getElementById('editBtn').href=editUrl(activeSlug);
+      document.getElementById('embedHint').textContent=`GID: ${gidCache[activeSlug]}`;
+      const btn=document.querySelector(`.tab-pill[data-slug="${activeSlug}"]`);
+      if(btn)loadEmbed(activeSlug,btn);
+    }
+  }catch(e){}
+}
+
+/* ── CSV EXPORT ── */
+function downloadCSV(){
+  const h=cachedHdr[activeSlug]||[],r=cachedRec[activeSlug]||[];
+  if(!h.length){alert('No data loaded yet.');return;}
+  const rows=[h,...r.map(x=>h.map(k=>x[k]||''))];
+  const csv=rows.map(r=>r.map(c=>{const s=String(c).replace(/"/g,'""');return(s.includes(',')||s.includes('"')||s.includes('\n'))?`"${s}"`:s;}).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`Tracing_${activeSlug}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();a.remove();
+}
+
+/* ── THEME ── */
+function toggleTheme(){
+  const html=document.documentElement;
+  const n=html.getAttribute('data-theme')==='light'?'dark':'light';
+  html.setAttribute('data-theme',n);localStorage.setItem('hdec-theme',n);
+  document.getElementById('tt-icon').textContent=n==='light'?'☀️':'🌙';
+  document.getElementById('tt-label').textContent=n==='light'?'Day':'Night';
+  Chart.defaults.color=n==='light'?'rgba(13,23,40,0.5)':'rgba(226,232,245,0.45)';
+  Chart.defaults.borderColor=n==='light'?'rgba(0,0,0,0.07)':'rgba(255,255,255,0.07)';
+}
+(function(){
+  const t=localStorage.getItem('hdec-theme')||'dark';
+  const ic=document.getElementById('tt-icon'),lb=document.getElementById('tt-label');
+  if(ic)ic.textContent=t==='light'?'☀️':'🌙';
+  if(lb)lb.textContent=t==='light'?'Day':'Night';
+})();
+
+/* ── INIT ── */
+(function init(){
+  const hash=window.location.hash.replace('#','');
+  let btn=document.querySelector('.tab-pill');
+  if(hash){const h=document.querySelector(`.tab-pill[data-slug="${hash}"]`);if(h)btn=h;}
+  if(!btn)return;
+  document.querySelectorAll('.tab-pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  activeSlug=btn.dataset.slug;
+  activeColor=btn.dataset.color||'#3b9eff';
+  document.documentElement.style.setProperty('--accent',activeColor);
+  setTimeout(()=>btn.scrollIntoView({inline:'center',behavior:'smooth'}),80);
+
+  // Load embed first (htmlview works without GID)
+  loadEmbed(activeSlug,btn);
+  // Fetch data and GIDs in parallel
+  loadData(activeSlug);
+  prefetchGIDs();   // if GID found, reloads embed with correct tab
+
+  autoTimer=setInterval(()=>loadData(activeSlug),60000);
+})();
 </script>
 </body>
 </html>

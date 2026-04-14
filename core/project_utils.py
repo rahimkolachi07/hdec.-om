@@ -77,7 +77,7 @@ MODULE_META = {
         'icon': '📋',
         'color': '#3b9eff',
         'desc': 'Maintenance activity records, checklists & photo logs',
-        'route': '/cmms/activities/',
+        'route': '/cmms/',
         'hub_route': '/cmms/',
         'category': 'maintenance',
     },

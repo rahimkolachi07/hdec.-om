@@ -1,9 +1,31 @@
+import socket
 from pathlib import Path
+
+
+def _discover_local_hosts():
+    hosts = {'127.0.0.1', 'localhost'}
+    try:
+        hostname = socket.gethostname()
+        if hostname:
+            hosts.add(hostname)
+        for info in socket.getaddrinfo(hostname, None):
+            address = info[4][0]
+            if address and ':' not in address:
+                hosts.add(address)
+    except OSError:
+        pass
+    return sorted(hosts)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'hdec-1100mw-alhenakiya-secret-2025-xK9p'
 DEBUG = False
-ALLOWED_HOSTS = ['hdec-om.live', 'www.hdec-om.live', '93.127.141.7', '127.0.0.1', 'localhost']
+LOCAL_HOSTS = _discover_local_hosts()
+ALLOWED_HOSTS = list(dict.fromkeys([
+    'hdec-om.live',
+    'www.hdec-om.live',
+    '93.127.141.7',
+    *LOCAL_HOSTS,
+]))
 
 # ── HTTPS / PROXY SETTINGS ───────────────────────────────────────────────────
 # Tell Django it's behind Caddy (HTTPS reverse proxy)
@@ -13,7 +35,11 @@ USE_X_FORWARDED_HOST = True
 # Secure cookies over HTTPS
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ['https://hdec-om.live', 'https://www.hdec-om.live']
+CSRF_TRUSTED_ORIGINS = [
+    'https://hdec-om.live',
+    'https://www.hdec-om.live',
+    *[f'http://{host}:8000' for host in LOCAL_HOSTS],
+]
 
 INSTALLED_APPS = [
     'django.contrib.staticfiles',
@@ -86,4 +112,17 @@ else:
 
 # ── CMMS SETTINGS ───────────────────────────────────────────────────────────
 CMMS_DATA_DIR = BASE_DIR / 'cmms_data'
+
+# ── HSE SETTINGS ────────────────────────────────────────────────────────────
+HSE_DATA_DIR = BASE_DIR / 'data' / 'hse'
+
+# ── PORTAL URL ───────────────────────────────────────────────────────────────
+HDEC_PORTAL_URL = 'https://hdec-om.live'
+
+# ── LIVE CHECKLIST DATA SOURCE ───────────────────────────────────────────────
+CMMS_CHECKLIST_DATA_SOURCE_URL = (
+    'https://docs.google.com/spreadsheets/d/'
+    '1HNbHa021efx6cly2vUqMGavlCMFJqwc_86UfTqn9Yrs/edit?usp=sharing'
+)
+CMMS_CHECKLIST_HTTP_TIMEOUT = 10
 

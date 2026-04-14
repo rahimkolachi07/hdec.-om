@@ -625,6 +625,7 @@
 <script>
 /* ── ROLE ── */
 const IS_ADMIN = {% if is_admin %}true{% else %}false{% endif %};
+const CAN_EDIT_MANPOWER = {% if can_edit_manpower %}true{% else %}false{% endif %};
 
 /* ── BACKGROUND ── */
 const cv=document.getElementById('cv'),cx=cv.getContext('2d');let W,H;
@@ -1006,12 +1007,12 @@ function buildTechCharts(){
 let activeCell = null;
 
 function openEdit(e, personIdx, date, type){
-  if(!IS_ADMIN){
+  if(!CAN_EDIT_MANPOWER){
     // Viewers see a read-only tooltip
     const dd=document.getElementById('editDropdown');
     const people=type==='eng'?engData:techData;
     const val=people[personIdx].schedule[date]||'—';
-    dd.innerHTML=`<div style="padding:10px 14px;font-size:12.5px;color:rgba(226,232,245,.6)">👁 <strong>${people[personIdx].name}</strong><br><span style="font-size:11px;color:rgba(226,232,245,.35)">${date}</span><br><br>Shift: <strong style="color:#60b0ff">${val}</strong><br><br><span style="font-size:11px;color:rgba(226,232,245,.3)">View only — contact admin to edit</span></div>`;
+    dd.innerHTML=`<div style="padding:10px 14px;font-size:12.5px;color:rgba(226,232,245,.6)">👁 <strong>${people[personIdx].name}</strong><br><span style="font-size:11px;color:rgba(226,232,245,.35)">${date}</span><br><br>Shift: <strong style="color:#60b0ff">${val}</strong><br><br><span style="font-size:11px;color:rgba(226,232,245,.3)">View only — contact admin to edit this timetable</span></div>`;
     dd.style.display='block';
     const rect=e.currentTarget.getBoundingClientRect();
     dd.style.top=Math.min(rect.bottom+4,innerHeight-120)+'px';
@@ -1046,6 +1047,7 @@ function openEdit(e, personIdx, date, type){
 }
 
 function setShift(personIdx, date, type, val){
+  if(!CAN_EDIT_MANPOWER) return;
   const people = type==='eng' ? engData : techData;
   if(val==='') delete people[personIdx].schedule[date];
   else people[personIdx].schedule[date] = val;

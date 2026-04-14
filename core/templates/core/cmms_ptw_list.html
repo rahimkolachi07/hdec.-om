@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CMMS PTW</title>
+<style>
+  :root{
+    --bg:#07090f;--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.08);
+    --border:rgba(255,255,255,.09);--text:#e8eaf0;--tm:rgba(232,234,240,.55);
+    --td:rgba(232,234,240,.3);--a1:#3b9eff;--a2:#00e5c8;--r:14px;--rs:10px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:14px 28px;background:rgba(7,9,15,.92);border-bottom:1px solid var(--border);backdrop-filter:blur(20px)}
+  .back-btn,.link-btn{font-size:13px;font-weight:600;color:var(--tm);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:8px;transition:.2s}
+  .back-btn:hover,.link-btn:hover{color:var(--text);border-color:var(--a1)}
+  .topbar-title{font-size:15px;font-weight:700}
+  .topbar-right{margin-left:auto;display:flex;gap:8px}
+  .page{max-width:1180px;margin:0 auto;padding:28px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+  .stat .label{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--td);margin-bottom:6px}
+  .stat .value{font-size:24px;font-weight:800}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .filter{padding:7px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--border);color:var(--tm);text-decoration:none;font-size:12px;font-weight:700}
+  .filter.active,.filter:hover{color:var(--text);border-color:var(--a1)}
+  .list{display:grid;gap:12px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;gap:14px;justify-content:space-between;align-items:flex-start}
+  .title{font-size:15px;font-weight:700;margin-bottom:8px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--tm)}
+  .meta span{background:var(--surface2);padding:3px 9px;border-radius:999px;border:1px solid var(--border)}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;text-decoration:none;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;cursor:pointer}
+  .btn-primary{background:var(--a1);border-color:transparent;color:#fff}
+  .status{padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid}
+  .s-draft,.s-pending_issue{color:#fbbf24;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3)}
+  .s-pending_hse,.s-pending_receiver_number,.s-pending_closure_issuer,.s-pending_closure_hse{color:#fb923c;background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.3)}
+  .s-active{color:#4ade80;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)}
+  .s-closed{color:#94a3b8;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.28)}
+  .empty{padding:70px 20px;text-align:center;color:var(--td);background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+  @media(max-width:860px){
+    .page{padding:18px}
+    .card{flex-direction:column}
+    .actions{justify-content:flex-start}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="{{ cmms_back_url }}" class="back-btn">← Back</a>
+  <span class="topbar-title">PTW Section</span>
+  <div class="topbar-right">
+    {% if can_view_activities %}
+    <a href="{{ cmms_back_url }}" class="link-btn">CMMS</a>
+    <a href="{{ cmms_back_url }}" class="link-btn">Done</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="page">
+  <div class="stats">
+    <div class="stat"><div class="label">Total</div><div class="value">{{ permits|length }}</div></div>
+    <div class="stat"><div class="label">Pending Issuer</div><div class="value">{{ status_counts.pending_issue|default:0 }}</div></div>
+    <div class="stat"><div class="label">Pending HSE</div><div class="value">{{ status_counts.pending_hse|default:0 }}</div></div>
+    <div class="stat"><div class="label">Receiver Unlock</div><div class="value">{{ status_counts.pending_receiver_number|default:0 }}</div></div>
+    <div class="stat"><div class="label">Active</div><div class="value">{{ status_counts.active|default:0 }}</div></div>
+  </div>
+
+  <div class="filters">
+    <a class="filter {% if not status_filter %}active{% endif %}" href="/cmms/ptw/?back={{ cmms_back_url|urlencode }}">All</a>
+    <a class="filter {% if status_filter == 'pending_issue' %}active{% endif %}" href="/cmms/ptw/?status=pending_issue&amp;back={{ cmms_back_url|urlencode }}">Pending Issuer</a>
+    <a class="filter {% if status_filter == 'pending_hse' %}active{% endif %}" href="/cmms/ptw/?status=pending_hse&amp;back={{ cmms_back_url|urlencode }}">Pending HSE</a>
+    <a class="filter {% if status_filter == 'pending_receiver_number' %}active{% endif %}" href="/cmms/ptw/?status=pending_receiver_number&amp;back={{ cmms_back_url|urlencode }}">Receiver Unlock</a>
+    <a class="filter {% if status_filter == 'active' %}active{% endif %}" href="/cmms/ptw/?status=active&amp;back={{ cmms_back_url|urlencode }}">Active</a>
+    <a class="filter {% if status_filter == 'pending_closure_issuer' %}active{% endif %}" href="/cmms/ptw/?status=pending_closure_issuer&amp;back={{ cmms_back_url|urlencode }}">Closure Issuer</a>
+    <a class="filter {% if status_filter == 'pending_closure_hse' %}active{% endif %}" href="/cmms/ptw/?status=pending_closure_hse&amp;back={{ cmms_back_url|urlencode }}">Closure HSE</a>
+    <a class="filter {% if status_filter == 'closed' %}active{% endif %}" href="/cmms/ptw/?status=closed&amp;back={{ cmms_back_url|urlencode }}">Closed</a>
+  </div>
+
+  {% if permits %}
+  <div class="list">
+    {% for permit in permits %}
+    <div class="card">
+      <div>
+        <div class="title">{{ permit.activity_name|default:permit.equipment|default:"Electrical Permit" }}</div>
+        <div class="meta">
+          <span>{{ permit.scheduled_date|default:"—" }}</span>
+          {% if permit.equipment %}<span>🔧 {{ permit.equipment }}</span>{% endif %}
+          {% if permit.location %}<span>📍 {{ permit.location }}</span>{% endif %}
+          {% if permit.receiver_name %}<span>👷 {{ permit.receiver_name }}</span>{% endif %}
+          {% if permit.permit_number %}<span>🔐 {{ permit.permit_number }}</span>{% endif %}
+          <span class="status s-{{ permit.status }}">{{ permit.status_label }}</span>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" href="{{ permit.ptw_url }}">Open PTW</a>
+        {% if permit.document_link %}
+        <a class="btn" href="{{ permit.document_link }}" target="_blank" rel="noopener">Open Permit Doc</a>
+        {% endif %}
+        {% if permit.work_accessible %}
+        <a class="btn" href="{{ permit.work_url }}">Open Activity</a>
+        {% endif %}
+        <a class="btn" href="/cmms/ptw/{{ permit.id }}/download/">Permit Link</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <div style="font-size:44px;margin-bottom:10px">📋</div>
+    <div>No permits found{% if status_filter %} for this filter{% endif %}.</div>
+  </div>
+  {% endif %}
+</div>
+<script>
+function goBack(event, fallback){
+  try{
+    if(document.referrer){
+      const prev = new URL(document.referrer, window.location.origin);
+      if(prev.origin === window.location.origin && prev.pathname !== window.location.pathname){
+        event.preventDefault();
+        window.history.back();
+        return false;
+      }
+    }
+  }catch(_){}
+  return true;
+}
+</script>
+</body>
+</html>

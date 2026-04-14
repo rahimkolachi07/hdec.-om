@@ -149,6 +149,8 @@
   <div class="status-banner new-entry"><span class="status-dot"></span>New Handover Entry</div>
   {% elif handover.status == 'submitted' %}
   <div class="status-banner submitted"><span class="status-dot"></span>Submitted — Read-only</div>
+  {% elif not can_edit %}
+  <div class="status-banner submitted"><span class="status-dot"></span>Read-only View</div>
   {% else %}
   <div class="status-banner draft"><span class="status-dot"></span>Draft — Editable</div>
   {% endif %}
@@ -190,7 +192,7 @@
         {% endif %}
       </div>
       <div class="section-body">
-        {% if is_new or handover.status == 'draft' %}
+        {% if is_editable %}
           <div class="form-row cols-4">
             <div class="form-group">
               <label>Date</label>
@@ -246,7 +248,7 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label>Major Alarms</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.major_alarms %}muted{% endif %}">{{ handover.major_alarms|default:"None reported" }}</div>
             {% else %}
               <textarea id="f-major-alarms" class="form-control" placeholder="List active major alarms during this shift…">{% if handover %}{{ handover.major_alarms }}{% endif %}</textarea>
@@ -254,7 +256,7 @@
           </div>
           <div class="form-group">
             <label>Equipment Breakdown</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.equipment_breakdown %}muted{% endif %}">{{ handover.equipment_breakdown|default:"None reported" }}</div>
             {% else %}
               <textarea id="f-equipment-breakdown" class="form-control" placeholder="Equipment currently down or under maintenance…">{% if handover %}{{ handover.equipment_breakdown }}{% endif %}</textarea>
@@ -272,7 +274,7 @@
       </div>
       <div class="section-body">
         <div class="form-group">
-          {% if handover and handover.status == 'submitted' %}
+          {% if handover and not is_editable %}
             <div class="view-field {% if not handover.maintenance_activities %}muted{% endif %}">{{ handover.maintenance_activities|default:"None recorded" }}</div>
           {% else %}
             <textarea id="f-maintenance-activities" class="form-control" placeholder="Describe maintenance tasks performed during this shift…" style="min-height:110px">{% if handover %}{{ handover.maintenance_activities }}{% endif %}</textarea>
@@ -291,7 +293,7 @@
         <div class="form-row cols-3">
           <div class="form-group">
             <label>Inverter Faults</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.inverter_faults %}muted{% endif %}">{{ handover.inverter_faults|default:"—" }}</div>
             {% else %}
               <textarea id="f-inverter-faults" class="form-control" placeholder="Inverter fault details…">{% if handover %}{{ handover.inverter_faults }}{% endif %}</textarea>
@@ -299,7 +301,7 @@
           </div>
           <div class="form-group">
             <label>SCB Faults</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.scb_faults %}muted{% endif %}">{{ handover.scb_faults|default:"—" }}</div>
             {% else %}
               <textarea id="f-scb-faults" class="form-control" placeholder="SCB / combiner box faults…">{% if handover %}{{ handover.scb_faults }}{% endif %}</textarea>
@@ -307,7 +309,7 @@
           </div>
           <div class="form-group">
             <label>Spare Parts Used</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.spare_parts %}muted{% endif %}">{{ handover.spare_parts|default:"—" }}</div>
             {% else %}
               <textarea id="f-spare-parts" class="form-control" placeholder="Parts consumed or requisitioned…">{% if handover %}{{ handover.spare_parts }}{% endif %}</textarea>
@@ -327,7 +329,7 @@
         <div class="form-row cols-2" style="margin-bottom:14px">
           <div class="form-group">
             <label>Key Issues</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.key_issues %}muted{% endif %}">{{ handover.key_issues|default:"None" }}</div>
             {% else %}
               <textarea id="f-key-issues" class="form-control" placeholder="Critical issues raised during shift…">{% if handover %}{{ handover.key_issues }}{% endif %}</textarea>
@@ -335,7 +337,7 @@
           </div>
           <div class="form-group">
             <label>Pending Work</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.pending_work %}muted{% endif %}">{{ handover.pending_work|default:"None" }}</div>
             {% else %}
               <textarea id="f-pending-work" class="form-control" placeholder="Work carried over to next shift…">{% if handover %}{{ handover.pending_work }}{% endif %}</textarea>
@@ -345,7 +347,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Instructions for Next Shift</label>
-            {% if handover and handover.status == 'submitted' %}
+            {% if handover and not is_editable %}
               <div class="view-field {% if not handover.instructions_next_shift %}muted{% endif %}">{{ handover.instructions_next_shift|default:"None" }}</div>
             {% else %}
               <textarea id="f-instructions" class="form-control" placeholder="Handover instructions, tasks, and follow-ups for the incoming team…">{% if handover %}{{ handover.instructions_next_shift }}{% endif %}</textarea>
@@ -363,7 +365,7 @@
       </div>
       <div class="section-body">
         <div class="form-group">
-          {% if handover and handover.status == 'submitted' %}
+          {% if handover and not is_editable %}
             <div class="view-field {% if not handover.observation_text %}muted{% endif %}">{{ handover.observation_text|default:"No observations recorded." }}</div>
           {% else %}
             <textarea id="f-observations" class="form-control" placeholder="General observations, site conditions, safety concerns…" style="min-height:100px">{% if handover %}{{ handover.observation_text }}{% endif %}</textarea>
@@ -383,7 +385,7 @@
         <div class="form-row cols-2">
           <div class="form-group">
             <label>Outgoing Shift Engineer</label>
-            {% if handover.status == 'draft' %}
+            {% if is_editable %}
               <div class="sig-zone" onclick="document.getElementById('sig-outgoing').click()">
                 <input type="file" id="sig-outgoing" accept="image/*" onchange="previewSig(this,'prev-outgoing')">
                 <img id="prev-outgoing" class="sig-preview" src="">
@@ -400,7 +402,7 @@
           </div>
           <div class="form-group">
             <label>Incoming Shift Engineer</label>
-            {% if handover.status == 'draft' %}
+            {% if is_editable %}
               <div class="sig-zone" onclick="document.getElementById('sig-incoming').click()">
                 <input type="file" id="sig-incoming" accept="image/*" onchange="previewSig(this,'prev-incoming')">
                 <img id="prev-incoming" class="sig-preview" src="">
@@ -423,13 +425,13 @@
   </div><!-- /main -->
 
   <!-- ACTION BAR -->
-  {% if is_new %}
+  {% if is_new and can_edit %}
   <div class="action-bar">
     <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="btn btn-ghost">Cancel</a>
     <button class="btn btn-primary" onclick="saveHandover('draft')">💾 Save as Draft</button>
     <button class="btn btn-success" onclick="saveHandover('submitted')">✅ Submit Handover</button>
   </div>
-  {% elif handover.status == 'draft' %}
+  {% elif handover.status == 'draft' and can_edit %}
   <div class="action-bar">
     <button class="btn btn-danger" onclick="deleteHandover()">🗑 Delete</button>
     <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="btn btn-ghost">← Back</a>
@@ -439,7 +441,7 @@
   {% else %}
   <div class="action-bar">
     <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/cmms/handover/" class="btn btn-ghost">← Back to List</a>
-    <a href="/api/p/{{ country_id }}/{{ project_id }}/handover/?action=export" class="btn btn-accent">📤 Export Excel</a>
+    <a href="/api/p/{{ country_id }}/{{ project_id }}/{{ category }}/handover/?action=export" class="btn btn-accent">📤 Export Excel</a>
   </div>
   {% endif %}
 
@@ -454,9 +456,7 @@ const IS_NEW = {{ is_new|yesno:"true,false" }};
 
 /* ── TECH TAGS ── */
 let techs = [];
-{% if handover and handover.technicians %}
-  techs = {{ handover.technicians|safe }};
-{% endif %}
+techs = JSON.parse('{{ handover_technicians_json|default:"[]"|escapejs }}');
 
 function renderTechs(){
   const wrap = document.getElementById('tech-tags');

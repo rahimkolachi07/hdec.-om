@@ -159,39 +159,6 @@
     .mod-card:hover .mod-open { gap: 10px; }
     .mod-soon-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
 
-    /* CMMS GROUP */
-    .cmms-group {
-      margin: 0 auto;
-      max-width: 1360px;
-      width: calc(100% - 104px);
-      border-radius: var(--radius);
-      border: 1px solid rgba(59,158,255,0.15);
-      background: rgba(59,158,255,0.025);
-      overflow: hidden;
-    }
-    .cmms-group-header {
-      padding: 14px 26px;
-      border-bottom: 1px solid rgba(59,158,255,0.12);
-      display: flex; align-items: center; gap: 10px;
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .9px; color: rgba(59,158,255,0.85);
-    }
-    .cmms-inner-grid {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px;
-    }
-    .cmms-inner-grid .mod-card {
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(59,158,255,0.12);
-      background: rgba(5,8,17,0.7);
-      width: min(270px, 100%);
-    }
-    .cmms-inner-grid .mod-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 16px 44px rgba(0,0,0,.5), 0 0 0 1px rgba(59,158,255,0.28);
-      border-color: rgba(59,158,255,0.32);
-      background: rgba(59,158,255,0.06);
-    }
-
     /* EMPTY */
     .no-modules { text-align: center; padding: 80px 20px; color: var(--text-dim); animation: fadeUp .5s ease both; }
     .no-modules .ico { font-size: 52px; margin-bottom: 14px; opacity: .6; }
@@ -220,10 +187,7 @@
       .section-label{padding:16px 24px 10px}
       .modules-grid{padding:4px 24px;gap:18px}
       .modules-grid.last{padding-bottom:70px}
-      .cmms-group{width:calc(100% - 48px)}
-      .cmms-inner-grid{gap:16px;padding:16px}
       .mod-card{width:min(280px,100%)}
-      .cmms-inner-grid .mod-card{width:min(260px,100%)}
     }
     /* ── DAY MODE ── */
     html[data-theme="light"]{--bg:#eef1f8;--surface:rgba(255,255,255,0.85);--surface-hover:rgba(255,255,255,0.95);--border:rgba(0,0,0,.1);--text:#0a1525;--text-muted:rgba(10,21,37,.55);--text-dim:rgba(10,21,37,.32);}
@@ -233,10 +197,6 @@
     html[data-theme="light"] .glow-orb{opacity:.035!important}
     html[data-theme="light"] .mod-card{background:#fff;border-color:rgba(0,0,0,.09);box-shadow:0 2px 10px rgba(0,0,0,.06)}
     html[data-theme="light"] .mod-card:hover{box-shadow:0 18px 50px rgba(0,0,0,.13),0 2px 8px rgba(0,0,0,.06)}
-    html[data-theme="light"] .cmms-inner-grid .mod-card{background:#f6f8ff;border-color:rgba(59,158,255,.18);box-shadow:0 1px 6px rgba(59,158,255,.06)}
-    html[data-theme="light"] .cmms-inner-grid .mod-card:hover{background:#f0f4ff;border-color:rgba(59,158,255,.32)}
-    html[data-theme="light"] .cmms-group{border-color:rgba(59,158,255,.22);background:rgba(59,158,255,.04)}
-    html[data-theme="light"] .cmms-group-header{color:rgba(27,100,200,.85);border-bottom-color:rgba(59,158,255,.15)}
     html[data-theme="light"] .cat-hero{background:rgba(238,241,248,.9);border-bottom-color:rgba(0,0,0,.1)}
     html[data-theme="light"] .mod-footer{border-top-color:rgba(0,0,0,.08);background:rgba(248,250,255,.9)}
     html[data-theme="light"] .back-btn{color:rgba(10,21,37,.6);border-color:rgba(0,0,0,.11);background:rgba(255,255,255,.7)}
@@ -262,12 +222,10 @@
       .section-label{padding:16px 16px 10px}
       .modules-grid{padding:4px 16px;gap:14px}
       .modules-grid.last{padding-bottom:50px}
-      .cmms-group{width:calc(100% - 32px)}
-      .cmms-inner-grid{gap:12px;padding:14px}
-      .mod-card,.cmms-inner-grid .mod-card{width:min(260px,100%);border-radius:14px}
+      .mod-card{width:min(260px,100%);border-radius:14px}
     }
     @media(max-width:420px){
-      .mod-card,.cmms-inner-grid .mod-card{width:100%;border-radius:12px}
+      .mod-card{width:100%;border-radius:12px}
     }
   </style>
 </head>
@@ -315,53 +273,13 @@
     <span style="font-size:11.5px;color:var(--text-dim);margin-left:auto">{{ module_cards|length }} module{{ module_cards|length|pluralize }}</span>
   </div>
 
-  {% if cmms_cards %}
+  {% if module_cards %}
   <div class="section-label">
-    <span class="sl-text">⚙️ CMMS</span>
-    <div class="sl-line"></div>
-  </div>
-  <div class="cmms-group">
-    <div class="cmms-group-header">⚙️ Computerised Maintenance Management System</div>
-    <div class="cmms-inner-grid">
-      {% for card in cmms_cards %}
-      {% if card.route %}
-      <a href="{{ card.route }}" class="mod-card" style="--card-rgb:{{ card.color_rgb }}">
-      {% else %}
-      <div class="mod-card disabled" style="--card-rgb:{{ card.color_rgb }}">
-      {% endif %}
-        <div class="card-shimmer"></div>
-        <div class="mod-card-glow"></div>
-        <div class="mod-stripe" style="background:linear-gradient(90deg,{{ card.color }},{{ card.color }}88)"></div>
-        <div class="mod-inner">
-          <div class="mod-top">
-            <div class="mod-icon-wrap">{{ card.icon }}</div>
-            {% if card.route %}
-              {% if card.can_edit %}<span class="mod-access access-edit">Edit</span>{% else %}<span class="mod-access access-view">View</span>{% endif %}
-            {% else %}
-              <span class="mod-access access-soon">Soon</span>
-            {% endif %}
-          </div>
-          <div class="mod-name">{{ card.label }}</div>
-          <div class="mod-desc">{{ card.desc }}</div>
-        </div>
-        <div class="mod-footer">
-          {% if card.route %}
-          <span class="mod-open" style="color:{{ card.color }}">Open →</span>
-          {% else %}<span class="mod-soon-label">Coming soon</span>{% endif %}
-        </div>
-      {% if card.route %}</a>{% else %}</div>{% endif %}
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {% if other_cards %}
-  <div class="section-label" style="padding-top:28px">
     <span class="sl-text">🔧 Modules</span>
     <div class="sl-line"></div>
   </div>
   <div class="modules-grid last">
-    {% for card in other_cards %}
+    {% for card in module_cards %}
     {% if card.route %}
     <a href="{{ card.route }}" class="mod-card" style="--card-rgb:{{ card.color_rgb }}">
     {% else %}

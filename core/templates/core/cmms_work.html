@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ activity.name }} — CMMS Work</title>
+<style>
+  :root{
+    --bg:#07090f;--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.08);
+    --border:rgba(255,255,255,.09);--text:#e8eaf0;--tm:rgba(232,234,240,.55);
+    --td:rgba(232,234,240,.3);--a1:#3b9eff;--a2:#00e5c8;--r:14px;--rs:10px;
+  }
+  html[data-theme=light]{--bg:#eef1f8;--surface:rgba(255,255,255,.85);--surface2:#fff;
+    --border:rgba(0,0,0,.1);--text:#0a1525;--tm:rgba(10,21,37,.55);--td:rgba(10,21,37,.3);}
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  /* ── Full-viewport mode (when checklist_link is present) ────────────────── */
+  {% if checklist_link %}
+  html,body{height:100%;overflow:hidden}
+  body{display:flex;flex-direction:column}
+  {% endif %}
+
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+
+  .topbar{flex-shrink:0;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:10px;
+    padding:10px 20px;background:rgba(7,9,15,.93);border-bottom:1px solid var(--border);backdrop-filter:blur(20px)}
+  .back-btn{font-size:13px;font-weight:600;color:var(--tm);text-decoration:none;
+    padding:5px 12px;border:1px solid var(--border);border-radius:8px;transition:.2s;white-space:nowrap}
+  .back-btn:hover{color:var(--text);border-color:var(--a1)}
+  .tb-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+  .tb-meta{font-size:12px;color:var(--tm);margin-left:4px;white-space:nowrap}
+  .tb-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+  /* ── Info chips row (compact topbar sub-row) ────────────────────────────── */
+  .info-chips{flex-shrink:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+    padding:6px 20px;background:rgba(7,9,15,.7);border-bottom:1px solid var(--border)}
+  .info-tag{font-size:11px;color:var(--tm);padding:3px 9px;border-radius:20px;
+    background:var(--surface2);border:1px solid var(--border);white-space:nowrap}
+  .status-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .status-open{background:rgba(59,158,255,.12);border:1px solid rgba(59,158,255,.3);color:var(--a1)}
+  .status-done{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80}
+
+  /* ── Full-viewport split layout ─────────────────────────────────────────── */
+  {% if checklist_link %}
+  .work-layout{flex:1;min-height:0;display:grid;grid-template-columns:1fr 320px;overflow:hidden}
+  .cl-iframe-panel{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--border)}
+  .cl-iframe-bar{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:8px 14px;
+    border-bottom:1px solid var(--border);background:var(--surface2)}
+  .cl-iframe-title{font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cl-iframe-body{flex:1;position:relative;min-height:0;background:#e8eaed}
+  .cl-iframe-body iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:block}
+  .cl-iframe-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(7,9,15,.5);font-size:13px;color:var(--tm);pointer-events:none;transition:opacity .4s}
+  .cl-iframe-loading.hidden{opacity:0;pointer-events:none}
+
+  /* Right side panel */
+  .side-panel{overflow-y:auto;display:flex;flex-direction:column;gap:0;background:var(--bg)}
+  {% endif %}
+
+  /* ── Normal scrollable container (no checklist link) ───────────────────── */
+  .container{max-width:1400px;margin:0 auto;padding:20px 16px}
+
+  /* Info card (normal mode) */
+  .info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    padding:18px 22px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+
+  /* SECTION CARD */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    margin-bottom:24px;overflow:hidden}
+  .card-head{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;border-bottom:1px solid var(--border)}
+  .card-head h3{font-size:14px;font-weight:700}
+  .card-body{padding:20px}
+
+  /* Side panel section */
+  .side-section{border-bottom:1px solid var(--border);padding:14px 16px}
+  .side-section-title{font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;
+    letter-spacing:.7px;margin-bottom:10px}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+    border:none;cursor:pointer;font-size:13px;font-weight:600;transition:.2s;text-decoration:none}
+  .btn-primary{background:var(--a1);color:#fff}
+  .btn-primary:hover{filter:brightness(1.1)}
+  .btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--a1)}
+  .btn-success{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#4ade80}
+  .btn-success:hover{background:rgba(34,197,94,.2)}
+  .btn-zip{background:linear-gradient(135deg,#3b9eff,#00e5c8);color:#fff;border:none;
+    width:100%;padding:12px;font-size:13px;border-radius:var(--rs)}
+  .btn-zip:hover{filter:brightness(1.08)}
+  .btn-block{width:100%;justify-content:center}
+  .btn-sm{padding:5px 10px;font-size:12px}
+
+  /* EXCEL EDITOR */
+  .xl-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:14px 20px 0;border-bottom:1px solid var(--border)}
+  .xl-tab{padding:7px 14px;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;
+    cursor:pointer;border:1px solid var(--border);border-bottom:none;background:var(--surface);
+    color:var(--tm);transition:.2s}
+  .xl-tab.active{background:var(--surface2);color:var(--text);border-color:var(--a1)}
+
+  /* Formula bar */
+  .xl-formula-bar{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);
+    background:var(--surface2);padding:4px 12px;min-height:32px}
+  .xl-name-box{min-width:72px;max-width:72px;padding:2px 6px;font-size:12px;font-weight:600;
+    border:1px solid var(--border);border-radius:4px;text-align:center;color:var(--text);
+    font-family:monospace;background:var(--bg);white-space:nowrap;overflow:hidden}
+  .xl-fx-sep{width:1px;height:18px;background:var(--border);margin:0 8px;flex-shrink:0}
+  .xl-fx-icon{font-size:12px;font-style:italic;color:var(--tm);margin-right:8px;flex-shrink:0}
+
+  /* Spreadsheet grid */
+  .xl-body{padding:0;overflow:hidden}
+  .xl-spreadsheet-wrap{overflow:auto;max-height:75vh;border-top:1px solid #c6cacc;background:#fff}
+  .xl-sheet-grid{display:grid;gap:0;width:max-content}
+
+  /* Header cells */
+  .xl-hdr-corner,.xl-hdr-col,.xl-hdr-row{background:#f8f9fa;border:1px solid #c6cacc;
+    font-size:11px;font-weight:600;color:#444746;
+    display:flex;align-items:center;justify-content:center;user-select:none}
+  .xl-hdr-corner{position:sticky;top:0;left:0;z-index:20;border-right:2px solid #c6cacc;border-bottom:2px solid #c6cacc}
+  .xl-hdr-col{position:sticky;top:0;z-index:10;border-bottom:2px solid #adb5bd}
+  .xl-hdr-row{position:sticky;left:0;z-index:10;border-right:2px solid #adb5bd}
+
+  /* Data cells — outer div handles ONLY grid placement */
+  .xl-grid-cell{position:relative;min-width:0;min-height:0;overflow:hidden}
+  .xl-grid-cell.editable{cursor:cell}
+  .xl-grid-cell.editable:focus-within{outline:2px solid #1a73e8;outline-offset:-1px;z-index:5}
+  .xl-grid-cell.editable:hover:not(:focus-within){outline:1px solid #a8c7fa;outline-offset:-1px;z-index:4}
+
+  /* Inner cell — carries the Excel visual style */
+  .xl-cell-inner{width:100%;height:100%;box-sizing:border-box;display:flex;overflow:hidden}
+
+  /* Content inside the inner cell */
+  .xl-sheet-text{flex:1;min-width:0;overflow:hidden;pointer-events:none}
+  .xl-sheet-input{
+    flex:1;min-width:0;
+    background:transparent;color:inherit;font:inherit;
+    text-align:inherit;white-space:inherit;line-height:inherit;
+    outline:none;border:none;margin:0;padding:0;
+    cursor:text;word-break:break-word;
+  }
+  .xl-sheet-input:empty::before{content:'\00a0'}
+
+  /* Save status */
+  .save-status{font-size:11.5px;color:var(--td)}
+
+  /* Skeleton */
+  .xl-skeleton{padding:40px;text-align:center;color:var(--td);font-size:13px}
+
+  /* PHOTO ZONES */
+  .photo-zones{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:700px){.photo-zones{grid-template-columns:1fr}}
+  /* In side panel, stack photos vertically */
+  .side-panel .photo-zones{grid-template-columns:1fr}
+
+  .drop-zone{border:2px dashed var(--border);border-radius:var(--rs);padding:16px 12px;
+    text-align:center;cursor:pointer;transition:.2s;position:relative}
+  .drop-zone:hover,.drop-zone.drag-over{border-color:var(--a1);background:rgba(59,158,255,.04)}
+  .drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .drop-icon{font-size:24px;margin-bottom:6px}
+  .drop-label{font-size:12px;font-weight:600;margin-bottom:2px}
+  .drop-sub{font-size:11px;color:var(--td)}
+
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px;margin-top:10px}
+  .photo-thumb{position:relative;border-radius:6px;overflow:hidden;aspect-ratio:1;
+    border:1px solid var(--border)}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo-del{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);border:none;
+    color:#fff;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:10px;
+    display:flex;align-items:center;justify-content:center}
+  .photo-del:hover{background:rgba(239,68,68,.8)}
+  .photo-uploading{opacity:.4}
+
+  /* TOAST */
+  .toast{position:fixed;top:70px;right:24px;z-index:9999;padding:11px 18px;border-radius:10px;
+    font-size:13px;font-weight:500;border:1px solid;display:none}
+  .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80}
+  .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+
+  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);
+    border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .no-checklist-note{padding:30px;text-align:center;color:var(--td);font-size:13px}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- ── Top bar ─────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <a href="{{ cmms_back_url }}" class="back-btn">← Back</a>
+  <span class="tb-title">{{ activity.name }}</span>
+  <span class="tb-meta">{{ record.date }}</span>
+  <div class="tb-right">
+    <a href="{{ cmms_back_url }}" class="back-btn">CMMS</a>
+    {% if permit and can_view_permits %}
+    <a href="/cmms/ptw/{{ permit.id }}/" class="back-btn">📋 PTW</a>
+    {% endif %}
+    <span id="topSaveStatus" class="save-status"></span>
+    {% if not record.completed and can_edit_activities %}
+    <button class="btn btn-success btn-sm" onclick="markComplete()">
+      {% if permit and permit.status == 'active' %}🔒 Close Permit{% elif permit and permit.status != 'closed' %}📋 PTW Pending{% else %}✓ Mark Complete{% endif %}
+    </button>
+    {% endif %}
+    <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-sm">Done</a>
+  </div>
+</div>
+
+{% if checklist_link %}
+<!-- ── Compact info chips (full-viewport mode) ────────────────────────────── -->
+<div class="info-chips">
+  {% if activity.equipment %}<span class="info-tag">🔧 {{ activity.equipment }}</span>{% endif %}
+  {% if activity.location %}<span class="info-tag">📍 {{ activity.location }}</span>{% endif %}
+  {% if activity.frequency %}<span class="info-tag">🔁 {{ activity.frequency }}</span>{% endif %}
+  {% if activity.assigned_technician %}<span class="info-tag">👷 {{ activity.assigned_technician }}</span>{% endif %}
+  <span class="status-badge {% if record.completed %}status-done{% else %}status-open{% endif %}">
+    {% if record.completed %}✓ Completed{% else %}● In Progress{% endif %}
+  </span>
+  {% if permit %}<span class="info-tag">📋 PTW {{ permit.status_label }}</span>{% endif %}
+  <span style="margin-left:auto;font-size:11px;color:var(--td)">{{ record.id }}</span>
+</div>
+
+<!-- ── Full-viewport split: iframe left + side panel right ───────────────── -->
+<div class="work-layout">
+
+  <!-- Left: Google Sheet iframe -->
+  <div class="cl-iframe-panel">
+    <div class="cl-iframe-bar">
+      <span class="cl-iframe-title">📋 {{ activity.name }}</span>
+      <button class="btn btn-ghost btn-sm" onclick="clReload()">↺ Reload</button>
+      <a href="{{ checklist_link }}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Open ↗</a>
+    </div>
+    <div class="cl-iframe-body">
+      <div class="cl-iframe-loading" id="clLoading">Loading checklist…</div>
+      <iframe id="clFrame"
+              src="{{ checklist_link }}"
+              allowfullscreen
+              allow="clipboard-read; clipboard-write; fullscreen"
+              onload="document.getElementById('clLoading').classList.add('hidden')"
+              onerror="document.getElementById('clLoading').classList.add('hidden')"></iframe>
+    </div>
+  </div>
+
+  <!-- Right: side panel (photos + actions) -->
+  <div class="side-panel">
+
+    <!-- Photos: Before -->
+    <div class="side-section">
+      <div class="side-section-title">Before Photos</div>
+      <div class="drop-zone" id="dropBefore"
+           ondragover="onDrag(event,'before')" ondragleave="offDrag(event,'before')" ondrop="onDrop(event,'before')">
+        <input type="file" accept="image/*" multiple onchange="handleFiles(this.files,'before')">
+        <div class="drop-icon">📁</div>
+        <div class="drop-label">Drop or click</div>
+        <div class="drop-sub">before photos</div>
+      </div>
+      <div class="photo-grid" id="gridBefore">
+        {% for url in before_urls %}
+        <div class="photo-thumb">
+          <img src="{{ url }}" loading="lazy">
+          <button class="photo-del" onclick="removePhoto('{{ url }}','before',this.parentElement)" title="Remove">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Photos: After -->
+    <div class="side-section">
+      <div class="side-section-title">After Photos</div>
+      <div class="drop-zone" id="dropAfter"
+           ondragover="onDrag(event,'after')" ondragleave="offDrag(event,'after')" ondrop="onDrop(event,'after')">
+        <input type="file" accept="image/*" multiple onchange="handleFiles(this.files,'after')">
+        <div class="drop-icon">📁</div>
+        <div class="drop-label">Drop or click</div>
+        <div class="drop-sub">after photos</div>
+      </div>
+      <div class="photo-grid" id="gridAfter">
+        {% for url in after_urls %}
+        <div class="photo-thumb">
+          <img src="{{ url }}" loading="lazy">
+          <button class="photo-del" onclick="removePhoto('{{ url }}','after',this.parentElement)" title="Remove">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Download + Complete -->
+    <div class="side-section">
+      {% if record.completed %}
+      <div style="font-size:12px;color:#4ade80;font-weight:600;margin-bottom:10px">
+        ✓ Completed {{ record.completed_at|slice:":10" }}
+      </div>
+      {% endif %}
+      <button class="btn btn-zip" onclick="downloadZip()">
+        <span class="spinner" id="zipSpinner"></span>
+        📦 Download ZIP
+      </button>
+      <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-block" style="margin-top:10px">Done</a>
+    </div>
+
+  </div><!-- /side-panel -->
+
+</div><!-- /work-layout -->
+
+{% else %}
+<!-- ── Normal scrollable layout (no checklist link) ──────────────────────── -->
+<div class="container">
+
+  <!-- Info strip -->
+  <div class="info-card">
+    {% if activity.equipment %}<span class="info-tag">🔧 {{ activity.equipment }}</span>{% endif %}
+    {% if activity.location %}<span class="info-tag">📍 {{ activity.location }}</span>{% endif %}
+    {% if activity.frequency %}<span class="info-tag">🔁 {{ activity.frequency }}</span>{% endif %}
+    {% if activity.assigned_technician %}<span class="info-tag">👷 {{ activity.assigned_technician }}</span>{% endif %}
+    <span class="status-badge {% if record.completed %}status-done{% else %}status-open{% endif %}">
+      {% if record.completed %}✓ Completed{% else %}● In Progress{% endif %}
+    </span>
+    {% if permit %}
+    <span class="info-tag">📋 PTW {{ permit.status_label }}</span>
+    {% endif %}
+    <span style="margin-left:auto;font-size:12px;color:var(--td)">Record ID: {{ record.id }}</span>
+  </div>
+
+  {% if has_checklist %}
+  <!-- File-based Excel grid editor -->
+  <div class="card">
+    <div class="card-head">
+      <h3>📋 Checklist</h3>
+      <span class="save-status" id="xlSaveStatus">Loading…</span>
+    </div>
+    <div id="xlTabs" class="xl-tabs"></div>
+    <div class="xl-formula-bar" id="xlFormulaBar">
+      <div class="xl-name-box" id="xlNameBox">—</div>
+      <div class="xl-fx-sep"></div>
+      <div class="xl-fx-icon">fx</div>
+    </div>
+    <div id="xlBody" class="xl-body">
+      <div class="xl-skeleton">Loading checklist…</div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="card-head"><h3>📋 Checklist</h3></div>
+    <div class="no-checklist-note">No checklist linked to this activity.</div>
+  </div>
+  {% endif %}
+
+  <!-- Photo Upload -->
+  <div class="card">
+    <div class="card-head"><h3>📷 Evidence Photos</h3></div>
+    <div class="card-body">
+      <div class="photo-zones">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--tm);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Before</div>
+          <div class="drop-zone" id="dropBefore"
+               ondragover="onDrag(event,'before')" ondragleave="offDrag(event,'before')" ondrop="onDrop(event,'before')">
+            <input type="file" accept="image/*" multiple onchange="handleFiles(this.files,'before')">
+            <div class="drop-icon">📁</div>
+            <div class="drop-label">Drop images here</div>
+            <div class="drop-sub">or click to browse</div>
+          </div>
+          <div class="photo-grid" id="gridBefore">
+            {% for url in before_urls %}
+            <div class="photo-thumb" id="thumb-{{ forloop.counter }}b">
+              <img src="{{ url }}" loading="lazy">
+              <button class="photo-del" onclick="removePhoto('{{ url }}','before',this.parentElement)" title="Remove">✕</button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--tm);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">After</div>
+          <div class="drop-zone" id="dropAfter"
+               ondragover="onDrag(event,'after')" ondragleave="offDrag(event,'after')" ondrop="onDrop(event,'after')">
+            <input type="file" accept="image/*" multiple onchange="handleFiles(this.files,'after')">
+            <div class="drop-icon">📁</div>
+            <div class="drop-label">Drop images here</div>
+            <div class="drop-sub">or click to browse</div>
+          </div>
+          <div class="photo-grid" id="gridAfter">
+            {% for url in after_urls %}
+            <div class="photo-thumb">
+              <img src="{{ url }}" loading="lazy">
+              <button class="photo-del" onclick="removePhoto('{{ url }}','after',this.parentElement)" title="Remove">✕</button>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download ZIP -->
+  <div class="card">
+    <div class="card-body" style="padding:16px">
+      {% if record.completed %}
+      <div style="margin-bottom:12px;font-size:13px;color:#4ade80;font-weight:600">
+        ✓ Completed on {{ record.completed_at|slice:":10" }}
+      </div>
+      {% endif %}
+      <button class="btn btn-zip" onclick="downloadZip()">
+        <span class="spinner" id="zipSpinner"></span>
+        📦 Download ZIP (Checklist + Before + After)
+      </button>
+      <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-block" style="margin-top:10px">Done</a>
+    </div>
+  </div>
+
+</div><!-- /container -->
+{% endif %}
+
+<script>
+const RECORD_ID    = '{{ record.id }}';
+const CSRF         = '{{ csrf_token }}';
+const HAS_XL       = {{ has_checklist|yesno:'true,false' }};
+const HAS_CL_LINK  = {{ checklist_link|yesno:'true,false' }};
+const MEDIA_URL    = '{{ media_url }}';
+const PTW_ID       = '{{ permit.id|default:"" }}';
+const PTW_STATUS   = '{{ permit.status|default:"" }}';
+const CAN_EDIT_ACTIVITIES = {% if can_edit_activities %}true{% else %}false{% endif %};
+
+function goBack(event, fallback){
+  try{
+    if(document.referrer){
+      const prev = new URL(document.referrer, window.location.origin);
+      if(prev.origin === window.location.origin && prev.pathname !== window.location.pathname){
+        event.preventDefault();
+        window.history.back();
+        return false;
+      }
+    }
+  }catch(_){}
+  return true;
+}
+
+// ── Google Sheet iframe reload ─────────────────────────────────────────────────
+function clReload(){
+  const f = document.getElementById('clFrame');
+  if(!f) return;
+  const ldr = document.getElementById('clLoading');
+  if(ldr) ldr.classList.remove('hidden');
+  f.src = f.src;
+}
+
+// ── Excel state ────────────────────────────────────────────────────────────────
+let xlSheets = [], xlValues = {}, xlCurrentSheet = 0, xlDirty = false, xlTimer = null;
+
+// ── Load Excel ─────────────────────────────────────────────────────────────────
+async function xlLoad(){
+  if(!HAS_XL) return;
+  try {
+    const r = await fetch(`/api/cmms/excel/${RECORD_ID}/`, {headers:{'X-CSRFToken':CSRF}});
+    if(!r.ok) throw new Error('Server error ' + r.status);
+    const d = await r.json();
+    xlSheets = d.sheets || [];
+    xlValues = d.values || {};
+    if(!xlSheets.length){
+      document.getElementById('xlBody').innerHTML =
+        `<div class="xl-skeleton">Checklist loaded, but no editable sheet was found.</div>`;
+      setStatus('No editable sheet');
+      return;
+    }
+    xlSheets.forEach(s => {
+      if(!xlValues[s.name]){
+        xlValues[s.name] = {mode:'generic', cells:{}};
+      }
+    });
+    xlRenderTabs();
+    xlRenderSheet(0);
+    setStatus('Loaded ✓');
+  } catch(e){
+    document.getElementById('xlBody').innerHTML =
+      `<div class="xl-skeleton" style="color:#f87171">Failed to load: ${e.message}</div>`;
+  }
+}
+
+function xlRenderTabs(){
+  const tabs = document.getElementById('xlTabs');
+  if(!tabs || !xlSheets.length) return;
+  tabs.innerHTML = xlSheets.map((s,i) =>
+    `<div class="xl-tab ${i===xlCurrentSheet?'active':''}" onclick="xlSwitch(${i})">${esc(s.name)}</div>`
+  ).join('');
+}
+
+function xlSwitch(i){ xlCurrentSheet = i; xlRenderTabs(); xlRenderSheet(i); }
+
+function xlRenderSheet(idx){
+  const body = document.getElementById('xlBody');
+  if(!body || !xlSheets[idx]) return;
+  const sheet = xlSheets[idx];
+  const sname = sheet.name;
+  const sv = xlValues[sname] || {mode:'generic', cells:{}};
+  body.innerHTML = xlRenderGenericSheet(sheet, sv);
+}
+
+function colLetter(n){
+  let s = '';
+  while(n > 0){ const r = (n-1)%26; s = String.fromCharCode(65+r)+s; n = Math.floor((n-1)/26); }
+  return s;
+}
+
+function xlRenderGenericSheet(sheet, sv){
+  const H_COL = 40; // row-number column width px
+  const H_ROW = 22; // column-letter row height px
+
+  const colWidths  = sheet.column_widths || [];
+  const rowHeights = sheet.row_heights  || [];
+
+  const colTemplate = `${H_COL}px ` + colWidths.map(w  => `${Math.max(w||0,0)}px`).join(' ');
+  const rowTemplate = `${H_ROW}px ` + rowHeights.map(h => `${Math.max(h||0,0)}px`).join(' ');
+
+  let html = `<div class="xl-spreadsheet-wrap"><div class="xl-sheet-grid" style="grid-template-columns:${colTemplate};grid-template-rows:${rowTemplate};">`;
+
+  // Corner
+  html += `<div class="xl-hdr-corner" style="grid-column:1;grid-row:1;"></div>`;
+
+  // Column letters (A, B, C …)
+  colWidths.forEach((w, i) => {
+    if(!w) return;
+    html += `<div class="xl-hdr-col" style="grid-column:${i+2};grid-row:1;">${colLetter(i+1)}</div>`;
+  });
+
+  // Row numbers (1, 2, 3 …)
+  rowHeights.forEach((h, i) => {
+    if(!h) return;
+    html += `<div class="xl-hdr-row" style="grid-column:1;grid-row:${i+2};">${i+1}</div>`;
+  });
+
+  // Data cells — outer div: ONLY grid placement. Inner div: Excel visual style.
+  (sheet.cells || []).forEach(cell => {
+    const value = Object.prototype.hasOwnProperty.call(sv.cells || {}, cell.ref)
+      ? sv.cells[cell.ref]
+      : cell.value;
+    const placement = `grid-column:${cell.col+1} / span ${cell.colspan||1};grid-row:${cell.row+1} / span ${cell.rowspan||1};`;
+    const innerStyle = esc(cell.style || '');
+    if(cell.editable){
+      html += `<div class="xl-grid-cell editable" style="${placement}" onclick="xlClickCell(this)">` +
+              `<div class="xl-cell-inner" style="${innerStyle}">` +
+              `<div class="xl-sheet-input" contenteditable="true" spellcheck="false" ` +
+              `data-sheet="${esc(sheet.name)}" data-ref="${cell.ref}" ` +
+              `oninput="xlCell(this)" onblur="xlCell(this)" ` +
+              `onfocus="xlFocus(this,'${cell.ref}')" ` +
+              `onkeydown="xlKey(event,this)">${escHtml(value)}</div>` +
+              `</div></div>`;
+    } else {
+      html += `<div class="xl-grid-cell" style="${placement}">` +
+              `<div class="xl-cell-inner" style="${innerStyle}">` +
+              `<div class="xl-sheet-text">${escHtml(value)}</div>` +
+              `</div></div>`;
+    }
+  });
+
+  html += '</div></div>';
+  return html;
+}
+
+function xlClickCell(outerDiv){
+  // Clicking anywhere on the cell outer div focuses the contenteditable inside
+  const inp = outerDiv.querySelector('[contenteditable]');
+  if(!inp) return;
+  if(document.activeElement === inp) return;
+  inp.focus();
+  // Move caret to end
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(inp);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } catch(e) {}
+}
+
+function xlFocus(el, ref){
+  const nameBox = document.getElementById('xlNameBox');
+  if(nameBox) nameBox.textContent = ref;
+}
+
+function xlKey(e, el){
+  if(e.key === 'Tab'){
+    e.preventDefault();
+    const all = [...document.getElementById('xlBody').querySelectorAll('[contenteditable="true"]')];
+    const idx = all.indexOf(el);
+    const next = e.shiftKey ? all[idx-1] : all[idx+1];
+    if(next){ next.focus(); xlSelectAll(next); }
+  } else if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    // Move to cell below: find next input in same column
+    const all = [...document.getElementById('xlBody').querySelectorAll('[contenteditable="true"]')];
+    const idx = all.indexOf(el);
+    // Try to find same column in next row — fallback to next in DOM order
+    const ref = el.dataset.ref || '';
+    const colPart = ref.replace(/\d+/, '');
+    let found = null;
+    for(let i = idx+1; i < all.length; i++){
+      const r = all[i].dataset.ref || '';
+      if(r.replace(/\d+/, '') === colPart){ found = all[i]; break; }
+    }
+    const target = found || all[idx+1];
+    if(target){ target.focus(); xlSelectAll(target); }
+  } else if(e.key === 'Escape'){
+    el.blur();
+  }
+}
+
+function xlSelectAll(el){
+  try {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const s = window.getSelection();
+    s.removeAllRanges(); s.addRange(r);
+  } catch(e) {}
+}
+
+function xlCell(el){
+  const sn = el.dataset.sheet, ref = el.dataset.ref;
+  if(!xlValues[sn]) xlValues[sn] = {mode:'generic', cells:{}};
+  if(!xlValues[sn].cells) xlValues[sn].cells = {};
+  xlValues[sn].mode = 'generic';
+  const raw = Object.prototype.hasOwnProperty.call(el, 'value')
+    ? el.value
+    : (el.innerText || el.textContent || '');
+  xlValues[sn].cells[ref] = normalizeCellValue(raw);
+  dirty();
+}
+function dirty(){
+  xlDirty = true;
+  setStatus('Unsaved…');
+  clearTimeout(xlTimer);
+  xlTimer = setTimeout(xlSave, 1500);
+}
+async function xlSave(){
+  if(!xlDirty) return;
+  setStatus('Saving…');
+  try {
+    const r = await fetch(`/api/cmms/excel/${RECORD_ID}/`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({excel_values: xlValues})
+    });
+    const d = await r.json();
+    if(d.ok){ xlDirty = false; setStatus('Saved ✓'); }
+    else setStatus('Save failed');
+  } catch(e){ setStatus('Error'); }
+}
+function setStatus(msg){
+  const el = document.getElementById('xlSaveStatus');
+  const el2 = document.getElementById('topSaveStatus');
+  if(el)  el.textContent  = msg;
+  if(el2) el2.textContent = msg;
+}
+
+// ── Photo upload ───────────────────────────────────────────────────────────────
+function onDrag(e, phase){ e.preventDefault(); document.getElementById('drop'+cap(phase)).classList.add('drag-over'); }
+function offDrag(e, phase){ document.getElementById('drop'+cap(phase)).classList.remove('drag-over'); }
+function onDrop(e, phase){
+  e.preventDefault();
+  offDrag(e, phase);
+  handleFiles(e.dataTransfer.files, phase);
+}
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+async function handleFiles(files, phase){
+  if(!files || !files.length) return;
+  const grid = document.getElementById('grid' + cap(phase));
+  for(const file of files){
+    if(!file.type.startsWith('image/')) continue;
+    // Local preview
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb photo-uploading';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    thumb.appendChild(img);
+    grid.appendChild(thumb);
+
+    // Upload
+    const fd = new FormData();
+    fd.append('phase', phase);
+    fd.append('photos', file);
+    try {
+      const r = await fetch(`/api/cmms/photos/${RECORD_ID}/`, {
+        method:'POST', headers:{'X-CSRFToken':CSRF}, body: fd
+      });
+      const d = await r.json();
+      if(d.saved && d.saved[0]){
+        const rel = d.saved[0].rel;
+        thumb.classList.remove('photo-uploading');
+        const del = document.createElement('button');
+        del.className = 'photo-del';
+        del.title = 'Remove';
+        del.textContent = '✕';
+        del.onclick = () => removePhoto(rel, phase, thumb);
+        thumb.appendChild(del);
+      } else {
+        thumb.remove();
+        showToast('Upload failed', 'error');
+      }
+    } catch(e){
+      thumb.remove();
+      showToast('Upload error', 'error');
+    }
+  }
+}
+
+async function removePhoto(rel, phase, thumbEl){
+  try {
+    const r = await fetch(`/api/cmms/photos/${RECORD_ID}/`, {
+      method:'DELETE',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({phase, rel})
+    });
+    const d = await r.json();
+    if(d.ok) thumbEl.remove();
+    else showToast(d.error || 'Error', 'error');
+  } catch(e){ showToast('Error', 'error'); }
+}
+
+// ── Mark complete ──────────────────────────────────────────────────────────────
+async function markComplete(){
+  if(!CAN_EDIT_ACTIVITIES){
+    showToast('View-only access', 'error');
+    return;
+  }
+  if(PTW_ID && PTW_STATUS && PTW_STATUS !== 'closed'){
+    window.location.href = PTW_STATUS === 'active'
+      ? `/cmms/ptw/${PTW_ID}/?mode=close`
+      : `/cmms/ptw/${PTW_ID}/`;
+    return;
+  }
+  if(!confirm('Mark this activity as complete?')) return;
+  await xlSave();
+  try {
+    const r = await fetch(`/api/cmms/complete/${RECORD_ID}/`, {
+      method:'POST', headers:{'X-CSRFToken':CSRF}
+    });
+    const d = await r.json();
+    if(d.ok){ showToast('Marked complete'); setTimeout(()=>location.reload(), 800); }
+    else showToast(d.error || 'Error', 'error');
+  } catch(e){ showToast('Error', 'error'); }
+}
+
+// ── Download ZIP ───────────────────────────────────────────────────────────────
+async function downloadZip(){
+  const spinner = document.getElementById('zipSpinner');
+  spinner.style.display = 'inline-block';
+  showToast('Preparing ZIP…');
+  await xlSave();
+  setTimeout(() => {
+    window.location.href = `/cmms/zip/${RECORD_ID}/`;
+    spinner.style.display = 'none';
+  }, 600);
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s){ return esc(s).replace(/\n/g, '<br>'); }
+function normalizeCellValue(value){
+  const text = String(value || '').replace(/\r/g, '').replace(/\u00A0/g, ' ');
+  return text === '\n' ? '' : text.replace(/\n$/, '');
+}
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+if(HAS_XL && !HAS_CL_LINK) xlLoad();
+</script>
+</body>
+</html>

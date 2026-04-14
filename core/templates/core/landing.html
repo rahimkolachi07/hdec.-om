@@ -422,7 +422,9 @@
       HDEC <span>Portal</span>
     </div>
     <div class="topbar-right">
+      {% if current_user.permissions.store != 'none' %}
       <a href="/store/" class="quick-link">📦 Store</a>
+      {% endif %}
       {% if is_admin %}
       <a href="/admin-panel/" class="quick-link">🔐 Control Panel</a>
       {% endif %}

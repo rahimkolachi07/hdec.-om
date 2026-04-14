@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CMMS PTW</title>
+<style>
+  :root{
+    --bg:#07090f;--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.08);
+    --border:rgba(255,255,255,.09);--text:#e8eaf0;--tm:rgba(232,234,240,.55);
+    --td:rgba(232,234,240,.3);--a1:#3b9eff;--ok:#22c55e;--warn:#f59e0b;--r:10px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  /* ── Full-viewport layout ── */
+  html,body{height:100%;overflow:hidden}
+  body{display:flex;flex-direction:column;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+
+  /* topbar */
+  .topbar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:10px 20px;
+    background:rgba(7,9,15,.95);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);z-index:20}
+  .back-btn,.link-btn{font-size:12px;font-weight:600;color:var(--tm);text-decoration:none;
+    padding:5px 11px;border:1px solid var(--border);border-radius:7px;transition:.2s;white-space:nowrap}
+  .back-btn:hover,.link-btn:hover{color:var(--text);border-color:var(--a1)}
+  .topbar-title{font-size:14px;font-weight:700}
+  .topbar-meta{font-size:11px;color:var(--tm);display:flex;gap:6px;flex-wrap:wrap;flex:1;min-width:0;overflow:hidden}
+  .topbar-meta span{background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-shrink:0}
+  .status{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid}
+  .s-draft,.s-pending_issue{color:#fbbf24;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3)}
+  .s-pending_hse,.s-pending_receiver_number,.s-pending_closure_issuer,.s-pending_closure_hse{color:#fb923c;background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.3)}
+  .s-active{color:#4ade80;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)}
+  .s-closed{color:#94a3b8;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.28)}
+
+  /* ── Main two-column layout ── */
+  .main-layout{flex:1;min-height:0;display:grid;grid-template-columns:1fr 340px;overflow:hidden}
+
+  /* ── Iframe panel (left, full height) ── */
+  .doc-frame-panel{display:flex;flex-direction:column;border-right:1px solid var(--border);overflow:hidden;min-height:0}
+  .doc-frame-bar{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:7px 12px;
+    border-bottom:1px solid var(--border);background:var(--surface2)}
+  .doc-frame-title{font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .doc-frame-body{flex:1;position:relative;min-height:0;background:#e8eaed}
+  .doc-frame-body iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:block}
+  .doc-frame-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;padding:40px;text-align:center;color:var(--tm);font-size:13px}
+  .doc-frame-placeholder strong{font-size:16px;color:var(--text)}
+  .doc-frame-placeholder p{max-width:320px;line-height:1.6}
+  .doc-frame-loading{position:absolute;inset:0;background:rgba(7,9,15,.55);display:flex;
+    align-items:center;justify-content:center;font-size:13px;color:var(--tm);
+    pointer-events:none;transition:opacity .4s}
+  .doc-frame-loading.hidden{opacity:0;pointer-events:none}
+
+  /* ── Right action panel ── */
+  .right-panel{overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:14px;background:var(--bg)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+  .card h3{font-size:13px;font-weight:800;margin-bottom:10px}
+  .summary{font-size:12px;color:var(--tm);line-height:1.6}
+  .field{margin-bottom:10px}
+  .field label{display:block;font-size:10px;font-weight:800;color:var(--td);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+  .field input,.field textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);
+    background:var(--surface2);color:var(--text);font-size:12px;outline:none}
+  .field input:focus,.field textarea:focus{border-color:var(--a1)}
+  .field textarea{min-height:80px;resize:vertical}
+  .action-row{display:flex;flex-wrap:wrap;gap:7px}
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border-radius:8px;
+    border:1px solid var(--border);background:var(--surface2);color:var(--text);
+    font-size:11px;font-weight:800;cursor:pointer;text-decoration:none;white-space:nowrap;transition:.15s}
+  .btn:hover{border-color:var(--a1);color:var(--text)}
+  .btn-sm{padding:5px 9px;font-size:10px}
+  .btn-block{width:100%;justify-content:center}
+  .btn-primary{background:var(--a1);border-color:transparent;color:#fff}
+  .btn-primary:hover{filter:brightness(1.1)}
+  .btn-ok{background:var(--ok);border-color:transparent;color:#fff}
+  .btn-ok:hover{filter:brightness(1.1)}
+  .btn-warn{background:var(--warn);border-color:transparent;color:#111827}
+  .btn-warn:hover{filter:brightness(1.05)}
+  .notice{padding:10px 12px;border-radius:8px;background:rgba(59,158,255,.08);
+    border:1px solid rgba(59,158,255,.22);font-size:11px;color:#c7defe;line-height:1.6}
+
+  /* toast */
+  .toast{position:fixed;top:56px;right:16px;z-index:9999;padding:10px 16px;border-radius:9px;
+    font-size:12px;font-weight:700;border:1px solid;display:none}
+  .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80}
+  .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- ── Compact topbar with permit info ── -->
+<div class="topbar">
+  <a href="{{ cmms_back_url }}" class="back-btn">← Back</a>
+  <span class="topbar-title">{{ permit.activity_name|default:permit.equipment|default:"Permit To Work" }}</span>
+  <div class="topbar-meta">
+    <span class="status s-{{ permit.status }}">{{ permit.status_label }}</span>
+    {% if permit.scheduled_date %}<span>{{ permit.scheduled_date }}</span>{% endif %}
+    {% if permit.equipment %}<span>🔧 {{ permit.equipment }}</span>{% endif %}
+    {% if permit.location %}<span>📍 {{ permit.location }}</span>{% endif %}
+    {% if permit.selected_permit_name %}<span>📄 {{ permit.selected_permit_name }}</span>{% endif %}
+    {% if permit.permit_number %}<span>🔐 {{ permit.permit_number }}</span>{% endif %}
+    {% if permit.receiver_name %}<span>👷 {{ permit.receiver_name }}</span>{% endif %}
+  </div>
+  <div class="topbar-right">
+    {% if can_view_activities %}
+    <a href="{{ cmms_back_url }}" class="link-btn">CMMS</a>
+    {% endif %}
+    <a id="openTabBtn" href="{{ permit.document_link|default:permit.template_link|default:'#' }}"
+       target="_blank" rel="noopener" class="link-btn">Open in new tab ↗</a>
+    {% if permit.work_accessible and can_view_activities %}
+    <a href="/cmms/work/{{ permit.record_id }}/" class="link-btn">Open Activity</a>
+    {% endif %}
+    <a href="{{ cmms_back_url }}" class="link-btn">Done</a>
+  </div>
+</div>
+
+<!-- ── Main layout: iframe (left) | actions (right) ── -->
+<div class="main-layout">
+
+  <!-- Embedded Google Sheet / Doc -->
+  <div class="doc-frame-panel">
+    <div class="doc-frame-bar">
+      <span class="doc-frame-title" id="frameTitle">Permit Document</span>
+      <button class="btn btn-sm" onclick="reloadFrame()" title="Reload">↺ Reload</button>
+    </div>
+    <div class="doc-frame-body" id="frameBody">
+      <div class="doc-frame-placeholder" id="framePlaceholder">
+        <strong>No document linked yet</strong>
+        <p>Paste your Google Sheets or Google Docs link into the field on the right, then click <em>Save Link</em>.</p>
+      </div>
+      <div class="doc-frame-loading" id="frameLoading">Loading…</div>
+      <iframe id="docFrame"
+              allowfullscreen
+              allow="clipboard-read; clipboard-write; fullscreen"
+              style="display:none"
+              onload="frameLoaded()"
+              onerror="frameError()"></iframe>
+    </div>
+  </div>
+
+  <!-- Action panel -->
+  <div class="right-panel">
+
+    {% if can_edit_application %}
+    <div class="card">
+      <h3>Receiver Application</h3>
+      <div class="notice">Open the permit document on the left, fill it, then submit.</div>
+      <div class="field" style="margin-top:10px">
+        <label>Google Sheets / Docs Link</label>
+        <input type="url" id="docLinkInput" data-document-link
+               value="{{ permit.document_link|default:permit.template_link }}"
+               placeholder="Paste your Google link here">
+      </div>
+      <div class="action-row">
+        <button class="btn" onclick="saveLink()">Save Link</button>
+        <button class="btn btn-primary" onclick="submitApplication()">Submit PTW →</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_issue_permit %}
+    <div class="card">
+      <h3>Issuer Review</h3>
+      <div class="notice">Review the permit on the left, then proceed.</div>
+      <div class="field" style="margin-top:10px">
+        <label>Permit Link</label>
+        <input type="url" data-document-link
+               value="{{ permit.document_link|default:permit.template_link }}"
+               placeholder="Paste Google link">
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="issuePermit()">Proceed To HSE →</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_hse_approve %}
+    <div class="card">
+      <h3>HSE Review</h3>
+      <div class="notice">Review the permit on the left, assign a permit number.</div>
+      <div class="field" style="margin-top:10px">
+        <label>Permit Link</label>
+        <input type="url" data-document-link
+               value="{{ permit.document_link|default:permit.template_link }}"
+               placeholder="Paste Google link">
+      </div>
+      <div class="field">
+        <label>Permit Number</label>
+        <input type="text" id="permitNumber" value="{{ permit.permit_number|default:'' }}" placeholder="Assign permit number">
+      </div>
+      <div class="field">
+        <label>Isolation Certificate Number</label>
+        <input type="text" id="isolationNumber" value="{{ permit.isolation_cert_number|default:'' }}" placeholder="Optional">
+      </div>
+      <div class="action-row">
+        <button class="btn btn-ok" onclick="hseApprove()">Proceed To Receiver →</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_receiver_unlock %}
+    <div class="card">
+      <h3>Receiver Unlock</h3>
+      <div class="summary" style="margin-bottom:10px">
+        HSE issued permit number: <strong style="color:#fff;font-size:14px">{{ permit.permit_number }}</strong>
+      </div>
+      <div class="field">
+        <label>Enter Permit Number To Unlock</label>
+        <input type="text" id="receiverPermitNumber" placeholder="Enter the same number">
+      </div>
+      <div class="action-row">
+        <button class="btn btn-ok" onclick="receiverUnlock()">Unlock Activity ✓</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_close_receiver %}
+    <div class="card">
+      <h3>Close Permit</h3>
+      <div class="field">
+        <label>Permit Link</label>
+        <input type="url" data-document-link
+               value="{{ permit.document_link|default:permit.template_link }}"
+               placeholder="Paste Google link">
+      </div>
+      <div class="field">
+        <label>Closure Notes</label>
+        <textarea id="closureStatusText" placeholder="Optional closure notes">{{ permit.closure_status_text|default:'' }}</textarea>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-warn" onclick="submitClosure()">Send To Issuer →</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_close_issuer %}
+    <div class="card">
+      <h3>Issuer Closure Review</h3>
+      <div class="notice">Review the closure in the permit document on the left.</div>
+      <div class="action-row" style="margin-top:10px">
+        <button class="btn btn-primary" onclick="issuerClose()">Proceed To HSE Closure →</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_close_hse %}
+    <div class="card">
+      <h3>HSE Closure Review</h3>
+      <div class="notice">Review and confirm the permit closure.</div>
+      <div class="action-row" style="margin-top:10px">
+        <button class="btn btn-ok" onclick="hseClose()">Close Permit ✓</button>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not can_edit_application and not can_issue_permit and not can_hse_approve and not can_receiver_unlock and not can_close_receiver and not can_close_issuer and not can_close_hse %}
+    <div class="card">
+      <h3>Permit Summary</h3>
+      <div class="summary">
+        <div>Receiver: {{ permit.receiver_name|default:"—" }}</div>
+        <div>Issuer: {{ permit.issuer_name|default:"—" }}</div>
+        <div>HSE: {{ permit.hse_name|default:"—" }}</div>
+        <div>Permit #: {{ permit.permit_number|default:"—" }}</div>
+        {% if permit.closed_at %}<div>Closed: {{ permit.closed_at|slice:":10" }}</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if record %}
+    <div class="card">
+      <div class="summary">
+        <div>Record: {{ record.id }}</div>
+        {% if activity and activity.checklist_file %}<div>Checklist: linked</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h3>Navigation</h3>
+      <div class="action-row">
+        {% if can_view_activities %}
+        <a href="{{ cmms_back_url }}" class="btn btn-primary btn-block">CMMS</a>
+        {% endif %}
+        <a href="{{ cmms_back_url }}" class="btn btn-block">Done</a>
+      </div>
+    </div>
+
+  </div><!-- /right-panel -->
+</div><!-- /main-layout -->
+
+<script>
+const PERMIT_ID  = '{{ permit.id }}';
+const API_URL    = `/api/cmms/ptw/${PERMIT_ID}/`;
+function goBack(event, fallback){
+  try{
+    if(document.referrer){
+      const prev = new URL(document.referrer, window.location.origin);
+      if(prev.origin === window.location.origin && prev.pathname !== window.location.pathname){
+        event.preventDefault();
+        window.history.back();
+        return false;
+      }
+    }
+  }catch(_){}
+  return true;
+}
+let _currentUrl  = '{{ permit.document_link|default:permit.template_link }}';
+
+// ── iframe ─────────────────────────────────────────────────────────────────────
+function toEmbedUrl(raw) {
+  if (!raw) return '';
+  try {
+    const u = new URL(raw.trim());
+    if (u.hostname === 'docs.google.com') {
+      const clean = u.pathname.replace(/\/(edit|view|preview|pub|htmlview)(\/.*)?$/, '');
+      return `https://docs.google.com${clean}/edit`;
+    }
+  } catch(e) {}
+  return raw.trim();
+}
+
+function setFrame(url) {
+  const frame   = document.getElementById('docFrame');
+  const holder  = document.getElementById('framePlaceholder');
+  const loading = document.getElementById('frameLoading');
+  const tabBtn  = document.getElementById('openTabBtn');
+  const title   = document.getElementById('frameTitle');
+  if (!url) {
+    frame.style.display = 'none';
+    holder.style.display = '';
+    loading.classList.add('hidden');
+    return;
+  }
+  _currentUrl = url;
+  holder.style.display = 'none';
+  loading.classList.remove('hidden');
+  frame.style.display  = 'block';
+  frame.src            = toEmbedUrl(url);
+  tabBtn.href          = url;
+  title.textContent    = url.includes('/spreadsheets/') ? 'Google Sheets — Permit'
+                       : url.includes('/document/')     ? 'Google Docs — Permit'
+                       : 'Permit Document';
+}
+
+function frameLoaded() { document.getElementById('frameLoading').classList.add('hidden'); }
+function frameError()  { document.getElementById('frameLoading').classList.add('hidden'); }
+function reloadFrame() {
+  const f = document.getElementById('docFrame');
+  if (!f.src || f.style.display === 'none') return;
+  document.getElementById('frameLoading').classList.remove('hidden');
+  f.contentWindow?.location.reload();          // try in-frame reload first
+  setTimeout(() => { f.src = f.src; }, 300);  // fallback
+}
+
+// Live-preview when user pastes or changes a link input
+document.addEventListener('input', e => {
+  if (e.target.matches('[data-document-link]')) {
+    const v = e.target.value.trim();
+    if (v.startsWith('http')) setFrame(v);
+  }
+});
+
+window.addEventListener('DOMContentLoaded', () => { if (_currentUrl) setFrame(_currentUrl); });
+
+// ── utilities ──────────────────────────────────────────────────────────────────
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type}`; t.style.display='block';
+  clearTimeout(t._t); t._t = setTimeout(()=>t.style.display='none', 3200);
+}
+function csrf(){
+  return document.cookie.split(';').map(v=>v.trim()).find(v=>v.startsWith('csrftoken='))?.split('=')[1]||'';
+}
+function currentDocumentLink(){
+  return document.querySelector('[data-document-link]')?.value?.trim() || _currentUrl;
+}
+async function postAction(payload){
+  const r = await fetch(API_URL,{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body:JSON.stringify(payload)});
+  const d = await r.json();
+  if(!r.ok||!d.ok) throw new Error(d.error||'Request failed');
+  return d;
+}
+
+// ── workflow ───────────────────────────────────────────────────────────────────
+async function saveLink(){
+  try{
+    const link = currentDocumentLink();
+    await postAction({action:'save_document', document_link:link});
+    showToast('Permit link saved'); setFrame(link);
+    setTimeout(()=>location.reload(), 700);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function submitApplication(){
+  try{
+    const d = await postAction({action:'submit_application', document_link:currentDocumentLink()});
+    showToast('PTW sent to issuer');
+    setTimeout(()=>window.location=`/cmms/ptw/${d.permit.id}/`, 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function issuePermit(){
+  try{
+    await postAction({action:'issue', document_link:currentDocumentLink()});
+    showToast('PTW sent to HSE'); setTimeout(()=>location.reload(), 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function hseApprove(){
+  try{
+    const d = await postAction({action:'hse_approve', document_link:currentDocumentLink(),
+      permit_number: document.getElementById('permitNumber')?.value||'',
+      isolation_cert_number: document.getElementById('isolationNumber')?.value||''});
+    showToast('Permit number sent to receiver');
+    setTimeout(()=>window.location=d.next_url||`/cmms/ptw/${PERMIT_ID}/`, 600);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function receiverUnlock(){
+  try{
+    const d = await postAction({action:'receiver_unlock',
+      entered_permit_number: document.getElementById('receiverPermitNumber')?.value||''});
+    showToast('Activity unlocked');
+    setTimeout(()=>window.location=d.next_url||`/cmms/work/{{ permit.record_id }}/`, 600);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function submitClosure(){
+  try{
+    await postAction({action:'submit_closure', document_link:currentDocumentLink(),
+      closure_status_text: document.getElementById('closureStatusText')?.value||''});
+    showToast('Closure sent to issuer'); setTimeout(()=>location.reload(), 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function issuerClose(){
+  try{
+    await postAction({action:'issuer_close', document_link:currentDocumentLink()});
+    showToast('Closure sent to HSE'); setTimeout(()=>location.reload(), 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function hseClose(){
+  try{
+    const d = await postAction({action:'hse_close', document_link:currentDocumentLink()});
+    showToast('Permit closed');
+    setTimeout(()=>window.location=d.next_url||`/cmms/ptw/${PERMIT_ID}/`, 600);
+  }catch(e){ showToast(e.message,'error'); }
+}
+</script>
+</body>
+</html>
