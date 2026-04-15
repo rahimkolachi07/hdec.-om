@@ -1,0 +1,20 @@
+[Unit]
+Description=HDEC Enterprise Hub (Gunicorn)
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/var/www/hdec
+ExecStart=/usr/local/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --access-logfile /var/log/hdec/access.log \
+    --error-logfile /var/log/hdec/error.log \
+    enterprise_hub.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
