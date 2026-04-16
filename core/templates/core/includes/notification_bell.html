@@ -10,7 +10,10 @@
         <div class="ntf-title">Notifications</div>
         <div class="ntf-sub" data-notification-subtitle>Loading…</div>
       </div>
-      <button type="button" class="ntf-mark-all" data-notification-read-all>Mark all read</button>
+      <div class="ntf-head-actions">
+        <button type="button" class="ntf-mark-all" data-notification-read-all>Mark all read</button>
+        <button type="button" class="ntf-close" data-notification-close aria-label="Close notifications">&times;</button>
+      </div>
     </div>
     <div class="ntf-list" data-notification-list>
       <div class="ntf-empty">Loading notifications…</div>
@@ -38,10 +41,12 @@
     border-radius:16px;border:1px solid rgba(255,255,255,.12);background:#0a101b;
     box-shadow:0 24px 60px rgba(0,0,0,.42);z-index:1200
   }
+  .ntf-menu[hidden]{display:none !important}
   .ntf-head{
     display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px;
     border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)
   }
+  .ntf-head-actions{display:flex;align-items:center;gap:12px}
   .ntf-title{font-size:13px;font-weight:800}
   .ntf-sub{font-size:11px;color:rgba(232,234,240,.58);margin-top:2px}
   .ntf-mark-all{
@@ -49,6 +54,12 @@
     padding:0;white-space:nowrap
   }
   .ntf-mark-all:hover{color:#bfe1ff}
+  .ntf-close{
+    width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;
+    border:none;border-radius:999px;background:rgba(255,255,255,.05);color:#d6dbe7;
+    font:inherit;font-size:16px;font-weight:700;cursor:pointer;line-height:1;transition:background .18s,color .18s
+  }
+  .ntf-close:hover{background:rgba(255,255,255,.1);color:#fff}
   .ntf-list{overflow:auto;padding:8px}
   .ntf-item{
     width:100%;text-align:left;padding:12px 12px 11px;border:none;border-radius:12px;background:none;
@@ -120,7 +131,8 @@
         const data = await response.json();
         renderNotifications(shell, data.notifications || [], data.unread_count || 0);
         if(sub){
-          sub.textContent = data.unread_count ? `${data.unread_count} unread` : 'All caught up';
+          const count = Number(data.unread_count || 0);
+          sub.textContent = count ? `${count} new notification${count === 1 ? '' : 's'}` : 'All caught up';
         }
       }catch(_){
         if(list){
@@ -158,6 +170,7 @@
     }
 
     async function openNotification(shell, item){
+      closeMenu(shell);
       if(item.is_unread){
         try{
           const data = await postNotificationAction({action:'read', notification_id:item.id});
@@ -211,28 +224,45 @@
 
     function closeAllMenus(){
       document.querySelectorAll('[data-notification-shell]').forEach(shell => {
-        const menu = shell.querySelector('[data-notification-menu]');
-        const toggle = shell.querySelector('[data-notification-toggle]');
-        if(menu) menu.hidden = true;
-        if(toggle) toggle.setAttribute('aria-expanded', 'false');
+        closeMenu(shell);
       });
     }
 
+    function openMenu(shell){
+      const menu = shell.querySelector('[data-notification-menu]');
+      const toggle = shell.querySelector('[data-notification-toggle]');
+      if(menu) menu.hidden = false;
+      if(toggle) toggle.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeMenu(shell){
+      const menu = shell.querySelector('[data-notification-menu]');
+      const toggle = shell.querySelector('[data-notification-toggle]');
+      if(menu) menu.hidden = true;
+      if(toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+
     function initShell(shell){
+      if(shell.dataset.notificationInitialized === 'true'){
+        return;
+      }
+      shell.dataset.notificationInitialized = 'true';
       const toggle = shell.querySelector('[data-notification-toggle]');
       const menu = shell.querySelector('[data-notification-menu]');
       const readAll = shell.querySelector('[data-notification-read-all]');
+      const closeBtn = shell.querySelector('[data-notification-close]');
       if(!toggle || !menu) return;
+      closeMenu(shell);
 
       toggle.addEventListener('click', async event => {
         event.stopPropagation();
-        const willOpen = menu.hidden;
-        closeAllMenus();
-        menu.hidden = !willOpen;
-        toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        if(willOpen){
+        if(menu.hidden){
+          closeAllMenus();
+          openMenu(shell);
           await fetchNotifications(shell);
+          return;
         }
+        closeMenu(shell);
       });
 
       readAll?.addEventListener('click', async event => {
@@ -244,12 +274,23 @@
         }catch(_){}
       });
 
+      closeBtn?.addEventListener('click', event => {
+        event.stopPropagation();
+        closeMenu(shell);
+      });
+
       fetchNotifications(shell);
     }
 
     document.addEventListener('click', event => {
       if(event.target.closest('[data-notification-shell]')) return;
       closeAllMenus();
+    });
+
+    document.addEventListener('keydown', event => {
+      if(event.key === 'Escape'){
+        closeAllMenus();
+      }
     });
 
     const initAll = function(){

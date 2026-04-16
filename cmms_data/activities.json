@@ -185,5 +185,39 @@
     "excluded_dates": [],
     "created_at": "2026-04-16T02:12:31.201266",
     "created_by": "admin"
+  },
+  {
+    "id": "66e01a1b-8527-456e-b1d7-f5f0380d8bab",
+    "type": "PM",
+    "month": "2026-04",
+    "scheduled_date": "2026-04-16",
+    "name": "Fence and Road",
+    "equipment": "fense",
+    "location": "all pv area",
+    "frequency": "weekly",
+    "checklist_file": "",
+    "assigned_engineer": "",
+    "assigned_technician": "",
+    "notes": "",
+    "excluded_dates": [],
+    "created_at": "2026-04-16T13:41:22.257671",
+    "created_by": "admin"
+  },
+  {
+    "id": "343045b4-244a-4076-8bb6-83a9a28c9c63",
+    "type": "CM",
+    "month": "2026-04",
+    "scheduled_date": "2026-04-17",
+    "name": "mvpsssad",
+    "equipment": "",
+    "location": "",
+    "frequency": "one-time",
+    "checklist_file": "",
+    "assigned_engineer": "",
+    "assigned_technician": "",
+    "notes": "",
+    "excluded_dates": [],
+    "created_at": "2026-04-16T13:55:20.404011",
+    "created_by": "admin"
   }
 ]
