@@ -161,12 +161,12 @@ def project_cmms_handover_api(request, country_id, project_id, category='mainten
         handover_id = str(data.get('id', '') or '').strip()
         if not handover_id:
             return JsonResponse({'error': 'Handover id is required.'}, status=400)
-        current = handover_get(country_id, project_id, handover_id)
+        current = handover_get(country_id, project_id, handover_id, include_deleted=True)
         if not current:
             return JsonResponse({'error': 'Handover not found.'}, status=404)
         if current.get('status') == 'submitted':
             return JsonResponse({'error': 'Submitted handovers cannot be deleted.'}, status=400)
-        handover_delete(country_id, project_id, handover_id)
+        handover_delete(country_id, project_id, handover_id, actor)
         return JsonResponse({'ok': True})
 
     return JsonResponse({'error': 'Unknown action'}, status=400)

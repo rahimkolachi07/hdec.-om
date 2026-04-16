@@ -71,7 +71,10 @@
       <a href="/p/{{ country_id }}/{{ project_id }}/{{ category }}/" class="back" onclick="return goBack(event, this.href)">← {{ category|title }}</a>
       <div class="page-title">⚙️ <span>CMMS</span> — {{ project.name }}</div>
     </div>
-    <div class="user-chip">{{ current_user.name }}</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      {% include 'core/includes/notification_bell.html' %}
+      <div class="user-chip">{{ current_user.name }}</div>
+    </div>
   </header>
 
   <div class="hero">

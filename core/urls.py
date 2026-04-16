@@ -93,6 +93,7 @@ urlpatterns = [
     path('api/cmms/activities/<str:activity_id>/', cmms_views.cmms_api_activity, name='cmms_api_activity'),
     path('api/cmms/start/', cmms_views.cmms_api_start, name='cmms_api_start'),
     path('api/cmms/ptw/<str:permit_id>/', cmms_views.cmms_api_ptw, name='cmms_api_ptw'),
+    path('api/notifications/', cmms_views.notifications_api, name='notifications_api'),
     path('api/cmms/excel/<str:record_id>/', cmms_views.cmms_api_excel, name='cmms_api_excel'),
     path('api/cmms/photos/<str:record_id>/', cmms_views.cmms_api_photos, name='cmms_api_photos'),
     path('api/cmms/complete/<str:record_id>/', cmms_views.cmms_api_complete, name='cmms_api_complete'),

@@ -37,6 +37,13 @@ MEDIA_CHECKLISTS_DIR = MEDIA_ROOT / 'cmms' / 'checklists'
 LOCAL_CHECKLISTS_DIR = CMMS_DATA_DIR / 'checklists'
 ROOT_CHECKLISTS_DIR = BASE_DIR / 'Checklists'
 PHOTOS_DIR = MEDIA_ROOT / 'cmms' / 'photos'
+CMMS_CM_REPORT_TEMPLATE_URL = str(
+    getattr(
+        settings,
+        'CMMS_CM_REPORT_TEMPLATE_URL',
+        'https://docs.google.com/spreadsheets/d/1Cvy43EKlDkVvBrFfa0f1b5eMZv04C273GGEOU5Oo234/edit?usp=sharing',
+    ) or ''
+).strip()
 
 for directory in (CMMS_DATA_DIR, LOCAL_CHECKLISTS_DIR, ROOT_CHECKLISTS_DIR, MEDIA_CHECKLISTS_DIR, PHOTOS_DIR):
     directory.mkdir(parents=True, exist_ok=True)
@@ -686,6 +693,13 @@ def _normalize_activity_name(value: str) -> str:
     return ' '.join(str(value or '').strip().lower().split())
 
 
+def _clean_http_url(value: str) -> str:
+    link = str(value or '').strip()
+    if link.startswith('http://') or link.startswith('https://'):
+        return link
+    return ''
+
+
 def _rows_to_checklist_activities(rows) -> list:
     activities_by_name: dict[str, dict] = {}
     for row_idx, row in enumerate(rows):
@@ -693,10 +707,22 @@ def _rows_to_checklist_activities(rows) -> list:
             continue
         if not row or not row[0]:
             continue
-        name = str(row[0]).strip()
-        link = str(row[1]).strip() if len(row) > 1 and row[1] else ''
-        permit_name = str(row[2]).strip() if len(row) > 2 and row[2] else ''
-        permit_link = str(row[3]).strip() if len(row) > 3 and row[3] else ''
+        cells = [str(cell).strip() if cell is not None else '' for cell in row]
+        name = cells[0]
+        checklist_cell = cells[1] if len(cells) > 1 else ''
+        permit_name = cells[2] if len(cells) > 2 else ''
+        permit_link = _clean_http_url(cells[3] if len(cells) > 3 else '')
+        report_name = cells[4] if len(cells) > 4 else ''
+        report_link = _clean_http_url(cells[5] if len(cells) > 5 else '')
+        checklist_link = _clean_http_url(checklist_cell)
+        checklist_name = '' if checklist_link else checklist_cell
+
+        if not report_link and _clean_http_url(report_name):
+            report_link = _clean_http_url(report_name)
+            report_name = ''
+        if report_link and not report_name:
+            report_name = 'CM Report'
+
         normalized = _normalize_activity_name(name)
         if not normalized:
             continue
@@ -704,25 +730,38 @@ def _rows_to_checklist_activities(rows) -> list:
         if not activity:
             activity = {
                 'name': name,
-                'link': link if link.startswith('http') else '',
+                'link': checklist_link,
+                'checklist_name': checklist_name,
+                'checklist_link': checklist_link,
+                'report_name': report_name,
+                'report_link': report_link,
                 'permits': [],
             }
             activities_by_name[normalized] = activity
-        elif not activity.get('link') and link.startswith('http'):
-            activity['link'] = link
+        else:
+            if not activity.get('link') and checklist_link:
+                activity['link'] = checklist_link
+            if not activity.get('checklist_link') and checklist_link:
+                activity['checklist_link'] = checklist_link
+            if not activity.get('checklist_name') and checklist_name:
+                activity['checklist_name'] = checklist_name
+            if not activity.get('report_name') and report_name:
+                activity['report_name'] = report_name
+            if not activity.get('report_link') and report_link:
+                activity['report_link'] = report_link
 
         if permit_name or permit_link:
             normalized_permit = _normalize_activity_name(permit_name or permit_link)
             if normalized_permit:
                 exists = any(
                     _normalize_activity_name(item.get('name', '')) == normalized_permit
-                    and str(item.get('link', '') or '').strip() == (permit_link if permit_link.startswith('http') else '')
+                    and str(item.get('link', '') or '').strip() == permit_link
                     for item in activity['permits']
                 )
                 if not exists:
                     activity['permits'].append({
                         'name': permit_name or 'Permit',
-                        'link': permit_link if permit_link.startswith('http') else '',
+                        'link': permit_link,
                     })
     return list(activities_by_name.values())
 
@@ -794,7 +833,7 @@ def _remote_checklist_activities() -> list | None:
 
 def get_all_checklist_activities() -> list:
     """
-    Return checklist activities from the live Google Sheet first, with
+    Return activity mappings from the live Google Sheet first, with
     Checklists/checklist_data.xlsx as a fallback when the remote source
     is unavailable.
     """
@@ -804,11 +843,30 @@ def get_all_checklist_activities() -> list:
     return _local_checklist_activities()
 
 
-def get_activity_permit_options(activity_name: str) -> list[dict]:
-    """Return permit options configured for an activity from the live mapping sheet."""
+def _dedupe_permit_options(permits: list[dict]) -> list[dict]:
+    result = []
+    seen: set[tuple[str, str]] = set()
+    for permit in permits or []:
+        permit_name = str(permit.get('name', '') or '').strip()
+        permit_link = str(permit.get('link', '') or '').strip()
+        if not permit_name:
+            continue
+        clean_link = permit_link if permit_link.startswith('http') else ''
+        key = (_normalize_activity_name(permit_name), clean_link)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append({
+            'name': permit_name,
+            'link': clean_link,
+        })
+    return result
+
+
+def _match_activity_mapping(activity_name: str) -> dict | None:
     target = _normalize_activity_name(activity_name)
     if not target:
-        return []
+        return None
 
     exact = None
     best_partial = None
@@ -825,25 +883,22 @@ def get_activity_permit_options(activity_name: str) -> list[dict]:
             if score > best_score:
                 best_score = score
                 best_partial = activity
+    return exact or best_partial
 
-    matched = exact or best_partial or {}
-    permits = matched.get('permits', []) or []
-    result = []
-    seen: set[tuple[str, str]] = set()
-    for permit in permits:
-        permit_name = str(permit.get('name', '') or '').strip()
-        permit_link = str(permit.get('link', '') or '').strip()
-        if not permit_name:
-            continue
-        key = (_normalize_activity_name(permit_name), permit_link)
-        if key in seen:
-            continue
-        seen.add(key)
-        result.append({
-            'name': permit_name,
-            'link': permit_link if permit_link.startswith('http') else '',
-        })
-    return result
+
+def get_activity_permit_options(activity_name: str) -> list[dict]:
+    """Return permit options configured for an activity from the live mapping sheet."""
+    all_activities = get_all_checklist_activities()
+    all_permits = _dedupe_permit_options([
+        permit
+        for activity in all_activities
+        for permit in (activity.get('permits', []) or [])
+    ])
+    matched = _match_activity_mapping(activity_name)
+    if not matched:
+        return all_permits
+    matched_permits = _dedupe_permit_options(matched.get('permits', []) or [])
+    return matched_permits or all_permits
 
 
 def get_checklist_link(activity_name: str) -> str | None:
@@ -852,32 +907,88 @@ def get_checklist_link(activity_name: str) -> str | None:
     The live Google Sheet is checked fresh each call, with the local
     checklist_data.xlsx file as fallback.
     """
-    target = _normalize_activity_name(activity_name)
-    if not target:
+    activity = _match_activity_mapping(activity_name) or {}
+    link = _clean_http_url(activity.get('checklist_link') or activity.get('link'))
+    return link or None
+
+
+def get_checklist_name(activity_name: str) -> str:
+    activity = _match_activity_mapping(activity_name) or {}
+    label = str(activity.get('checklist_name', '') or '').strip()
+    return label or 'Checklist'
+
+
+def get_report_link(activity_name: str) -> str | None:
+    activity = _match_activity_mapping(activity_name) or {}
+    link = _clean_http_url(activity.get('report_link'))
+    return link or None
+
+
+def get_report_name(activity_name: str) -> str:
+    activity = _match_activity_mapping(activity_name) or {}
+    label = str(activity.get('report_name', '') or '').strip()
+    return label or 'CM Report'
+
+
+def get_activity_sheet_link(activity: dict | None) -> str:
+    activity = activity or {}
+    if _activity_type(activity.get('type', 'PM')) == 'CM':
+        report_link = get_report_link(activity.get('name', ''))
+        if report_link:
+            return report_link
+        if CMMS_CM_REPORT_TEMPLATE_URL.startswith('http'):
+            return CMMS_CM_REPORT_TEMPLATE_URL
+        return ''
+    checklist_link = get_checklist_link(activity.get('name', ''))
+    return checklist_link or ''
+
+
+def get_activity_sheet_label(activity: dict | None) -> str:
+    activity = activity or {}
+    if _activity_type(activity.get('type', 'PM')) == 'CM':
+        return get_report_name(activity.get('name', ''))
+    return get_checklist_name(activity.get('name', ''))
+
+
+def download_google_sheet_export(sheet_url: str, export_format: str = 'xlsx') -> bytes | None:
+    link = str(sheet_url or '').strip()
+    if not link:
+        return None
+    try:
+        parsed = urlparse(link)
+    except Exception:
         return None
 
-    best_link = None
-    best_score = 0
-    for activity in get_all_checklist_activities():
-        name = _normalize_activity_name(activity.get('name', ''))
-        link = str(activity.get('link', '') or '').strip()
-        if not name or not link.startswith('http'):
-            continue
-        if name == target:
-            return link
-        if name in target or target in name:
-            score = len(set(name.split()) & set(target.split()))
-            if score > best_score:
-                best_score = score
-                best_link = link
-    return best_link if best_score > 0 else None
+    match = re.search(r'/spreadsheets/d/([a-zA-Z0-9\-_]+)', parsed.path or '')
+    if not match:
+        return None
+
+    query = parse_qs(parsed.query or '')
+    fragment = parse_qs(str(parsed.fragment or '').lstrip('#'))
+    gid = str(query.get('gid', [''])[0] or fragment.get('gid', [''])[0]).strip()
+    params = {'format': export_format}
+    if gid:
+        params['gid'] = gid
+    export_url = f"https://docs.google.com/spreadsheets/d/{match.group(1)}/export?{urlencode(params)}"
+
+    try:
+        request = Request(export_url, headers={'User-Agent': 'HDEC-CMMS/1.0'})
+        with urlopen(request, timeout=CHECKLIST_HTTP_TIMEOUT) as response:
+            payload = response.read()
+        if not payload:
+            return None
+        if payload[:256].lower().startswith(b'<!doctype html') or payload[:256].lower().startswith(b'<html'):
+            return None
+        return payload
+    except Exception:
+        return None
 
 
 def parse_excel_checklist(file_path):
     """
     Parse an Excel checklist file into structured JSON for web rendering.
     Uses pixel-perfect generic mode so the webpage shows the same layout as Excel.
-    Skips 'Cover Page' sheet.
+    Skips helper sheets such as cover pages and workbook settings.
     Returns list of sheet dicts: {name, kind, column_widths, row_heights, cells}
     """
     return _parse_excel_checklist_generic(file_path)
@@ -1071,6 +1182,18 @@ def _excel_cell_style_css(cell) -> str:
     return ';'.join(style_bits)
 
 
+def _should_skip_checklist_sheet(worksheet) -> bool:
+    title = re.sub(r'\s+', ' ', str(getattr(worksheet, 'title', '') or '')).strip().lower()
+    helper_sheet_names = {
+        'cover page',
+        'setting',
+        'settings',
+        'google image',
+        'google images',
+    }
+    return getattr(worksheet, 'sheet_state', 'visible') != 'visible' or title in helper_sheet_names
+
+
 def _parse_excel_checklist_generic(file_path):
     import openpyxl
     from openpyxl.utils import get_column_letter, range_boundaries
@@ -1080,7 +1203,7 @@ def _parse_excel_checklist_generic(file_path):
     sheets = []
 
     for worksheet_index, worksheet in enumerate(workbook.worksheets):
-        if worksheet.title.lower().strip() in ('cover page', 'cover page '):
+        if _should_skip_checklist_sheet(worksheet):
             continue
         display_sheet = display_workbook.worksheets[worksheet_index]
         max_row = worksheet.max_row or 0
@@ -1280,6 +1403,8 @@ def generate_zip(record_id: str) -> io.BytesIO | None:
 
     with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
         checklist_path = resolve_checklist_path(activity.get('checklist_file', ''))
+        linked_sheet_url = get_activity_sheet_link(activity)
+        sheet_label = get_activity_sheet_label(activity)
         if checklist_path and checklist_path.exists():
             saved_values = record.get('excel_values', {})
             if saved_values:
@@ -1293,9 +1418,17 @@ def generate_zip(record_id: str) -> io.BytesIO | None:
                     archive.write(checklist_path, f"{folder}/{checklist_path.name}")
             else:
                 archive.write(checklist_path, f"{folder}/{checklist_path.name}")
+        elif linked_sheet_url:
+            workbook_bytes = download_google_sheet_export(linked_sheet_url, 'xlsx')
+            if workbook_bytes:
+                safe_name = _slug(activity.get('name') or sheet_label or 'sheet')
+                archive.writestr(
+                    f"{folder}/{safe_name}_{sheet_label.lower().replace(' ', '_')}.xlsx",
+                    workbook_bytes,
+                )
 
         try:
-            from .cmms_ptw_utils import annotate_permit, get_permit_for_record
+            from .cmms_ptw_utils import annotate_permit, ensure_final_permit_pdf, get_permit_for_record
 
             permit = annotate_permit(get_permit_for_record(record_id))
         except Exception:
@@ -1311,6 +1444,17 @@ def generate_zip(record_id: str) -> io.BytesIO | None:
                 f"HSE: {permit.get('hse_name', '') or 'N/A'}",
             ]
             archive.writestr(f"{folder}/PTW Details.txt", "\n".join(permit_lines))
+            final_pdf = str(permit.get('final_pdf', '') or '').strip()
+            if permit.get('status') == 'closed' and not final_pdf:
+                try:
+                    refreshed = annotate_permit(ensure_final_permit_pdf(permit))
+                    final_pdf = str((refreshed or {}).get('final_pdf', '') or '').strip()
+                except Exception:
+                    final_pdf = ''
+            if final_pdf:
+                final_pdf_path = MEDIA_ROOT / final_pdf
+                if final_pdf_path.exists():
+                    archive.write(final_pdf_path, f"{folder}/{final_pdf_path.name}")
 
         for rel in record.get('before_photos', []):
             full = MEDIA_ROOT / rel

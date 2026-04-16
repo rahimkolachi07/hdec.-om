@@ -30,6 +30,7 @@
   .status{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid}
   .s-draft,.s-pending_issue{color:#fbbf24;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3)}
   .s-pending_hse,.s-pending_receiver_number,.s-pending_closure_issuer,.s-pending_closure_hse{color:#fb923c;background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.3)}
+  .s-rejected_by_issuer,.s-rejected_by_hse,.s-closure_rejected_by_issuer,.s-closure_rejected_by_hse{color:#f87171;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28)}
   .s-active{color:#4ade80;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)}
   .s-closed{color:#94a3b8;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.28)}
 
@@ -56,7 +57,10 @@
   .right-panel{overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:14px;background:var(--bg)}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
   .card h3{font-size:13px;font-weight:800;margin-bottom:10px}
+  .card.focused{border-color:rgba(59,158,255,.44);box-shadow:0 0 0 1px rgba(59,158,255,.2),0 16px 36px rgba(0,0,0,.22)}
   .summary{font-size:12px;color:var(--tm);line-height:1.6}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .summary-grid strong{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--td);margin-bottom:2px}
   .field{margin-bottom:10px}
   .field label{display:block;font-size:10px;font-weight:800;color:var(--td);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
   .field input,.field textarea{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);
@@ -76,14 +80,24 @@
   .btn-ok:hover{filter:brightness(1.1)}
   .btn-warn{background:var(--warn);border-color:transparent;color:#111827}
   .btn-warn:hover{filter:brightness(1.05)}
+  .btn-danger{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.3);color:#fecaca}
+  .btn-danger:hover{background:rgba(239,68,68,.22);border-color:rgba(239,68,68,.38)}
   .notice{padding:10px 12px;border-radius:8px;background:rgba(59,158,255,.08);
     border:1px solid rgba(59,158,255,.22);font-size:11px;color:#c7defe;line-height:1.6}
+  .notice.notice-error{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.22);color:#fecaca}
+  .notice.notice-success{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);color:#bbf7d0}
+  .reason-text{margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.16);font-size:11px;line-height:1.6;color:#fecaca}
 
   /* toast */
   .toast{position:fixed;top:56px;right:16px;z-index:9999;padding:10px 16px;border-radius:9px;
     font-size:12px;font-weight:700;border:1px solid;display:none}
   .toast.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#4ade80}
   .toast.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+  @media(max-width:980px){
+    .main-layout{grid-template-columns:1fr}
+    .doc-frame-panel{min-height:42vh;border-right:none;border-bottom:1px solid var(--border)}
+    .summary-grid{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -103,6 +117,7 @@
     {% if permit.receiver_name %}<span>👷 {{ permit.receiver_name }}</span>{% endif %}
   </div>
   <div class="topbar-right">
+    {% include 'core/includes/notification_bell.html' %}
     {% if can_view_activities %}
     <a href="{{ cmms_back_url }}" class="link-btn">CMMS</a>
     {% endif %}
@@ -142,8 +157,41 @@
   <!-- Action panel -->
   <div class="right-panel">
 
+    <div class="card" id="permit-status">
+      <h3>Workflow Status</h3>
+      <div class="summary-grid">
+        <div><strong>Status</strong>{{ permit.status_label }}</div>
+        <div><strong>Permit Number</strong>{{ permit.permit_number|default:"—" }}</div>
+        <div><strong>Receiver</strong>{{ permit.receiver_name|default:"—" }}</div>
+        <div><strong>Issuer</strong>{{ permit.issuer_name|default:"—" }}</div>
+        <div><strong>HSE</strong>{{ permit.hse_name|default:"—" }}</div>
+        <div><strong>Isolation</strong>{{ permit.isolation_cert_number|default:"—" }}</div>
+      </div>
+      {% if permit.rejection_reason %}
+      <div class="reason-text">
+        <strong style="display:block;margin-bottom:4px">Application Rejection</strong>
+        {% if permit.rejected_by_name %}By: {{ permit.rejected_by_name }}<br>{% endif %}
+        {% if permit.rejected_at %}At: {{ permit.rejected_at|slice:":16" }}<br>{% endif %}
+        Reason: {{ permit.rejection_reason }}
+      </div>
+      {% endif %}
+      {% if permit.closure_rejection_reason %}
+      <div class="reason-text">
+        <strong style="display:block;margin-bottom:4px">Closure Rejection</strong>
+        {% if permit.closure_rejected_by_name %}By: {{ permit.closure_rejected_by_name }}<br>{% endif %}
+        {% if permit.closure_rejected_at %}At: {{ permit.closure_rejected_at|slice:":16" }}<br>{% endif %}
+        Reason: {{ permit.closure_rejection_reason }}
+      </div>
+      {% endif %}
+      {% if permit.final_pdf_url %}
+      <div class="action-row" style="margin-top:10px">
+        <a href="{{ permit.final_pdf_url }}" class="btn" target="_blank" rel="noopener">Open Final PDF</a>
+      </div>
+      {% endif %}
+    </div>
+
     {% if can_edit_application %}
-    <div class="card">
+    <div class="card" id="receiver-application">
       <h3>Receiver Application</h3>
       <div class="notice">Open the permit document on the left, fill it, then submit.</div>
       <div class="field" style="margin-top:10px">
@@ -152,6 +200,9 @@
                value="{{ permit.document_link|default:permit.template_link }}"
                placeholder="Paste your Google link here">
       </div>
+      {% if permit.rejection_reason %}
+      <div class="notice notice-error">Update the permit and resubmit. Reason: {{ permit.rejection_reason }}</div>
+      {% endif %}
       <div class="action-row">
         <button class="btn" onclick="saveLink()">Save Link</button>
         <button class="btn btn-primary" onclick="submitApplication()">Submit PTW →</button>
@@ -160,7 +211,7 @@
     {% endif %}
 
     {% if can_issue_permit %}
-    <div class="card">
+    <div class="card" id="issuer-review">
       <h3>Issuer Review</h3>
       <div class="notice">Review the permit on the left, then proceed.</div>
       <div class="field" style="margin-top:10px">
@@ -169,14 +220,19 @@
                value="{{ permit.document_link|default:permit.template_link }}"
                placeholder="Paste Google link">
       </div>
+      <div class="field">
+        <label>Reject Reason</label>
+        <textarea id="issuerRejectReason" placeholder="Explain why the PTW is being rejected"></textarea>
+      </div>
       <div class="action-row">
         <button class="btn btn-primary" onclick="issuePermit()">Proceed To HSE →</button>
+        <button class="btn btn-danger" onclick="rejectIssue()">Reject PTW</button>
       </div>
     </div>
     {% endif %}
 
     {% if can_hse_approve %}
-    <div class="card">
+    <div class="card" id="hse-review">
       <h3>HSE Review</h3>
       <div class="notice">Review the permit on the left, assign a permit number.</div>
       <div class="field" style="margin-top:10px">
@@ -193,14 +249,19 @@
         <label>Isolation Certificate Number</label>
         <input type="text" id="isolationNumber" value="{{ permit.isolation_cert_number|default:'' }}" placeholder="Optional">
       </div>
+      <div class="field">
+        <label>Reject Reason</label>
+        <textarea id="hseRejectReason" placeholder="Explain why the PTW is being rejected"></textarea>
+      </div>
       <div class="action-row">
         <button class="btn btn-ok" onclick="hseApprove()">Proceed To Receiver →</button>
+        <button class="btn btn-danger" onclick="rejectHse()">Reject PTW</button>
       </div>
     </div>
     {% endif %}
 
     {% if can_receiver_unlock %}
-    <div class="card">
+    <div class="card" id="receiver-unlock">
       <h3>Receiver Unlock</h3>
       <div class="summary" style="margin-bottom:10px">
         HSE issued permit number: <strong style="color:#fff;font-size:14px">{{ permit.permit_number }}</strong>
@@ -216,8 +277,9 @@
     {% endif %}
 
     {% if can_close_receiver %}
-    <div class="card">
+    <div class="card" id="receiver-close">
       <h3>Close Permit</h3>
+      <div class="notice">Submit the closure details after the work is complete.</div>
       <div class="field">
         <label>Permit Link</label>
         <input type="url" data-document-link
@@ -228,6 +290,9 @@
         <label>Closure Notes</label>
         <textarea id="closureStatusText" placeholder="Optional closure notes">{{ permit.closure_status_text|default:'' }}</textarea>
       </div>
+      {% if permit.closure_rejection_reason %}
+      <div class="notice notice-error">Update the closure and resubmit. Reason: {{ permit.closure_rejection_reason }}</div>
+      {% endif %}
       <div class="action-row">
         <button class="btn btn-warn" onclick="submitClosure()">Send To Issuer →</button>
       </div>
@@ -235,27 +300,37 @@
     {% endif %}
 
     {% if can_close_issuer %}
-    <div class="card">
+    <div class="card" id="issuer-close-review">
       <h3>Issuer Closure Review</h3>
       <div class="notice">Review the closure in the permit document on the left.</div>
+      <div class="field" style="margin-top:10px">
+        <label>Reject Reason</label>
+        <textarea id="closureIssuerRejectReason" placeholder="Explain why the closure is being rejected"></textarea>
+      </div>
       <div class="action-row" style="margin-top:10px">
         <button class="btn btn-primary" onclick="issuerClose()">Proceed To HSE Closure →</button>
+        <button class="btn btn-danger" onclick="rejectClosureIssuer()">Reject Closure</button>
       </div>
     </div>
     {% endif %}
 
     {% if can_close_hse %}
-    <div class="card">
+    <div class="card" id="hse-close-review">
       <h3>HSE Closure Review</h3>
       <div class="notice">Review and confirm the permit closure.</div>
+      <div class="field" style="margin-top:10px">
+        <label>Reject Reason</label>
+        <textarea id="closureHseRejectReason" placeholder="Explain why the closure is being rejected"></textarea>
+      </div>
       <div class="action-row" style="margin-top:10px">
         <button class="btn btn-ok" onclick="hseClose()">Close Permit ✓</button>
+        <button class="btn btn-danger" onclick="rejectClosureHse()">Reject Closure</button>
       </div>
     </div>
     {% endif %}
 
     {% if not can_edit_application and not can_issue_permit and not can_hse_approve and not can_receiver_unlock and not can_close_receiver and not can_close_issuer and not can_close_hse %}
-    <div class="card">
+    <div class="card" id="permit-summary">
       <h3>Permit Summary</h3>
       <div class="summary">
         <div>Receiver: {{ permit.receiver_name|default:"—" }}</div>
@@ -313,8 +388,20 @@ function toEmbedUrl(raw) {
   try {
     const u = new URL(raw.trim());
     if (u.hostname === 'docs.google.com') {
-      const clean = u.pathname.replace(/\/(edit|view|preview|pub|htmlview)(\/.*)?$/, '');
-      return `https://docs.google.com${clean}/edit`;
+      const sheetMatch = u.pathname.match(/^\/spreadsheets\/d\/([^/]+)/);
+      if (sheetMatch) {
+        const gidFromHash = new URLSearchParams(String(u.hash || '').replace(/^#/, '')).get('gid');
+        const gid = u.searchParams.get('gid') || gidFromHash;
+        const params = new URLSearchParams();
+        if (gid) params.set('gid', gid);
+        const query = params.toString();
+        return `https://docs.google.com/spreadsheets/d/${sheetMatch[1]}/preview${query ? `?${query}` : ''}`;
+      }
+
+      const docMatch = u.pathname.match(/^\/document\/d\/([^/]+)/);
+      if (docMatch) {
+        return `https://docs.google.com/document/d/${docMatch[1]}/preview`;
+      }
     }
   } catch(e) {}
   return raw.trim();
@@ -361,7 +448,6 @@ document.addEventListener('input', e => {
   }
 });
 
-window.addEventListener('DOMContentLoaded', () => { if (_currentUrl) setFrame(_currentUrl); });
 
 // ── utilities ──────────────────────────────────────────────────────────────────
 function showToast(msg, type='success'){
@@ -375,6 +461,14 @@ function csrf(){
 function currentDocumentLink(){
   return document.querySelector('[data-document-link]')?.value?.trim() || _currentUrl;
 }
+function requiredReason(id, label){
+  const reason = document.getElementById(id)?.value?.trim() || '';
+  if(!reason){
+    showToast(`${label} reason is required`, 'error');
+    return '';
+  }
+  return reason;
+}
 async function postAction(payload){
   const r = await fetch(API_URL,{method:'POST',
     headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
@@ -382,6 +476,20 @@ async function postAction(payload){
   const d = await r.json();
   if(!r.ok||!d.ok) throw new Error(d.error||'Request failed');
   return d;
+}
+function focusSection(sectionId, shouldFocusReason=false){
+  if(!sectionId) return;
+  document.querySelectorAll('.card.focused').forEach(card => card.classList.remove('focused'));
+  const target = document.getElementById(sectionId);
+  if(!target) return;
+  target.classList.add('focused');
+  target.scrollIntoView({behavior:'smooth', block:'start'});
+  if(shouldFocusReason){
+    const textarea = target.querySelector('textarea');
+    if(textarea){
+      setTimeout(() => textarea.focus(), 220);
+    }
+  }
 }
 
 // ── workflow ───────────────────────────────────────────────────────────────────
@@ -406,6 +514,14 @@ async function issuePermit(){
     showToast('PTW sent to HSE'); setTimeout(()=>location.reload(), 500);
   }catch(e){ showToast(e.message,'error'); }
 }
+async function rejectIssue(){
+  const reason = requiredReason('issuerRejectReason', 'Reject');
+  if(!reason) return;
+  try{
+    await postAction({action:'reject_issue', reason, document_link:currentDocumentLink()});
+    showToast('PTW rejected'); setTimeout(()=>location.reload(), 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
 async function hseApprove(){
   try{
     const d = await postAction({action:'hse_approve', document_link:currentDocumentLink(),
@@ -413,6 +529,14 @@ async function hseApprove(){
       isolation_cert_number: document.getElementById('isolationNumber')?.value||''});
     showToast('Permit number sent to receiver');
     setTimeout(()=>window.location=d.next_url||`/cmms/ptw/${PERMIT_ID}/`, 600);
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function rejectHse(){
+  const reason = requiredReason('hseRejectReason', 'Reject');
+  if(!reason) return;
+  try{
+    await postAction({action:'reject_hse', reason, document_link:currentDocumentLink()});
+    showToast('PTW rejected'); setTimeout(()=>location.reload(), 500);
   }catch(e){ showToast(e.message,'error'); }
 }
 async function receiverUnlock(){
@@ -436,6 +560,14 @@ async function issuerClose(){
     showToast('Closure sent to HSE'); setTimeout(()=>location.reload(), 500);
   }catch(e){ showToast(e.message,'error'); }
 }
+async function rejectClosureIssuer(){
+  const reason = requiredReason('closureIssuerRejectReason', 'Reject');
+  if(!reason) return;
+  try{
+    await postAction({action:'reject_closure_issuer', reason, document_link:currentDocumentLink()});
+    showToast('Closure rejected'); setTimeout(()=>location.reload(), 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
 async function hseClose(){
   try{
     const d = await postAction({action:'hse_close', document_link:currentDocumentLink()});
@@ -443,6 +575,26 @@ async function hseClose(){
     setTimeout(()=>window.location=d.next_url||`/cmms/ptw/${PERMIT_ID}/`, 600);
   }catch(e){ showToast(e.message,'error'); }
 }
+async function rejectClosureHse(){
+  const reason = requiredReason('closureHseRejectReason', 'Reject');
+  if(!reason) return;
+  try{
+    await postAction({action:'reject_closure_hse', reason, document_link:currentDocumentLink()});
+    showToast('Closure rejected'); setTimeout(()=>location.reload(), 500);
+  }catch(e){ showToast(e.message,'error'); }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (_currentUrl) setFrame(_currentUrl);
+  const params = new URLSearchParams(window.location.search);
+  let focus = params.get('focus') || '';
+  if(!focus && {{ show_close_mode|yesno:'true,false' }}){
+    focus = 'receiver-close';
+  }
+  if(focus){
+    focusSection(focus, params.get('decision') === 'reject');
+  }
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,267 @@
+<div class="ntf-shell" data-notification-shell>
+  <button type="button" class="ntf-btn" data-notification-toggle aria-haspopup="true" aria-expanded="false">
+    <span class="ntf-icon">🔔</span>
+    <span class="ntf-label">Notifications</span>
+    <span class="ntf-badge" data-notification-count style="display:none">0</span>
+  </button>
+  <div class="ntf-menu" data-notification-menu hidden>
+    <div class="ntf-head">
+      <div>
+        <div class="ntf-title">Notifications</div>
+        <div class="ntf-sub" data-notification-subtitle>Loading…</div>
+      </div>
+      <button type="button" class="ntf-mark-all" data-notification-read-all>Mark all read</button>
+    </div>
+    <div class="ntf-list" data-notification-list>
+      <div class="ntf-empty">Loading notifications…</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ntf-shell{position:relative;display:flex;align-items:center}
+  .ntf-btn{
+    position:relative;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;
+    border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+    color:inherit;font:inherit;cursor:pointer;transition:border-color .2s,background .2s,transform .2s
+  }
+  .ntf-btn:hover{border-color:rgba(59,158,255,.38);background:rgba(59,158,255,.08)}
+  .ntf-icon{font-size:13px;line-height:1}
+  .ntf-label{font-size:12px;font-weight:700;opacity:.92}
+  .ntf-badge{
+    min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#ef4444;color:#fff;
+    font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center
+  }
+  .ntf-menu{
+    position:absolute;top:calc(100% + 10px);right:0;width:min(380px,calc(100vw - 24px));
+    max-height:min(70vh,560px);display:flex;flex-direction:column;overflow:hidden;
+    border-radius:16px;border:1px solid rgba(255,255,255,.12);background:#0a101b;
+    box-shadow:0 24px 60px rgba(0,0,0,.42);z-index:1200
+  }
+  .ntf-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px;
+    border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)
+  }
+  .ntf-title{font-size:13px;font-weight:800}
+  .ntf-sub{font-size:11px;color:rgba(232,234,240,.58);margin-top:2px}
+  .ntf-mark-all{
+    border:none;background:none;color:#7ec3ff;font:inherit;font-size:11px;font-weight:700;cursor:pointer;
+    padding:0;white-space:nowrap
+  }
+  .ntf-mark-all:hover{color:#bfe1ff}
+  .ntf-list{overflow:auto;padding:8px}
+  .ntf-item{
+    width:100%;text-align:left;padding:12px 12px 11px;border:none;border-radius:12px;background:none;
+    color:inherit;cursor:pointer;transition:background .18s,transform .18s;border:1px solid transparent
+  }
+  .ntf-item:hover{background:rgba(255,255,255,.05);border-color:rgba(59,158,255,.18)}
+  .ntf-item + .ntf-item{margin-top:6px}
+  .ntf-item.is-unread{background:rgba(59,158,255,.08);border-color:rgba(59,158,255,.16)}
+  .ntf-item.kind-success.is-unread{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.18)}
+  .ntf-item.kind-warning.is-unread{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2)}
+  .ntf-item.kind-error.is-unread{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.18)}
+  .ntf-row{display:flex;align-items:flex-start;gap:9px}
+  .ntf-dot{
+    width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;background:#3b9eff;
+    box-shadow:0 0 0 4px rgba(59,158,255,.12)
+  }
+  .ntf-item.kind-success .ntf-dot{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.12)}
+  .ntf-item.kind-warning .ntf-dot{background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.14)}
+  .ntf-item.kind-error .ntf-dot{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.14)}
+  .ntf-content{min-width:0;flex:1}
+  .ntf-item-title{font-size:12px;font-weight:800;line-height:1.4}
+  .ntf-item-text{font-size:11.5px;line-height:1.5;color:rgba(232,234,240,.7);margin-top:3px}
+  .ntf-item-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px}
+  .ntf-item-time{font-size:10px;color:rgba(232,234,240,.46)}
+  .ntf-item-state{font-size:10px;font-weight:800;color:#7ec3ff}
+  .ntf-empty{padding:18px 12px;font-size:12px;color:rgba(232,234,240,.55);text-align:center}
+  @media(max-width:640px){
+    .ntf-label{display:none}
+    .ntf-menu{right:-6px}
+  }
+</style>
+
+<script>
+  (function(){
+    if(window.HDECNotificationsLoaded){
+      window.HDECNotificationsLoaded();
+      return;
+    }
+
+    function csrf(){
+      return document.cookie.split(';').map(part => part.trim()).find(part => part.startsWith('csrftoken='))?.split('=')[1] || '';
+    }
+
+    function formatTime(value){
+      if(!value) return '';
+      try{
+        const date = new Date(value);
+        if(Number.isNaN(date.getTime())) return '';
+        return date.toLocaleString([], {
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }catch(_){
+        return '';
+      }
+    }
+
+    async function fetchNotifications(shell){
+      const list = shell.querySelector('[data-notification-list]');
+      const sub = shell.querySelector('[data-notification-subtitle]');
+      try{
+        const response = await fetch('/api/notifications/?limit=12', {headers:{'X-Requested-With':'XMLHttpRequest'}});
+        if(response.status === 401){
+          return;
+        }
+        const data = await response.json();
+        renderNotifications(shell, data.notifications || [], data.unread_count || 0);
+        if(sub){
+          sub.textContent = data.unread_count ? `${data.unread_count} unread` : 'All caught up';
+        }
+      }catch(_){
+        if(list){
+          list.innerHTML = '<div class="ntf-empty">Could not load notifications.</div>';
+        }
+        if(sub){
+          sub.textContent = 'Unavailable';
+        }
+      }
+    }
+
+    function setCount(shell, count){
+      const badge = shell.querySelector('[data-notification-count]');
+      if(!badge) return;
+      if(count > 0){
+        badge.style.display = 'inline-flex';
+        badge.textContent = String(count > 99 ? '99+' : count);
+      }else{
+        badge.style.display = 'none';
+        badge.textContent = '0';
+      }
+    }
+
+    async function postNotificationAction(payload){
+      const response = await fetch('/api/notifications/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf(),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(payload || {})
+      });
+      return response.json();
+    }
+
+    async function openNotification(shell, item){
+      if(item.is_unread){
+        try{
+          const data = await postNotificationAction({action:'read', notification_id:item.id});
+          setCount(shell, data.unread_count || 0);
+        }catch(_){}
+      }
+      if(item.link){
+        window.location.href = item.link;
+      }
+    }
+
+    function renderNotifications(shell, items, unreadCount){
+      const list = shell.querySelector('[data-notification-list]');
+      if(!list) return;
+      setCount(shell, unreadCount || 0);
+      if(!items.length){
+        list.innerHTML = '<div class="ntf-empty">No notifications yet.</div>';
+        return;
+      }
+      list.innerHTML = '';
+      items.forEach(item => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `ntf-item kind-${item.kind || 'info'}${item.is_unread ? ' is-unread' : ''}`;
+        button.innerHTML = `
+          <div class="ntf-row">
+            <span class="ntf-dot"></span>
+            <div class="ntf-content">
+              <div class="ntf-item-title">${escapeHtml(item.title || 'Notification')}</div>
+              <div class="ntf-item-text">${escapeHtml(item.message || '')}</div>
+              <div class="ntf-item-meta">
+                <span class="ntf-item-time">${escapeHtml(formatTime(item.created_at) || '')}</span>
+                <span class="ntf-item-state">${item.is_unread ? 'Unread' : 'Read'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        button.addEventListener('click', () => openNotification(shell, item));
+        list.appendChild(button);
+      });
+    }
+
+    function escapeHtml(value){
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function closeAllMenus(){
+      document.querySelectorAll('[data-notification-shell]').forEach(shell => {
+        const menu = shell.querySelector('[data-notification-menu]');
+        const toggle = shell.querySelector('[data-notification-toggle]');
+        if(menu) menu.hidden = true;
+        if(toggle) toggle.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    function initShell(shell){
+      const toggle = shell.querySelector('[data-notification-toggle]');
+      const menu = shell.querySelector('[data-notification-menu]');
+      const readAll = shell.querySelector('[data-notification-read-all]');
+      if(!toggle || !menu) return;
+
+      toggle.addEventListener('click', async event => {
+        event.stopPropagation();
+        const willOpen = menu.hidden;
+        closeAllMenus();
+        menu.hidden = !willOpen;
+        toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        if(willOpen){
+          await fetchNotifications(shell);
+        }
+      });
+
+      readAll?.addEventListener('click', async event => {
+        event.stopPropagation();
+        try{
+          const data = await postNotificationAction({action:'read_all'});
+          setCount(shell, data.unread_count || 0);
+          await fetchNotifications(shell);
+        }catch(_){}
+      });
+
+      fetchNotifications(shell);
+    }
+
+    document.addEventListener('click', event => {
+      if(event.target.closest('[data-notification-shell]')) return;
+      closeAllMenus();
+    });
+
+    const initAll = function(){
+      document.querySelectorAll('[data-notification-shell]').forEach(initShell);
+      if(!window.__hdecNotificationsPoll){
+        window.__hdecNotificationsPoll = window.setInterval(() => {
+          document.querySelectorAll('[data-notification-shell]').forEach(fetchNotifications);
+        }, 45000);
+      }
+    };
+
+    window.HDECNotificationsLoaded = initAll;
+    initAll();
+  })();
+</script>

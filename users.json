@@ -2,7 +2,8 @@
   "admin": {
     "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
     "role": "admin",
-    "name": "Administrator"
+    "name": "Administrator",
+    "email": "rahimkolachi16@gmail.com"
   },
   "tech": {
     "password": "fe9bbd400bb6cb314531e3462507661401959afc69aae96bc6aec2c213b83bc1",
@@ -75,6 +76,121 @@
     "role": "maintenance_engineer",
     "name": "Raheem",
     "email": "raheemkolachi7@gmail.com",
+    "permissions": {
+      "activities": "edit",
+      "permits": "edit",
+      "handover": "edit",
+      "manpower": "view",
+      "store": "edit",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
+  },
+  "raheem2": {
+    "password": "d50f722c78fceb3161241ed23d235c54c1f0bcb23d745fa3c70d5127445a4202",
+    "role": "operation_engineer",
+    "name": "Raheem2",
+    "email": "rahimkolachi0716@gmail.com",
+    "permissions": {
+      "activities": "view",
+      "permits": "edit",
+      "handover": "view",
+      "manpower": "view",
+      "store": "view",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
+  },
+  "khalid": {
+    "password": "5f14e72d515e753ca29c94e56cf339a8358067cbbb425dfe8cb2974bdbd1fc45",
+    "role": "operation_engineer",
+    "name": "khalid",
+    "email": "khalidhakro75@gmail.com",
+    "permissions": {
+      "activities": "view",
+      "permits": "edit",
+      "handover": "view",
+      "manpower": "view",
+      "store": "view",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
+  },
+  "farooq": {
+    "password": "78f3147cd91db76f0b024f12cd0671c865d806172c0a483ee3be5d3ba4bcdd90",
+    "role": "maintenance_engineer",
+    "name": "farooq",
+    "email": "engrfarooqghumro@gmail.com",
+    "permissions": {
+      "activities": "edit",
+      "permits": "edit",
+      "handover": "edit",
+      "manpower": "view",
+      "store": "edit",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "view"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
+  },
+  "noman": {
+    "password": "f75ea99bf78dfa24e85706820cb7e5f06c31649876e6780ffcf5f5105967cf97",
+    "role": "hse_engineer",
+    "name": "noman",
+    "email": "engr.noman56@gmail.com",
+    "permissions": {
+      "activities": "view",
+      "permits": "edit",
+      "handover": "view",
+      "manpower": "view",
+      "store": "view",
+      "tracing": "view",
+      "annual_plan": "view",
+      "documents": "view",
+      "daily_report": "view",
+      "sjn_portal": "edit"
+    },
+    "access": {
+      "overall": "all",
+      "countries": [],
+      "projects": []
+    }
+  },
+  "naveed": {
+    "password": "d901d9a1661c9cf1d56fb97a2a15fab37d0861149bbf7cbdac04c2ddef55f0dd",
+    "role": "maintenance_engineer",
+    "name": "naveed",
+    "email": "naveednasir707@gmail.com",
     "permissions": {
       "activities": "edit",
       "permits": "edit",

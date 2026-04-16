@@ -110,8 +110,20 @@
 
   /* Spreadsheet grid */
   .xl-body{padding:0;overflow:hidden}
-  .xl-spreadsheet-wrap{overflow:auto;max-height:75vh;border-top:1px solid #c6cacc;background:#fff}
-  .xl-sheet-grid{display:grid;gap:0;width:max-content}
+  .xl-spreadsheet-wrap{
+    overflow-y:auto;overflow-x:hidden;max-height:75vh;border-top:1px solid #c6cacc;
+    background:linear-gradient(180deg,#f8fafc 0%,#edf2f7 100%);padding:14px;
+  }
+  .xl-fit-stage{
+    position:relative;width:100%;min-height:100%;display:flex;justify-content:center;align-items:flex-start;
+  }
+  .xl-sheet-grid{
+    display:grid;gap:0;width:max-content;transform-origin:top center;transition:transform .18s ease;
+    background:#fff;border:1px solid #d8dee8;box-shadow:0 18px 42px rgba(15,23,42,.12)
+  }
+  .xl-spreadsheet-wrap .xl-cell-inner,
+  .xl-spreadsheet-wrap .xl-sheet-text,
+  .xl-spreadsheet-wrap .xl-sheet-input{color:#000 !important}
 
   /* Header cells */
   .xl-hdr-corner,.xl-hdr-col,.xl-hdr-row{background:#f8f9fa;border:1px solid #c6cacc;
@@ -193,6 +205,7 @@
   <span class="tb-title">{{ activity.name }}</span>
   <span class="tb-meta">{{ record.date }}</span>
   <div class="tb-right">
+    {% include 'core/includes/notification_bell.html' %}
     <a href="{{ cmms_back_url }}" class="back-btn">CMMS</a>
     {% if permit and can_view_permits %}
     <a href="/cmms/ptw/{{ permit.id }}/" class="back-btn">📋 PTW</a>
@@ -203,7 +216,7 @@
       {% if permit and permit.status == 'active' %}🔒 Close Permit{% elif permit and permit.status != 'closed' %}📋 PTW Pending{% else %}✓ Mark Complete{% endif %}
     </button>
     {% endif %}
-    <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-sm">Done</a>
+    <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-sm" onclick="return doneRedirect(event)">Done</a>
   </div>
 </div>
 
@@ -218,6 +231,7 @@
     {% if record.completed %}✓ Completed{% else %}● In Progress{% endif %}
   </span>
   {% if permit %}<span class="info-tag">📋 PTW {{ permit.status_label }}</span>{% endif %}
+  {% if permit and permit.permit_number %}<span class="info-tag">🔐 {{ permit.permit_number }}</span>{% endif %}
   <span style="margin-left:auto;font-size:11px;color:var(--td)">{{ record.id }}</span>
 </div>
 
@@ -227,14 +241,14 @@
   <!-- Left: Google Sheet iframe -->
   <div class="cl-iframe-panel">
     <div class="cl-iframe-bar">
-      <span class="cl-iframe-title">📋 {{ activity.name }}</span>
+      <span class="cl-iframe-title">📋 {{ sheet_label }} — {{ activity.name }}</span>
       <button class="btn btn-ghost btn-sm" onclick="clReload()">↺ Reload</button>
       <a href="{{ checklist_link }}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Open ↗</a>
     </div>
     <div class="cl-iframe-body">
-      <div class="cl-iframe-loading" id="clLoading">Loading checklist…</div>
+      <div class="cl-iframe-loading" id="clLoading">Loading {{ sheet_label|lower }}…</div>
       <iframe id="clFrame"
-              src="{{ checklist_link }}"
+              data-src="{{ checklist_link|escapejs }}"
               allowfullscreen
               allow="clipboard-read; clipboard-write; fullscreen"
               onload="document.getElementById('clLoading').classList.add('hidden')"
@@ -296,7 +310,7 @@
         <span class="spinner" id="zipSpinner"></span>
         📦 Download ZIP
       </button>
-      <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-block" style="margin-top:10px">Done</a>
+      <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-block" style="margin-top:10px" onclick="return doneRedirect(event)">Done</a>
     </div>
 
   </div><!-- /side-panel -->
@@ -319,6 +333,9 @@
     {% if permit %}
     <span class="info-tag">📋 PTW {{ permit.status_label }}</span>
     {% endif %}
+    {% if permit and permit.permit_number %}
+    <span class="info-tag">🔐 {{ permit.permit_number }}</span>
+    {% endif %}
     <span style="margin-left:auto;font-size:12px;color:var(--td)">Record ID: {{ record.id }}</span>
   </div>
 
@@ -326,7 +343,7 @@
   <!-- File-based Excel grid editor -->
   <div class="card">
     <div class="card-head">
-      <h3>📋 Checklist</h3>
+      <h3>📋 {{ sheet_label }}</h3>
       <span class="save-status" id="xlSaveStatus">Loading…</span>
     </div>
     <div id="xlTabs" class="xl-tabs"></div>
@@ -336,14 +353,14 @@
       <div class="xl-fx-icon">fx</div>
     </div>
     <div id="xlBody" class="xl-body">
-      <div class="xl-skeleton">Loading checklist…</div>
+      <div class="xl-skeleton">Loading {{ sheet_label|lower }}…</div>
     </div>
   </div>
 
   {% else %}
   <div class="card">
-    <div class="card-head"><h3>📋 Checklist</h3></div>
-    <div class="no-checklist-note">No checklist linked to this activity.</div>
+    <div class="card-head"><h3>📋 {{ sheet_label }}</h3></div>
+    <div class="no-checklist-note">No {{ sheet_label|lower }} linked to this activity.</div>
   </div>
   {% endif %}
 
@@ -404,7 +421,7 @@
         <span class="spinner" id="zipSpinner"></span>
         📦 Download ZIP (Checklist + Before + After)
       </button>
-      <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-block" style="margin-top:10px">Done</a>
+      <a href="{{ cmms_back_url }}" class="btn btn-ghost btn-block" style="margin-top:10px" onclick="return doneRedirect(event)">Done</a>
     </div>
   </div>
 
@@ -435,13 +452,61 @@ function goBack(event, fallback){
   return true;
 }
 
+function doneRedirect(event){
+  if(PTW_ID && PTW_STATUS && PTW_STATUS !== 'closed'){
+    if(event) event.preventDefault();
+    window.location.href = PTW_STATUS === 'active'
+      ? `/cmms/ptw/${PTW_ID}/?mode=close`
+      : `/cmms/ptw/${PTW_ID}/`;
+    return false;
+  }
+  return true;
+}
+
 // ── Google Sheet iframe reload ─────────────────────────────────────────────────
+function toChecklistEmbedUrl(raw){
+  const url = String(raw || '').trim();
+  if(!url) return '';
+  try{
+    const parsed = new URL(url);
+    if(parsed.hostname !== 'docs.google.com') return url;
+
+    const sheetMatch = parsed.pathname.match(/^\/spreadsheets\/d\/([^/]+)/);
+    if(sheetMatch){
+      const gidFromHash = new URLSearchParams(String(parsed.hash || '').replace(/^#/, '')).get('gid');
+      const gid = parsed.searchParams.get('gid') || gidFromHash;
+      const params = new URLSearchParams();
+      if(gid) params.set('gid', gid);
+      const query = params.toString();
+      return `https://docs.google.com/spreadsheets/d/${sheetMatch[1]}/preview${query ? `?${query}` : ''}`;
+    }
+
+    const docMatch = parsed.pathname.match(/^\/document\/d\/([^/]+)/);
+    if(docMatch){
+      return `https://docs.google.com/document/d/${docMatch[1]}/preview`;
+    }
+  }catch(_){}
+  return url;
+}
+
+function initChecklistFrame(){
+  const frame = document.getElementById('clFrame');
+  if(!frame) return;
+  const embedUrl = toChecklistEmbedUrl(frame.dataset.src || '');
+  if(!embedUrl){
+    document.getElementById('clLoading')?.classList.add('hidden');
+    return;
+  }
+  frame.src = embedUrl;
+}
+
 function clReload(){
   const f = document.getElementById('clFrame');
   if(!f) return;
   const ldr = document.getElementById('clLoading');
   if(ldr) ldr.classList.remove('hidden');
-  f.src = f.src;
+  const embedUrl = toChecklistEmbedUrl(f.dataset.src || f.src);
+  if(embedUrl) f.src = embedUrl;
 }
 
 // ── Excel state ────────────────────────────────────────────────────────────────
@@ -458,7 +523,7 @@ async function xlLoad(){
     xlValues = d.values || {};
     if(!xlSheets.length){
       document.getElementById('xlBody').innerHTML =
-        `<div class="xl-skeleton">Checklist loaded, but no editable sheet was found.</div>`;
+        `<div class="xl-skeleton">{{ sheet_label|escapejs }} loaded, but no editable sheet was found.</div>`;
       setStatus('No editable sheet');
       return;
     }
@@ -493,6 +558,10 @@ function xlRenderSheet(idx){
   const sname = sheet.name;
   const sv = xlValues[sname] || {mode:'generic', cells:{}};
   body.innerHTML = xlRenderGenericSheet(sheet, sv);
+  requestAnimationFrame(() => {
+    xlFitSheetToWidth();
+    setTimeout(xlFitSheetToWidth, 80);
+  });
 }
 
 function colLetter(n){
@@ -501,17 +570,41 @@ function colLetter(n){
   return s;
 }
 
+function xlFitSheetToWidth(){
+  const wrap = document.querySelector('#xlBody .xl-spreadsheet-wrap');
+  const stage = document.querySelector('#xlBody .xl-fit-stage');
+  const grid = document.querySelector('#xlBody .xl-sheet-grid');
+  if(!wrap || !stage || !grid) return;
+  const gridWidth = Number(stage.dataset.gridWidth || 0);
+  const gridHeight = Number(stage.dataset.gridHeight || 0);
+  if(!gridWidth || !gridHeight){
+    grid.style.transform = 'scale(0.94)';
+    stage.style.height = '';
+    return;
+  }
+  const framePadding = 36;
+  const availableWidth = Math.max(240, wrap.clientWidth - framePadding);
+  const fitScale = availableWidth / gridWidth;
+  const scale = (!Number.isFinite(fitScale) || fitScale <= 0)
+    ? 0.94
+    : Math.min(0.94, fitScale);
+  grid.style.transform = `scale(${scale})`;
+  stage.style.height = `${Math.ceil(gridHeight * scale)}px`;
+}
+
 function xlRenderGenericSheet(sheet, sv){
   const H_COL = 40; // row-number column width px
   const H_ROW = 22; // column-letter row height px
 
   const colWidths  = sheet.column_widths || [];
   const rowHeights = sheet.row_heights  || [];
+  const totalWidth = H_COL + colWidths.reduce((sum, width) => sum + Math.max(width || 0, 0), 0);
+  const totalHeight = H_ROW + rowHeights.reduce((sum, height) => sum + Math.max(height || 0, 0), 0);
 
   const colTemplate = `${H_COL}px ` + colWidths.map(w  => `${Math.max(w||0,0)}px`).join(' ');
   const rowTemplate = `${H_ROW}px ` + rowHeights.map(h => `${Math.max(h||0,0)}px`).join(' ');
 
-  let html = `<div class="xl-spreadsheet-wrap"><div class="xl-sheet-grid" style="grid-template-columns:${colTemplate};grid-template-rows:${rowTemplate};">`;
+  let html = `<div class="xl-spreadsheet-wrap"><div class="xl-fit-stage" data-grid-width="${totalWidth}" data-grid-height="${totalHeight}"><div class="xl-sheet-grid" style="grid-template-columns:${colTemplate};grid-template-rows:${rowTemplate};width:${totalWidth}px;height:${totalHeight}px;">`;
 
   // Corner
   html += `<div class="xl-hdr-corner" style="grid-column:1;grid-row:1;"></div>`;
@@ -552,7 +645,7 @@ function xlRenderGenericSheet(sheet, sv){
     }
   });
 
-  html += '</div></div>';
+  html += '</div></div></div>';
   return html;
 }
 
@@ -769,6 +862,12 @@ function showToast(msg, type='success'){
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  if(HAS_XL && !HAS_CL_LINK){
+    requestAnimationFrame(xlFitSheetToWidth);
+  }
+});
+if(HAS_CL_LINK) initChecklistFrame();
 if(HAS_XL && !HAS_CL_LINK) xlLoad();
 </script>
 </body>

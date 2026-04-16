@@ -4,7 +4,8 @@ CMMS Views — monthly schedule, activity work page, and API endpoints.
 import json
 import re
 from datetime import datetime
-from urllib.parse import urlparse
+from pathlib import Path
+from urllib.parse import urlencode, urlparse
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, Http404, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -25,6 +26,13 @@ from .email_utils import (
     notify_permit_issued,
     notify_permit_ready_to_proceed,
 )
+from .notification_utils import (
+    create_notifications,
+    list_notifications,
+    mark_all_notifications_read,
+    mark_notification_read,
+    unread_count,
+)
 
 from .cmms_utils import (
     get_activity, get_activities_for_month,
@@ -34,13 +42,14 @@ from .cmms_utils import (
     save_photo, delete_photo,
     parse_excel_checklist, generate_zip,
     get_checklist_files, resolve_checklist_path, ensure_activity_checklist, save_checklist_file,
-    get_checklist_link, get_all_checklist_activities, get_activity_permit_options,
+    get_activity_sheet_label, get_activity_sheet_link, get_all_checklist_activities, get_activity_permit_options,
 )
 from .cmms_ptw_utils import (
     annotate_permit,
     application_is_active,
     build_permit_docx,
     can_close_hse,
+    can_delete_permit,
     can_close_issuer,
     can_close_receiver,
     can_edit_application,
@@ -48,6 +57,8 @@ from .cmms_ptw_utils import (
     can_issue_permit,
     can_receiver_unlock,
     create_or_get_record_permit,
+    delete_permit,
+    ensure_final_permit_pdf,
     get_permit,
     get_permit_for_record,
     is_cmms_permit,
@@ -215,18 +226,45 @@ def _dedupe_users(users: list) -> list:
     return result
 
 
-def _issuer_notification_users() -> list:
-    users = [u for u in get_users_by_role('operation_engineer') if u.get('email')]
+def _dedupe_usernames(usernames: list[str]) -> list[str]:
+    seen = set()
+    result = []
+    for username in usernames:
+        clean = str(username or '').strip().lower()
+        if not clean or clean in seen:
+            continue
+        seen.add(clean)
+        result.append(clean)
+    return result
+
+
+def _issuer_users() -> list:
+    users = get_users_by_role('operation_engineer')
     if users:
         return _dedupe_users(users)
-    return _dedupe_users([u for u in get_users_by_role('admin') if u.get('email')])
+    return _dedupe_users(get_users_by_role('admin'))
+
+
+def _hse_users() -> list:
+    users = get_users_by_role('hse_engineer')
+    if users:
+        return _dedupe_users(users)
+    return _dedupe_users(get_users_by_role('admin'))
+
+
+def _issuer_notification_users() -> list:
+    return [user for user in _issuer_users() if user.get('email')]
 
 
 def _hse_notification_users() -> list:
-    users = [u for u in get_users_by_role('hse_engineer') if u.get('email')]
-    if users:
-        return _dedupe_users(users)
-    return _dedupe_users([u for u in get_users_by_role('admin') if u.get('email')])
+    return [user for user in _hse_users() if user.get('email')]
+
+
+def _usernames_for_users(users: list) -> list[str]:
+    return _dedupe_usernames([
+        str((user or {}).get('username', '')).strip().lower()
+        for user in users or []
+    ])
 
 
 def _receiver_and_maintenance_emails(receiver_username: str) -> list:
@@ -244,6 +282,127 @@ def _receiver_and_maintenance_emails(receiver_username: str) -> list:
         for email in emails
         if email and '@' in str(email)
     ))
+
+
+def _receiver_and_maintenance_usernames(receiver_username: str) -> list[str]:
+    usernames = [receiver_username]
+    usernames.extend(
+        str((user or {}).get('username', '')).strip().lower()
+        for user in get_users_by_role('maintenance_engineer')
+    )
+    return _dedupe_usernames(usernames)
+
+
+def _closure_notification_emails(permit: dict | None) -> list:
+    permit = permit or {}
+    emails = _receiver_and_maintenance_emails(permit.get('receiver_username', ''))
+    emails.extend([
+        _user_email(permit.get('issuer_username', '')),
+        _user_email(permit.get('hse_username', '')),
+    ])
+    return list(dict.fromkeys(
+        str(email).strip()
+        for email in emails
+        if email and '@' in str(email)
+    ))
+
+
+def _closure_notification_usernames(permit: dict | None) -> list[str]:
+    permit = permit or {}
+    usernames = _receiver_and_maintenance_usernames(permit.get('receiver_username', ''))
+    usernames.extend([
+        permit.get('issuer_username', ''),
+        permit.get('hse_username', ''),
+    ])
+    return _dedupe_usernames(usernames)
+
+
+def _ptw_link(permit_id: str, *, focus: str = '', decision: str = '') -> str:
+    clean_id = str(permit_id or '').strip()
+    if not clean_id:
+        return '/cmms/ptw/'
+    params = {}
+    if focus:
+        params['focus'] = focus
+    if decision:
+        params['decision'] = decision
+    query = urlencode(params)
+    base = f'/cmms/ptw/{clean_id}/'
+    return f'{base}?{query}' if query else base
+
+
+def _push_ptw_notifications(
+    usernames: list[str],
+    *,
+    title: str,
+    message: str,
+    permit: dict | None,
+    focus: str = '',
+    kind: str = 'info',
+    actor_name: str = '',
+) -> None:
+    permit = permit or {}
+    create_notifications(
+        usernames,
+        title=title,
+        message=message,
+        link=_ptw_link(permit.get('id', ''), focus=focus),
+        kind=kind,
+        entity_type='ptw',
+        entity_id=permit.get('id', ''),
+        permit_id=permit.get('id', ''),
+        actor_name=actor_name,
+    )
+
+
+def notifications_api(request):
+    redir = _require_login(request)
+    if redir:
+        return redir
+    user = _get_user(request) or {}
+    username = str(user.get('username', '')).strip().lower()
+    if not username:
+        return JsonResponse({'error': 'Login required'}, status=401)
+
+    if request.method == 'GET':
+        try:
+            limit = max(1, min(int(request.GET.get('limit', '20')), 100))
+        except Exception:
+            limit = 20
+        return JsonResponse({
+            'notifications': list_notifications(username, limit=limit),
+            'unread_count': unread_count(username),
+        })
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    action = str(data.get('action', '') or '').strip()
+    if action == 'read':
+        notification_id = str(data.get('notification_id', '') or '').strip()
+        notification = mark_notification_read(notification_id, username)
+        if not notification:
+            return JsonResponse({'error': 'Notification not found'}, status=404)
+        return JsonResponse({
+            'ok': True,
+            'notification': notification,
+            'unread_count': unread_count(username),
+        })
+
+    if action == 'read_all':
+        changed = mark_all_notifications_read(username)
+        return JsonResponse({
+            'ok': True,
+            'updated': changed,
+            'unread_count': unread_count(username),
+        })
+
+    return JsonResponse({'error': 'Unknown action'}, status=400)
 
 
 # ── Hub: monthly schedule ─────────────────────────────────────────────────────
@@ -291,15 +450,19 @@ def cmms_work(request, record_id):
     before_urls = [f"{media_url}{p}" for p in record.get('before_photos', [])]
     after_urls  = [f"{media_url}{p}" for p in record.get('after_photos', [])]
     checklist_path = resolve_checklist_path(activity.get('checklist_file', ''))
-    checklist_link = get_checklist_link(activity.get('name', ''))
+    activity_type = str(activity.get('type', 'PM') or 'PM').upper()
+    sheet_link = get_activity_sheet_link(activity)
+    checklist_link = sheet_link if (activity_type == 'CM' or not checklist_path) else ''
+    sheet_label = get_activity_sheet_label(activity)
 
     return render(request, 'core/cmms_work.html', _ctx(request, {
         'record':          record,
         'activity':        activity,
         'before_urls':     before_urls,
         'after_urls':      after_urls,
-        'has_checklist':   bool(checklist_path) and not checklist_link,
+        'has_checklist':   bool(checklist_path),
         'checklist_link':  checklist_link or '',
+        'sheet_label':     sheet_label,
         'media_url':       media_url,
         'permit':          permit,
         'can_edit_activities': has_permission(user or {}, 'activities', 'edit'),
@@ -320,6 +483,7 @@ def cmms_ptw_list(request):
         permit['work_url'] = f"/cmms/work/{permit['record_id']}/" if permit.get('record_id') else ''
         permit['ptw_url'] = f"/cmms/ptw/{permit['id']}/"
         permit['work_accessible'] = bool(permit.get('record_id') and application_is_active(permit))
+        permit['can_delete'] = can_delete_permit(permit, user)
     status_counts = {}
     for permit in list_permits():
         if not is_cmms_permit(permit):
@@ -331,6 +495,7 @@ def cmms_ptw_list(request):
         'status_filter': status_filter,
         'status_counts': status_counts,
         'can_view_activities': has_permission(user, 'activities', 'view'),
+        'can_delete_permits': any(permit.get('can_delete') for permit in permits),
     }))
 
 
@@ -373,9 +538,18 @@ def cmms_ptw_download(request, permit_id):
     redir = _require_module_access(request, 'permits', 'view')
     if redir:
         return redir
-    permit = get_permit(permit_id)
+    permit = annotate_permit(get_permit(permit_id))
     if not permit:
         raise Http404('Permit not found')
+    if permit.get('status') == 'closed':
+        permit = ensure_final_permit_pdf(permit) or permit
+        final_pdf = str((permit or {}).get('final_pdf', '') or '').strip()
+        if final_pdf:
+            final_pdf_path = Path(getattr(__import__('django.conf', fromlist=['settings']).settings, 'MEDIA_ROOT', '')) / final_pdf
+            if final_pdf_path.exists():
+                response = HttpResponse(final_pdf_path.read_bytes(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{final_pdf_path.name}"'
+                return response
     if permit.get('document_link'):
         return redirect(permit['document_link'])
     buffer = build_permit_docx(permit)
@@ -414,7 +588,7 @@ def cmms_api_ptw(request, permit_id):
     if redir:
         return redir
     user = _get_user(request)
-    permit = get_permit(permit_id)
+    permit = annotate_permit(get_permit(permit_id))
     if not permit:
         return JsonResponse({'error': 'Permit not found'}, status=404)
 
@@ -435,10 +609,20 @@ def cmms_api_ptw(request, permit_id):
     action = data.get('action', '').strip()
     now = datetime.now().isoformat()
 
+    if action == 'delete':
+        if not can_delete_permit(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        deleted = delete_permit(permit_id, (user or {}).get('username', '') or (user or {}).get('name', ''))
+        if not deleted:
+            return JsonResponse({'error': 'Permit not found'}, status=404)
+        return JsonResponse({'ok': True, 'deleted_id': permit_id})
+
     if action == 'save_document':
         if not can_edit_application(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link'))
+        document_link = _clean_external_link(
+            data.get('document_link') or permit.get('document_link') or permit.get('template_link')
+        )
         if not document_link:
             return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
         permit = update_permit(permit_id, {'document_link': document_link})
@@ -455,9 +639,45 @@ def cmms_api_ptw(request, permit_id):
             'receiver_name': user.get('name', ''),
             'receiver_username': user.get('username', ''),
             'submitted_at': now,
+            'issuer_name': '',
+            'issuer_username': '',
+            'issuer_signature': '',
+            'issued_at': '',
+            'hse_name': '',
+            'hse_username': '',
+            'hse_signature': '',
+            'hse_signed_at': '',
+            'permit_number': '',
+            'receiver_confirmed_permit_number': '',
+            'receiver_confirmed_at': '',
+            'active_at': '',
+            'isolation_cert_number': '',
+            'rejection_stage': '',
+            'rejection_reason': '',
+            'rejected_at': '',
+            'rejected_by_name': '',
+            'rejected_by_username': '',
             'status': 'pending_issue',
         })
         notify_permit_created(permit, _issuer_notification_users())
+        _push_ptw_notifications(
+            _usernames_for_users(_issuer_users()),
+            title='PTW request needs issuer review',
+            message=f"{permit.get('activity_name') or permit.get('equipment') or 'PTW'} was submitted and is waiting for issuer approval.",
+            permit=permit,
+            focus='issuer-review',
+            kind='warning',
+            actor_name=user.get('name', ''),
+        )
+        _push_ptw_notifications(
+            [permit.get('receiver_username', '')],
+            title='PTW submitted',
+            message='Your permit request was submitted and is now waiting for issuer review.',
+            permit=permit,
+            focus='receiver-application',
+            kind='info',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     if action == 'issue':
@@ -471,10 +691,72 @@ def cmms_api_ptw(request, permit_id):
             'issuer_name': user.get('name', ''),
             'issuer_username': user.get('username', ''),
             'issued_at': now,
+            'rejection_stage': '',
+            'rejection_reason': '',
+            'rejected_at': '',
+            'rejected_by_name': '',
+            'rejected_by_username': '',
             'status': 'pending_hse',
         }
         permit = update_permit(permit_id, payload)
         notify_permit_issued(permit, _hse_notification_users())
+        _push_ptw_notifications(
+            _usernames_for_users(_hse_users()),
+            title='PTW needs HSE approval',
+            message=f"{permit.get('activity_name') or permit.get('equipment') or 'PTW'} is waiting for HSE approval.",
+            permit=permit,
+            focus='hse-review',
+            kind='warning',
+            actor_name=user.get('name', ''),
+        )
+        _push_ptw_notifications(
+            [permit.get('receiver_username', '')],
+            title='Issuer approved the PTW',
+            message='Your PTW was reviewed by the issuer and is now waiting for HSE approval.',
+            permit=permit,
+            focus='permit-status',
+            kind='info',
+            actor_name=user.get('name', ''),
+        )
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'reject_issue':
+        if not can_issue_permit(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        reason = str(data.get('reason', '') or '').strip()
+        if not reason:
+            return JsonResponse({'error': 'Rejection reason is required'}, status=400)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        payload = {
+            'issuer_name': '',
+            'issuer_username': '',
+            'issuer_signature': '',
+            'issued_at': '',
+            'permit_number': '',
+            'isolation_cert_number': '',
+            'hse_name': '',
+            'hse_username': '',
+            'hse_signature': '',
+            'hse_signed_at': '',
+            'rejection_stage': 'issue',
+            'rejection_reason': reason,
+            'rejected_at': now,
+            'rejected_by_name': user.get('name', ''),
+            'rejected_by_username': user.get('username', ''),
+            'status': 'rejected_by_issuer',
+        }
+        if document_link:
+            payload['document_link'] = document_link
+        permit = update_permit(permit_id, payload)
+        _push_ptw_notifications(
+            _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
+            title='PTW rejected by issuer',
+            message=f"Issuer rejected the PTW. Reason: {reason}",
+            permit=permit,
+            focus='receiver-application',
+            kind='error',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     if action == 'hse_approve':
@@ -494,17 +776,68 @@ def cmms_api_ptw(request, permit_id):
             'hse_name': user.get('name', ''),
             'hse_username': user.get('username', ''),
             'hse_signed_at': now,
+            'rejection_stage': '',
+            'rejection_reason': '',
+            'rejected_at': '',
+            'rejected_by_name': '',
+            'rejected_by_username': '',
             'status': 'pending_receiver_number',
         })
         notify_permit_ready_to_proceed(
             permit,
             _receiver_and_maintenance_emails(permit.get('receiver_username', '')),
         )
+        _push_ptw_notifications(
+            _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
+            title='PTW approved and ready to proceed',
+            message=f"HSE approved the PTW. Enter permit number {permit_number} to proceed.",
+            permit=permit,
+            focus='receiver-unlock',
+            kind='success',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({
             'ok': True,
             'permit': annotate_permit(permit),
             'next_url': f"/cmms/ptw/{permit_id}/",
         })
+
+    if action == 'reject_hse':
+        if not can_hse_approve(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        reason = str(data.get('reason', '') or '').strip()
+        if not reason:
+            return JsonResponse({'error': 'Rejection reason is required'}, status=400)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        payload = {
+            'permit_number': '',
+            'receiver_confirmed_permit_number': '',
+            'receiver_confirmed_at': '',
+            'isolation_cert_number': '',
+            'hse_name': '',
+            'hse_username': '',
+            'hse_signature': '',
+            'hse_signed_at': '',
+            'rejection_stage': 'hse',
+            'rejection_reason': reason,
+            'rejected_at': now,
+            'rejected_by_name': user.get('name', ''),
+            'rejected_by_username': user.get('username', ''),
+            'status': 'rejected_by_hse',
+        }
+        if document_link:
+            payload['document_link'] = document_link
+        permit = update_permit(permit_id, payload)
+        _push_ptw_notifications(
+            _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
+            title='PTW rejected by HSE',
+            message=f"HSE rejected the PTW. Reason: {reason}",
+            permit=permit,
+            focus='receiver-application',
+            kind='error',
+            actor_name=user.get('name', ''),
+        )
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     if action == 'receiver_unlock':
         if not can_receiver_unlock(permit, user):
@@ -521,6 +854,15 @@ def cmms_api_ptw(request, permit_id):
             'active_at': now,
             'status': 'active',
         })
+        _push_ptw_notifications(
+            [permit.get('receiver_username', '')],
+            title='PTW is active',
+            message='Permit number confirmed. Work can now proceed on the activity.',
+            permit=permit,
+            focus='permit-status',
+            kind='success',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({
             'ok': True,
             'permit': annotate_permit(permit),
@@ -540,6 +882,17 @@ def cmms_api_ptw(request, permit_id):
             'closure_requested_at': now,
             'closure_receiver_name': user.get('name', ''),
             'closure_receiver_signed_at': now,
+            'closure_issuer_name': '',
+            'closure_issuer_signature': '',
+            'closure_issuer_signed_at': '',
+            'closure_hse_name': '',
+            'closure_hse_signature': '',
+            'closure_hse_signed_at': '',
+            'closure_rejection_stage': '',
+            'closure_rejection_reason': '',
+            'closure_rejected_at': '',
+            'closure_rejected_by_name': '',
+            'closure_rejected_by_username': '',
             'status': 'pending_closure_issuer',
         }
         permit = update_permit(permit_id, payload)
@@ -548,6 +901,25 @@ def cmms_api_ptw(request, permit_id):
             u.get('email', '') for u in _issuer_notification_users()
         ]
         notify_permit_closure_requested(permit, closure_recipients)
+        issuer_usernames = [permit.get('issuer_username', '')] if permit.get('issuer_username') else _usernames_for_users(_issuer_users())
+        _push_ptw_notifications(
+            issuer_usernames,
+            title='PTW closure needs issuer review',
+            message='The receiver submitted a closure request and it is waiting for issuer review.',
+            permit=permit,
+            focus='issuer-close-review',
+            kind='warning',
+            actor_name=user.get('name', ''),
+        )
+        _push_ptw_notifications(
+            [permit.get('receiver_username', '')],
+            title='Closure sent to issuer',
+            message='Your PTW closure request was submitted and is now waiting for issuer review.',
+            permit=permit,
+            focus='receiver-close',
+            kind='info',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     if action == 'issuer_close':
@@ -560,10 +932,68 @@ def cmms_api_ptw(request, permit_id):
             'document_link': document_link,
             'closure_issuer_name': user.get('name', ''),
             'closure_issuer_signed_at': now,
+            'closure_rejection_stage': '',
+            'closure_rejection_reason': '',
+            'closure_rejected_at': '',
+            'closure_rejected_by_name': '',
+            'closure_rejected_by_username': '',
             'status': 'pending_closure_hse',
         }
         permit = update_permit(permit_id, payload)
         notify_permit_closure_hse_required(permit, _hse_notification_users())
+        _push_ptw_notifications(
+            _usernames_for_users(_hse_users()),
+            title='PTW closure needs HSE approval',
+            message='The issuer reviewed the closure request and it is now waiting for HSE closure.',
+            permit=permit,
+            focus='hse-close-review',
+            kind='warning',
+            actor_name=user.get('name', ''),
+        )
+        _push_ptw_notifications(
+            [permit.get('receiver_username', '')],
+            title='Closure sent to HSE',
+            message='The issuer reviewed your closure request. It is now waiting for HSE closure.',
+            permit=permit,
+            focus='permit-status',
+            kind='info',
+            actor_name=user.get('name', ''),
+        )
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
+
+    if action == 'reject_closure_issuer':
+        if not can_close_issuer(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        reason = str(data.get('reason', '') or '').strip()
+        if not reason:
+            return JsonResponse({'error': 'Rejection reason is required'}, status=400)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        payload = {
+            'closure_issuer_name': '',
+            'closure_issuer_signature': '',
+            'closure_issuer_signed_at': '',
+            'closure_hse_name': '',
+            'closure_hse_signature': '',
+            'closure_hse_signed_at': '',
+            'closure_rejection_stage': 'issuer',
+            'closure_rejection_reason': reason,
+            'closure_rejected_at': now,
+            'closure_rejected_by_name': user.get('name', ''),
+            'closure_rejected_by_username': user.get('username', ''),
+            'status': 'closure_rejected_by_issuer',
+        }
+        if document_link:
+            payload['document_link'] = document_link
+        permit = update_permit(permit_id, payload)
+        _push_ptw_notifications(
+            _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
+            title='PTW closure rejected by issuer',
+            message=f"Issuer rejected the closure request. Reason: {reason}",
+            permit=permit,
+            focus='receiver-close',
+            kind='error',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     if action == 'hse_close':
@@ -576,26 +1006,69 @@ def cmms_api_ptw(request, permit_id):
             'document_link': document_link,
             'closure_hse_name': user.get('name', ''),
             'closure_hse_signed_at': now,
+            'closure_rejection_stage': '',
+            'closure_rejection_reason': '',
+            'closure_rejected_at': '',
+            'closure_rejected_by_name': '',
+            'closure_rejected_by_username': '',
             'closed_at': now,
             'status': 'closed',
         }
         permit = update_permit(permit_id, payload)
+        permit = ensure_final_permit_pdf(permit) or permit
         if permit.get('record_id'):
             update_record(permit['record_id'], {
                 'completed': True,
                 'completed_at': now,
             })
-        close_emails = [
-            _user_email(permit.get('receiver_username', '')),
-            _user_email(permit.get('issuer_username', '')),
-            _user_email(permit.get('hse_username', '')),
-        ]
+        close_emails = _closure_notification_emails(permit)
         notify_permit_closed(permit, close_emails)
+        _push_ptw_notifications(
+            _closure_notification_usernames(permit),
+            title='PTW closed',
+            message='The permit was fully closed by HSE.',
+            permit=permit,
+            focus='permit-summary',
+            kind='success',
+            actor_name=user.get('name', ''),
+        )
         return JsonResponse({
             'ok': True,
             'permit': annotate_permit(permit),
             'next_url': f"/cmms/work/{permit.get('record_id', '')}/",
         })
+
+    if action == 'reject_closure_hse':
+        if not can_close_hse(permit, user):
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+        reason = str(data.get('reason', '') or '').strip()
+        if not reason:
+            return JsonResponse({'error': 'Rejection reason is required'}, status=400)
+        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
+        payload = {
+            'closure_hse_name': '',
+            'closure_hse_signature': '',
+            'closure_hse_signed_at': '',
+            'closure_rejection_stage': 'hse',
+            'closure_rejection_reason': reason,
+            'closure_rejected_at': now,
+            'closure_rejected_by_name': user.get('name', ''),
+            'closure_rejected_by_username': user.get('username', ''),
+            'status': 'closure_rejected_by_hse',
+        }
+        if document_link:
+            payload['document_link'] = document_link
+        permit = update_permit(permit_id, payload)
+        _push_ptw_notifications(
+            _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
+            title='PTW closure rejected by HSE',
+            message=f"HSE rejected the closure request. Reason: {reason}",
+            permit=permit,
+            focus='receiver-close',
+            kind='error',
+            actor_name=user.get('name', ''),
+        )
+        return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     return JsonResponse({'error': 'Unknown action'}, status=400)
 
@@ -636,6 +1109,7 @@ def cmms_api_activities(request):
                 'permit_id': permit.get('id') if permit else '',
                 'permit_status': permit.get('status') if permit else '',
                 'permit_status_label': permit.get('status_label') if permit else '',
+                'permit_number': permit.get('permit_number') if permit else '',
                 'permit_required': permit_required,
                 'permit_url': f"/cmms/ptw/{permit.get('id')}/" if permit else '',
             })
@@ -858,6 +1332,11 @@ def cmms_api_complete(request, record_id):
         record = get_record(record_id)
         if not record:
             return JsonResponse({'error': 'Not found'}, status=404)
+        permit = annotate_permit(get_permit_for_record(record_id))
+        if not permit:
+            return JsonResponse({'error': 'Permit must be completed before closing the activity'}, status=400)
+        if permit.get('status') != 'closed':
+            return JsonResponse({'error': 'Permit is not closed yet. Complete PTW closure first.'}, status=400)
         update_record(record_id, {
             'completed':    True,
             'completed_at': datetime.now().isoformat(),
@@ -908,8 +1387,8 @@ def cmms_api_checklists(request):
 def cmms_api_checklist_activities(request):
     """
     GET /api/cmms/checklist-activities/
-    Returns all activity names + links from the configured live Google Sheet.
-    Used by the hub modal to populate the activity name dropdown.
+    Returns all activity mappings from the configured live Google Sheet,
+    including PM checklist links, PTW options, and CM report links.
     """
     redir = _require_module_access(request, 'activities', 'view')
     if redir:

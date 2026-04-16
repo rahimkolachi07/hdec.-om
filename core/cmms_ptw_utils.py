@@ -20,6 +20,8 @@ import uuid
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 from zipfile import ZipFile
 
 from django.conf import settings
@@ -39,20 +41,25 @@ WORK_PERMIT_DIR = MEDIA_ROOT / 'work_permit'
 PERMIT_TEMPLATE_PATH = WORK_PERMIT_DIR / 'ElectricalWorkPermit.docx'
 PERMIT_SIGNATURES_DIR = WORK_PERMIT_DIR / 'signatures'
 PERMIT_EXPORTS_DIR = WORK_PERMIT_DIR / 'generated'
+PERMIT_FINAL_PDF_DIR = PERMIT_EXPORTS_DIR / 'final_pdf'
 PERMIT_TEMPLATE_ASSETS_DIR = WORK_PERMIT_DIR / 'template_assets'
 PERMITS_FILE = CMMS_DATA_DIR / 'permits.json'
 
-for directory in (CMMS_DATA_DIR, WORK_PERMIT_DIR, PERMIT_SIGNATURES_DIR, PERMIT_EXPORTS_DIR, PERMIT_TEMPLATE_ASSETS_DIR):
+for directory in (CMMS_DATA_DIR, WORK_PERMIT_DIR, PERMIT_SIGNATURES_DIR, PERMIT_EXPORTS_DIR, PERMIT_FINAL_PDF_DIR, PERMIT_TEMPLATE_ASSETS_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 PERMIT_STATUSES = {
     'draft': 'Draft',
     'pending_issue': 'Pending Issuer',
+    'rejected_by_issuer': 'Rejected By Issuer',
     'pending_hse': 'Pending HSE',
+    'rejected_by_hse': 'Rejected By HSE',
     'pending_receiver_number': 'Pending Receiver Permit Number',
     'active': 'Active',
     'pending_closure_issuer': 'Pending Closure Issuer',
+    'closure_rejected_by_issuer': 'Closure Rejected By Issuer',
     'pending_closure_hse': 'Pending Closure HSE',
+    'closure_rejected_by_hse': 'Closure Rejected By HSE',
     'closed': 'Closed',
 }
 
@@ -116,8 +123,18 @@ def _save(path: Path, data) -> None:
         json.dump(data, handle, indent=2, ensure_ascii=False)
 
 
-def list_permits() -> list[dict]:
-    permits = _load(PERMITS_FILE)
+def _all_permits() -> list[dict]:
+    return _load(PERMITS_FILE)
+
+
+def _is_deleted_permit(permit: dict | None) -> bool:
+    return bool((permit or {}).get('deleted_at'))
+
+
+def list_permits(*, include_deleted: bool = False) -> list[dict]:
+    permits = _all_permits()
+    if not include_deleted:
+        permits = [permit for permit in permits if not _is_deleted_permit(permit)]
     return sorted(
         permits,
         key=lambda permit: (
@@ -130,8 +147,11 @@ def list_permits() -> list[dict]:
     )
 
 
-def get_permit(permit_id: str) -> dict | None:
-    return next((permit for permit in list_permits() if permit.get('id') == permit_id), None)
+def get_permit(permit_id: str, *, include_deleted: bool = False) -> dict | None:
+    return next((
+        permit for permit in list_permits(include_deleted=include_deleted)
+        if permit.get('id') == permit_id
+    ), None)
 
 
 def get_permit_for_record(record_id: str) -> dict | None:
@@ -145,7 +165,7 @@ def _touch(permit: dict) -> dict:
 
 
 def _save_permit(permit: dict) -> dict:
-    permits = list_permits()
+    permits = _all_permits()
     replaced = False
     for index, existing in enumerate(permits):
         if existing.get('id') == permit.get('id'):
@@ -159,10 +179,19 @@ def _save_permit(permit: dict) -> dict:
 
 
 def update_permit(permit_id: str, data: dict) -> dict | None:
-    permit = get_permit(permit_id)
+    permit = get_permit(permit_id, include_deleted=True)
     if not permit:
         return None
     permit.update({key: value for key, value in data.items() if key != 'id'})
+    return _save_permit(_touch(permit))
+
+
+def delete_permit(permit_id: str, deleted_by: str = '') -> dict | None:
+    permit = get_permit(permit_id)
+    if not permit:
+        return None
+    permit['deleted_at'] = datetime.now().isoformat()
+    permit['deleted_by'] = str(deleted_by or '').strip()
     return _save_permit(_touch(permit))
 
 
@@ -261,7 +290,17 @@ def create_or_get_record_permit(
         'receiver_confirmed_permit_number': '',
         'receiver_confirmed_at': '',
         'isolation_cert_number': '',
+        'rejection_stage': '',
+        'rejection_reason': '',
+        'rejected_at': '',
+        'rejected_by_name': '',
+        'rejected_by_username': '',
         'closure_status_text': '',
+        'closure_rejection_stage': '',
+        'closure_rejection_reason': '',
+        'closure_rejected_at': '',
+        'closure_rejected_by_name': '',
+        'closure_rejected_by_username': '',
         'closure_receiver_name': '',
         'closure_receiver_signature': '',
         'closure_receiver_signed_at': '',
@@ -313,10 +352,10 @@ def save_signature_image(permit_id: str, field_name: str, data_url: str | None) 
 def can_edit_application(permit: dict, user: dict | None) -> bool:
     role = (user or {}).get('role', '')
     if role == 'admin':
-        return permit.get('status') in ('draft', 'pending_issue')
+        return permit.get('status') in ('draft', 'pending_issue', 'rejected_by_issuer', 'rejected_by_hse')
     return (
         role == 'maintenance_engineer'
-        and permit.get('status') in ('draft', 'pending_issue')
+        and permit.get('status') in ('draft', 'pending_issue', 'rejected_by_issuer', 'rejected_by_hse')
         and permit.get('receiver_username') == (user or {}).get('username', '')
     )
 
@@ -345,10 +384,10 @@ def can_receiver_unlock(permit: dict, user: dict | None) -> bool:
 def can_close_receiver(permit: dict, user: dict | None) -> bool:
     role = (user or {}).get('role', '')
     if role == 'admin':
-        return permit.get('status') == 'active'
+        return permit.get('status') in ('active', 'closure_rejected_by_issuer', 'closure_rejected_by_hse')
     return (
         role == 'maintenance_engineer'
-        and permit.get('status') == 'active'
+        and permit.get('status') in ('active', 'closure_rejected_by_issuer', 'closure_rejected_by_hse')
         and permit.get('receiver_username') == (user or {}).get('username', '')
     )
 
@@ -363,8 +402,36 @@ def can_close_hse(permit: dict, user: dict | None) -> bool:
     return permit.get('status') == 'pending_closure_hse' and role in ('admin', 'hse_engineer')
 
 
+def can_delete_permit(permit: dict, user: dict | None) -> bool:
+    if not permit or not is_cmms_permit(permit):
+        return False
+    role = (user or {}).get('role', '')
+    username = str((user or {}).get('username', '')).strip()
+    if role == 'admin':
+        return True
+    return (
+        role == 'maintenance_engineer'
+        and username
+        and permit.get('receiver_username') == username
+        and permit.get('status') not in (
+            'active',
+            'pending_closure_issuer',
+            'pending_closure_hse',
+            'closure_rejected_by_issuer',
+            'closure_rejected_by_hse',
+        )
+    )
+
+
 def application_is_active(permit: dict) -> bool:
-    return permit.get('status') in ('active', 'pending_closure_issuer', 'pending_closure_hse', 'closed')
+    return permit.get('status') in (
+        'active',
+        'pending_closure_issuer',
+        'pending_closure_hse',
+        'closure_rejected_by_issuer',
+        'closure_rejected_by_hse',
+        'closed',
+    )
 
 
 def is_cmms_permit(permit: dict | None) -> bool:
@@ -1004,6 +1071,189 @@ def _apply_special_sections(document, permit: dict) -> None:
             )
 
 
+def _download_google_export(url: str, export_format: str = 'pdf') -> bytes | None:
+    link = str(url or '').strip()
+    if not link:
+        return None
+    try:
+        parsed = urlparse(link)
+    except Exception:
+        return None
+    if parsed.hostname != 'docs.google.com':
+        return None
+
+    document_match = re.search(r'/document/d/([a-zA-Z0-9\-_]+)', parsed.path or '')
+    if document_match:
+        export_url = f"https://docs.google.com/document/d/{document_match.group(1)}/export?{urlencode({'format': export_format})}"
+    else:
+        spreadsheet_match = re.search(r'/spreadsheets/d/([a-zA-Z0-9\-_]+)', parsed.path or '')
+        if not spreadsheet_match:
+            return None
+        query = parse_qs(parsed.query or '')
+        fragment = parse_qs(str(parsed.fragment or '').lstrip('#'))
+        gid = str(query.get('gid', [''])[0] or fragment.get('gid', [''])[0]).strip()
+        params = {'format': export_format}
+        if export_format == 'pdf':
+            params.update({
+                'portrait': 'false',
+                'size': 'A4',
+                'fitw': 'true',
+                'sheetnames': 'false',
+                'printtitle': 'false',
+                'pagenumbers': 'false',
+                'gridlines': 'false',
+                'fzr': 'false',
+            })
+        if gid:
+            params['gid'] = gid
+        export_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_match.group(1)}/export?{urlencode(params)}"
+
+    try:
+        request = Request(export_url, headers={'User-Agent': 'HDEC-CMMS/1.0'})
+        with urlopen(request, timeout=15) as response:
+            payload = response.read()
+        if not payload:
+            return None
+        if payload[:256].lower().startswith(b'<!doctype html') or payload[:256].lower().startswith(b'<html'):
+            return None
+        return payload
+    except Exception:
+        return None
+
+
+def build_permit_pdf(permit: dict) -> io.BytesIO:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.lib.utils import simpleSplit
+    from reportlab.pdfgen import canvas
+
+    page_width, page_height = A4
+    margin = 18 * mm
+    line_height = 13
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    y = page_height - margin
+
+    def header():
+        nonlocal y
+        pdf.setFillColorRGB(0.09, 0.25, 0.54)
+        pdf.rect(0, page_height - 36 * mm, page_width, 36 * mm, stroke=0, fill=1)
+        pdf.setFillColorRGB(1, 1, 1)
+        pdf.setFont('Helvetica-Bold', 18)
+        pdf.drawString(margin, page_height - 18 * mm, 'HDEC CMMS Permit To Work')
+        pdf.setFont('Helvetica', 10)
+        pdf.drawString(margin, page_height - 25 * mm, f"Activity: {permit.get('activity_name') or permit.get('equipment') or 'Permit'}")
+        pdf.drawRightString(page_width - margin, page_height - 25 * mm, f"Permit No: {permit.get('permit_number') or 'N/A'}")
+        y = page_height - 45 * mm
+
+    def new_page():
+        pdf.showPage()
+        header()
+
+    def ensure_space(lines_needed: int = 2):
+        nonlocal y
+        if y - (lines_needed * line_height) < margin:
+            new_page()
+
+    def section(title: str):
+        nonlocal y
+        ensure_space(3)
+        pdf.setFillColorRGB(0.11, 0.17, 0.27)
+        pdf.setFont('Helvetica-Bold', 12)
+        pdf.drawString(margin, y, title)
+        y -= 6
+        pdf.setStrokeColorRGB(0.86, 0.89, 0.94)
+        pdf.line(margin, y, page_width - margin, y)
+        y -= 14
+
+    def field(label: str, value: str):
+        nonlocal y
+        text = str(value or 'N/A')
+        wrapped = simpleSplit(text, 'Helvetica', 10, page_width - (2 * margin) - 100)
+        ensure_space(max(2, len(wrapped) + 1))
+        pdf.setFillColorRGB(0.20, 0.26, 0.35)
+        pdf.setFont('Helvetica-Bold', 10)
+        pdf.drawString(margin, y, label)
+        pdf.setFillColorRGB(0.07, 0.09, 0.12)
+        pdf.setFont('Helvetica', 10)
+        current_y = y
+        for index, line in enumerate(wrapped or ['N/A']):
+            pdf.drawString(margin + 100, current_y - (index * line_height), line)
+        y = current_y - (max(1, len(wrapped)) * line_height) - 4
+
+    header()
+    section('Permit Summary')
+    for label, value in [
+        ('Status', permit.get('status_label') or permit.get('status') or 'N/A'),
+        ('Receiver', permit.get('receiver_name') or 'N/A'),
+        ('Issuer', permit.get('issuer_name') or 'N/A'),
+        ('HSE', permit.get('closure_hse_name') or permit.get('hse_name') or 'N/A'),
+        ('Equipment', permit.get('equipment') or 'N/A'),
+        ('Location', permit.get('location') or 'N/A'),
+        ('Scheduled Date', permit.get('scheduled_date') or 'N/A'),
+        ('Work Type', (permit.get('work_type') or '').replace('_', ' ').title() or 'N/A'),
+        ('Isolation Cert.', permit.get('isolation_cert_number') or 'N/A'),
+        ('Google Permit Link', permit.get('document_link') or 'N/A'),
+    ]:
+        field(label, value)
+
+    section('Workflow Sign-Off')
+    for label, value in [
+        ('Receiver Submitted', permit.get('submitted_at') or 'N/A'),
+        ('Issuer Approved', permit.get('issued_at') or 'N/A'),
+        ('HSE Approved', permit.get('hse_signed_at') or 'N/A'),
+        ('Receiver Proceeded', permit.get('receiver_confirmed_at') or 'N/A'),
+        ('Closure Requested', permit.get('closure_requested_at') or 'N/A'),
+        ('Issuer Closure', permit.get('closure_issuer_signed_at') or 'N/A'),
+        ('HSE Closure', permit.get('closure_hse_signed_at') or 'N/A'),
+        ('Closed At', permit.get('closed_at') or 'N/A'),
+    ]:
+        field(label, value)
+
+    closure_notes = str(permit.get('closure_status_text') or '').strip()
+    if closure_notes:
+        section('Closure Notes')
+        field('Notes', closure_notes)
+
+    pdf.setFont('Helvetica-Oblique', 9)
+    pdf.setFillColorRGB(0.38, 0.45, 0.54)
+    ensure_space(2)
+    pdf.drawString(margin, y, 'This PDF is the final locked CMMS permit export generated after closure.')
+    pdf.save()
+    buffer.seek(0)
+    return buffer
+
+
+def ensure_final_permit_pdf(permit: dict | None) -> dict | None:
+    annotated = annotate_permit(permit)
+    if not annotated:
+        return None
+
+    pdf_rel = str(annotated.get('final_pdf', '') or '').strip()
+    if pdf_rel:
+        pdf_path = MEDIA_ROOT / pdf_rel
+        if pdf_path.exists():
+            return annotated
+
+    pdf_bytes = _download_google_export(annotated.get('document_link') or annotated.get('template_link'), 'pdf')
+    if not pdf_bytes:
+        pdf_bytes = build_permit_pdf(annotated).getvalue()
+    if not pdf_bytes:
+        return annotated
+
+    filename = permit_filename(annotated).replace('.docx', '.pdf')
+    dest_dir = PERMIT_FINAL_PDF_DIR / str(annotated.get('id', 'permit'))
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = dest_dir / filename
+    dest_path.write_bytes(pdf_bytes)
+    rel_path = str(dest_path.relative_to(MEDIA_ROOT)).replace('\\', '/')
+    updated = update_permit(annotated['id'], {
+        'final_pdf': rel_path,
+        'finalized_at': annotated.get('closed_at') or datetime.now().isoformat(),
+    })
+    return annotate_permit(updated)
+
+
 def build_permit_docx(permit: dict) -> io.BytesIO:
     from docx import Document
 
@@ -1055,6 +1305,7 @@ def annotate_permit(permit: dict | None) -> dict | None:
     enriched['closure_receiver_signature_url'] = _media_url(permit.get('closure_receiver_signature'))
     enriched['closure_issuer_signature_url'] = _media_url(permit.get('closure_issuer_signature'))
     enriched['closure_hse_signature_url'] = _media_url(permit.get('closure_hse_signature'))
+    enriched['final_pdf_url'] = _media_url(permit.get('final_pdf'))
     enriched['template_link'] = permit.get('template_link') or GOOGLE_PTW_TEMPLATE_URL
     enriched['document_link'] = permit.get('document_link') or enriched['template_link']
     return enriched

@@ -5,7 +5,7 @@ and the daily activity digest.
 """
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import escape
 from pathlib import Path
 
@@ -122,14 +122,14 @@ def _permit_subject_target(permit: dict) -> str:
     return _safe(permit.get('activity_name') or permit.get('equipment'), 'Permit')
 
 
-def _google_doc_html(permit: dict) -> str:
-    link = str((permit or {}).get('document_link', '')).strip()
+def _final_pdf_html(permit: dict) -> str:
+    link = str((permit or {}).get('final_pdf_url', '')).strip()
     if not link:
         return ''
     escaped_link = escape(link)
     return (
         f'<p style="font-size:13px;margin:16px 0 0">'
-        f'<strong>Google Docs Permit Link:</strong> '
+        f'<strong>Final Locked PDF:</strong> '
         f'<a href="{escaped_link}" target="_blank" rel="noopener" '
         f'style="color:#0f4aa3;text-decoration:none">{escaped_link}</a></p>'
     )
@@ -230,14 +230,13 @@ def notify_permit_created(permit: dict, operation_engineers: list):
         f"Equipment: {_safe(permit.get('equipment'), 'N/A')}\n"
         f"Location: {_safe(permit.get('location'), 'N/A')}\n"
         f"Approval Website: {permit_url}\n"
-        f"Google Docs Permit Link: {_safe(permit.get('document_link'), 'N/A')}\n\n"
+        "\n"
         "Please log in and issue the permit."
     )
     html_body = f"""
 <p style="margin:0 0 10px">A new <strong>Permit to Work</strong> has been submitted and is awaiting your issuance.</p>
 {_permit_info_table(permit)}
 {_action_panel(permit, 'Open PTW For Issuer Review')}
-{_google_doc_html(permit)}
 <p style="background:#fff7ed;border-left:4px solid #f97316;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
   <strong>Action Required - Permit Issuer:</strong> Review the permit in HDEC CMMS and proceed it to HSE.
 </p>"""
@@ -259,7 +258,7 @@ def notify_permit_issued(permit: dict, hse_officers: list):
         f"Equipment: {_safe(permit.get('equipment'), 'N/A')}\n"
         f"Work Type: {_safe((permit.get('work_type') or '').replace('_', ' ').title(), 'N/A')}\n"
         f"Approval Website: {permit_url}\n"
-        f"Google Docs Permit Link: {_safe(permit.get('document_link'), 'N/A')}\n\n"
+        "\n"
         "Please review the permit, assign the permit number, and proceed it back to the receiver."
     )
     html_body = f"""
@@ -272,7 +271,6 @@ def notify_permit_issued(permit: dict, hse_officers: list):
   </tr>
 </table>
 {_action_panel(permit, 'Open PTW For HSE Approval')}
-{_google_doc_html(permit)}
 <p style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
   <strong>Action Required - HSE:</strong> Review the permit, assign the permit number, and proceed it back to the receiver.
 </p>"""
@@ -298,7 +296,7 @@ def notify_permit_ready_to_proceed(permit: dict, receiver_emails):
         f"Issuer: {_safe(permit.get('issuer_name'), 'N/A')}\n"
         f"HSE Officer: {_safe(permit.get('hse_name'), 'N/A')}\n"
         f"Approval Website: {permit_url}\n"
-        f"Google Docs Permit Link: {_safe(permit.get('document_link'), 'N/A')}\n\n"
+        "\n"
         "HSE has approved this permit. The receiver can now enter the permit number in CMMS and proceed the activity."
     )
     html_body = f"""
@@ -315,7 +313,6 @@ def notify_permit_ready_to_proceed(permit: dict, receiver_emails):
   </tr>
 </table>
 {_action_panel(permit, 'Open PTW To Proceed Activity')}
-{_google_doc_html(permit)}
 <p style="background:#dcfce7;border-left:4px solid #16a34a;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
   <strong>Action Required:</strong> Enter the same permit number in CMMS and click proceed to unlock the activity.
 </p>"""
@@ -335,7 +332,7 @@ def notify_permit_closure_requested(permit: dict, issuer_emails: list):
         f"Issuer: {_safe(permit.get('issuer_name'), 'N/A')}\n"
         f"Permit No.: {_safe(permit.get('permit_number'), 'N/A')}\n"
         f"Approval Website: {permit_url}\n"
-        f"Google Docs Permit Link: {_safe(permit.get('document_link'), 'N/A')}\n\n"
+        "\n"
         "Please review the closure and proceed it to HSE."
     )
     html_body = f"""
@@ -352,7 +349,6 @@ def notify_permit_closure_requested(permit: dict, issuer_emails: list):
   </tr>
 </table>
 {_action_panel(permit, 'Open PTW For Closure Review')}
-{_google_doc_html(permit)}
 <p style="background:#fff7ed;border-left:4px solid #f97316;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
   <strong>Action Required - Issuer:</strong> Review the closure request and send it to HSE.
 </p>"""
@@ -373,7 +369,7 @@ def notify_permit_closure_hse_required(permit: dict, hse_officers: list):
         f"Issuer: {_safe(permit.get('closure_issuer_name') or permit.get('issuer_name'), 'N/A')}\n"
         f"Permit No.: {_safe(permit.get('permit_number'), 'N/A')}\n"
         f"Approval Website: {permit_url}\n"
-        f"Google Docs Permit Link: {_safe(permit.get('document_link'), 'N/A')}\n\n"
+        "\n"
         "Please review and close this permit."
     )
     html_body = f"""
@@ -390,7 +386,6 @@ def notify_permit_closure_hse_required(permit: dict, hse_officers: list):
   </tr>
 </table>
 {_action_panel(permit, 'Open PTW For Final HSE Closure')}
-{_google_doc_html(permit)}
 <p style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
   <strong>Action Required - HSE:</strong> Complete the final closure for this permit.
 </p>"""
@@ -401,6 +396,10 @@ def notify_permit_closed(permit: dict, to_emails: list):
     """Notify relevant users that the permit has been fully closed."""
     activity = _activity_details(permit)
     permit_url = _permit_portal_url(permit)
+    final_pdf_line = (
+        f"Final Locked PDF: {_safe(permit.get('final_pdf_url'), 'N/A')}\n"
+        if permit.get('final_pdf_url') else ''
+    )
     subject = f"[HDEC CMMS] Permit Closed - {_permit_subject_target(permit)}"
     text = (
         "Permit Closed\n\n"
@@ -411,7 +410,8 @@ def notify_permit_closed(permit: dict, to_emails: list):
         f"Issuer: {_safe(permit.get('issuer_name'), 'N/A')}\n"
         f"HSE Officer: {_safe(permit.get('closure_hse_name') or permit.get('hse_name'), 'N/A')}\n"
         f"Portal: {permit_url}\n"
-        f"Google Docs Permit Link: {_safe(permit.get('document_link'), 'N/A')}\n\n"
+        f"{final_pdf_line}"
+        "\n"
         "This permit is now fully closed."
     )
     html_body = f"""
@@ -428,7 +428,7 @@ def notify_permit_closed(permit: dict, to_emails: list):
   </tr>
 </table>
 {_action_panel(permit, 'Open PTW In HDEC CMMS')}
-{_google_doc_html(permit)}
+{_final_pdf_html(permit)}
 <p style="background:#dcfce7;border-left:4px solid #16a34a;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
   <strong>Status:</strong> Closed.
 </p>"""
@@ -471,74 +471,129 @@ def notify_activity_assigned(activity: dict, engineer_email: str, date: str = No
     _send([engineer_email], subject, text, _html_wrap('Activity Assigned', html_body, '#1a3a6b'))
 
 
-def send_daily_activity_digest(digest_date: str, activities: list, recipient_emails: list):
-    """Send the daily maintenance activity summary to maintenance engineers."""
-    portal_url = _portal_home_url()
-    subject = f"[HDEC CMMS] Today's Maintenance Activities - {digest_date}"
+def _digest_status_label(value: str) -> str:
+    status = str(value or '').strip().lower()
+    mapping = {
+        'completed': 'Completed',
+        'done': 'Done',
+        'in_progress': 'In Progress',
+        'not_started': 'Not Started',
+        'not_done': 'Not Done',
+        'planned': 'Planned',
+    }
+    return mapping.get(status, status.replace('_', ' ').title() or 'Planned')
 
-    if activities:
-        lines = [
-            "Today's Maintenance Activities",
+
+def _digest_text_section(title: str, activities: list[dict]) -> list[str]:
+    lines = [title]
+    if not activities:
+        lines.append('No activities.')
+        lines.append('')
+        return lines
+
+    for index, activity in enumerate(activities, start=1):
+        lines.extend([
+            f"{index}. {_safe(activity.get('name'), 'Unnamed Activity')}",
+            f"   Date: {_safe(activity.get('scheduled_date'), 'N/A')}",
+            f"   Status: {_digest_status_label(activity.get('status', 'planned'))}",
+            f"   Description: {_safe(activity.get('notes'), 'N/A')}",
+            f"   Equipment: {_safe(activity.get('equipment'), '-')}",
+            f"   Location: {_safe(activity.get('location'), '-')}",
+            f"   Assigned Engineer: {_safe(activity.get('assigned_engineer'), '-')}",
+            f"   Assigned Technician: {_safe(activity.get('assigned_technician'), '-')}",
             "",
-        ]
-        for index, activity in enumerate(activities, start=1):
-            lines.extend([
-                f"{index}. {_safe(activity.get('name'), 'Unnamed Activity')}",
-                f"   Description: {_safe(activity.get('notes'), 'N/A')}",
-                f"   Equipment: {_safe(activity.get('equipment'), '-')}",
-                f"   Location: {_safe(activity.get('location'), '-')}",
-                f"   Assigned Engineer: {_safe(activity.get('assigned_engineer'), '-')}",
-                f"   Assigned Technician: {_safe(activity.get('assigned_technician'), '-')}",
-                "",
-            ])
-        lines.append(f"Portal: {portal_url}")
-        text = "\n".join(lines).rstrip()
+        ])
+    return lines
 
-        rows = []
-        for activity in activities:
-            rows.append(
-                f"""
+
+def _digest_html_section(title: str, activities: list[dict], accent_color: str) -> str:
+    if not activities:
+        return f"""
+<div style="margin:18px 0;padding:16px;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff">
+  <div style="font-size:15px;font-weight:700;color:{accent_color};margin-bottom:8px">{escape(title)}</div>
+  <div style="font-size:13px;color:#64748b">No activities.</div>
+</div>"""
+
+    rows = []
+    for activity in activities:
+        rows.append(
+            f"""
 <tr>
+  <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('scheduled_date'), 'N/A'))}</td>
   <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('name'), 'Unnamed Activity'))}</td>
   <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('notes'), 'N/A'))}</td>
   <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('equipment'), '-'))}</td>
   <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('location'), '-'))}</td>
   <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('assigned_engineer'), '-'))}</td>
   <td style="padding:9px 12px;border-top:1px solid #e5e7eb">{escape(_safe(activity.get('assigned_technician'), '-'))}</td>
+  <td style="padding:9px 12px;border-top:1px solid #e5e7eb;font-weight:700;color:#0f172a">{escape(_digest_status_label(activity.get('status', 'planned')))}</td>
 </tr>"""
-            )
-        html_body = f"""
-<p>Here is the list of <strong>today's scheduled maintenance activities</strong> for {escape(digest_date)}.</p>
-<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:13px">
-  <thead>
-    <tr style="background:#f8fbff">
-      <th align="left" style="padding:9px 12px">Activity</th>
-      <th align="left" style="padding:9px 12px">Description</th>
-      <th align="left" style="padding:9px 12px">Equipment</th>
-      <th align="left" style="padding:9px 12px">Location</th>
-      <th align="left" style="padding:9px 12px">Engineer</th>
-      <th align="left" style="padding:9px 12px">Technician</th>
-    </tr>
-  </thead>
-  <tbody>{''.join(rows)}</tbody>
-</table>
-<div style="margin:20px 0;padding:18px;border:1px solid #dbe4f0;border-radius:14px;background:#f8fbff">
-  <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px">Open HDEC CMMS</div>
-  <div style="font-size:13px;color:#475569;margin-bottom:14px">Use the website below to review today's activities and related permits.</div>
-  <a href="{escape(portal_url)}" style="display:inline-block;background:#0f4aa3;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:700">Open CMMS Portal</a>
-</div>"""
-    else:
-        text = (
-            "Today's Maintenance Activities\n\n"
-            f"No maintenance activities are scheduled for {digest_date}.\n\n"
-            f"Portal: {portal_url}"
         )
-        html_body = f"""
-<p>No maintenance activities are scheduled for <strong>{escape(digest_date)}</strong>.</p>
+
+    return f"""
+<div style="margin:18px 0;padding:16px;border:1px solid #e2e8f0;border-radius:12px;background:#ffffff">
+  <div style="font-size:15px;font-weight:700;color:{accent_color};margin-bottom:10px">{escape(title)}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="background:#f8fbff">
+        <th align="left" style="padding:9px 12px">Date</th>
+        <th align="left" style="padding:9px 12px">Activity</th>
+        <th align="left" style="padding:9px 12px">Description</th>
+        <th align="left" style="padding:9px 12px">Equipment</th>
+        <th align="left" style="padding:9px 12px">Location</th>
+        <th align="left" style="padding:9px 12px">Engineer</th>
+        <th align="left" style="padding:9px 12px">Technician</th>
+        <th align="left" style="padding:9px 12px">Status</th>
+      </tr>
+    </thead>
+    <tbody>{''.join(rows)}</tbody>
+  </table>
+</div>"""
+
+
+def send_daily_activity_digest(
+    digest_date: str,
+    schedule_sections: dict,
+    previous_24h_sections: dict,
+    recipient_emails: list,
+    *,
+    window_end: datetime | None = None,
+):
+    """Send the daily maintenance schedule plus previous 24h status to maintenance engineers."""
+    portal_url = _portal_home_url()
+    end_dt = window_end or datetime.now()
+    start_dt = end_dt - timedelta(hours=24)
+    subject = f"[HDEC CMMS] Daily Maintenance Digest - {digest_date}"
+
+    text_lines = [
+        f"Daily Maintenance Digest - {digest_date}",
+        "",
+        f"Today's schedule date: {digest_date}",
+        f"Previous 24 hours window: {start_dt.strftime('%Y-%m-%d %H:%M')} to {end_dt.strftime('%Y-%m-%d %H:%M')}",
+        "",
+    ]
+    text_lines.extend(_digest_text_section("Today's PM Activities", schedule_sections.get('PM', [])))
+    text_lines.extend(_digest_text_section("Today's CM Activities", schedule_sections.get('CM', [])))
+    text_lines.extend(_digest_text_section("Previous 24 Hours - PM Activities", previous_24h_sections.get('PM', [])))
+    text_lines.extend(_digest_text_section("Previous 24 Hours - CM Activities", previous_24h_sections.get('CM', [])))
+    text_lines.append(f"Portal: {portal_url}")
+    text = "\n".join(text_lines).rstrip()
+
+    html_body = f"""
+<p>Here is the <strong>daily maintenance digest</strong> for <strong>{escape(digest_date)}</strong>.</p>
+<div style="margin:18px 0;padding:16px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fbff">
+  <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px">Digest Window</div>
+  <div style="font-size:13px;color:#475569">Today's schedule date: <strong>{escape(digest_date)}</strong></div>
+  <div style="font-size:13px;color:#475569">Previous 24 hours: <strong>{escape(start_dt.strftime('%Y-%m-%d %H:%M'))}</strong> to <strong>{escape(end_dt.strftime('%Y-%m-%d %H:%M'))}</strong></div>
+</div>
+{_digest_html_section("Today's PM Activities", schedule_sections.get('PM', []), '#1d4ed8')}
+{_digest_html_section("Today's CM Activities", schedule_sections.get('CM', []), '#9a3412')}
+{_digest_html_section("Previous 24 Hours - PM Activities", previous_24h_sections.get('PM', []), '#0f766e')}
+{_digest_html_section("Previous 24 Hours - CM Activities", previous_24h_sections.get('CM', []), '#7c3aed')}
 <div style="margin:20px 0;padding:18px;border:1px solid #dbe4f0;border-radius:14px;background:#f8fbff">
   <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:6px">Open HDEC CMMS</div>
-  <div style="font-size:13px;color:#475569;margin-bottom:14px">Use the website below to review activities and permits.</div>
+  <div style="font-size:13px;color:#475569;margin-bottom:14px">Use the website below to review today's schedule, open activities, and permit status.</div>
   <a href="{escape(portal_url)}" style="display:inline-block;background:#0f4aa3;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:700">Open CMMS Portal</a>
 </div>"""
 
-    _send(recipient_emails, subject, text, _html_wrap("Today's Maintenance Activities", html_body, '#1a3a6b'))
+    _send(recipient_emails, subject, text, _html_wrap('Daily Maintenance Digest', html_body, '#1a3a6b'))

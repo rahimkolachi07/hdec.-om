@@ -304,6 +304,7 @@
   </div>
   <a href="{{ cmms_back_url }}" class="back-btn">← Back</a>
   <div class="tb-right">
+    {% include 'core/includes/notification_bell.html' %}
     {% if can_view_permits %}
     <a href="/cmms/ptw/" class="back-btn" style="border-color:rgba(0,229,200,.25);color:var(--a2)">📋 PTW</a>
     {% endif %}
@@ -408,6 +409,9 @@
       <select id="f_name" required>
         <option value="">— Loading… —</option>
       </select>
+      <div id="f_name_custom_wrap" style="display:none;margin-top:8px">
+        <input type="text" id="f_name_custom" placeholder="Write CM activity name">
+      </div>
       <div style="font-size:11px;color:var(--td);margin-top:5px" id="f_name_hint"></div>
     </div>
 
@@ -500,7 +504,7 @@ let lastPmFrequency   = 'monthly';
 (function(){
   const [y,m] = TODAY.split('-').map(Number);
   currentYear=y; currentMonth=m;
-  loadChecklistActivities();
+  loadChecklistActivitiesLive();
   loadMonth();
 })();
 
@@ -695,6 +699,7 @@ function showDayActivities(dateStr){
           ${a.frequency?`<span class="meta-tag">🔁 ${esc(a.frequency)}</span>`:''}
           ${a.assigned_technician?`<span class="meta-tag">👷 ${esc(a.assigned_technician)}</span>`:''}
           ${a.checklist_file?`<span class="meta-tag" style="color:var(--a2)">📄 Checklist</span>`:''}
+          ${a.permit_number?`<span class="meta-tag" style="color:#fbbf24">🔐 ${esc(a.permit_number)}</span>`:''}
           <span class="act-status ${statusClass(a.record_status)}">${statusLabel(a)}</span>
           ${a.permit_status
             ?`<span class="act-status act-status-permit">PTW: ${esc(a.permit_status_label||a.permit_status)}</span>`
@@ -736,28 +741,52 @@ function statusLabel(a){
 }
 
 // ── Start activity ────────────────────────────────────────────────────────────
+function uniquePermitOptions(permits){
+  const seen = new Set();
+  return (permits || [])
+    .filter(p => String((p||{}).name || '').trim())
+    .map(p => ({
+      name: String(p.name || '').trim(),
+      link: String(p.link || '').trim()
+    }))
+    .filter(p => p.link.startsWith('http'))
+    .filter(p => {
+      const key = `${p.name.toLowerCase()}|${p.link}`;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function allPermitOptions(){
+  return uniquePermitOptions(
+    checklistActs.flatMap(a => Array.isArray((a||{}).permits) ? a.permits : [])
+  );
+}
+
 function permitOptionsForActivity(activityName){
   const target = String(activityName||'').trim().toLowerCase();
-  if(!target) return [];
+  if(!target) return allPermitOptions();
   const exact = checklistActs.find(a => String(a.name||'').trim().toLowerCase() === target);
-  if(exact && Array.isArray(exact.permits) && exact.permits.length) return exact.permits;
+  if(exact && Array.isArray(exact.permits) && exact.permits.length) return uniquePermitOptions(exact.permits);
   const partial = checklistActs.find(a => {
     const name = String(a.name||'').trim().toLowerCase();
     return name && (name.includes(target) || target.includes(name));
   });
-  return (partial && Array.isArray(partial.permits)) ? partial.permits : [];
+  if(partial && Array.isArray(partial.permits) && partial.permits.length){
+    return uniquePermitOptions(partial.permits);
+  }
+  return allPermitOptions();
 }
 
 function openPermitModal(activity, date, btn){
-  const permits = permitOptionsForActivity(activity.name).filter(p => String(p.link||'').trim().startsWith('http'));
-  if(!permits.length){
-    showToast('No permit link is configured for this activity in Google Sheets', 'error');
-    return;
-  }
+  const permits = permitOptionsForActivity(activity.name);
   pendingStart = {activityId: activity.id, date, btn, activityName: activity.name, permits};
   document.getElementById('startPermitActivity').value = activity.name || '';
   const sel = document.getElementById('startPermitSelect');
-  sel.innerHTML = '<option value="">— Select permit —</option>';
+  sel.innerHTML = permits.length
+    ? '<option value="">— Select permit —</option>'
+    : '<option value="">— Use default permit template —</option>';
   permits.forEach((permit, idx) => {
     const opt = document.createElement('option');
     opt.value = String(idx);
@@ -766,7 +795,9 @@ function openPermitModal(activity, date, btn){
   });
   sel.selectedIndex = permits.length === 1 ? 1 : 0;
   document.getElementById('startPermitHint').textContent =
-    permits.length === 1
+    !permits.length
+      ? 'No mapped permit was found. The default permit template will be used.'
+      : permits.length === 1
       ? 'One permit is available for this activity.'
       : `${permits.length} permits are available for this activity.`;
   document.getElementById('startPermitBtn').className = `btn ${actType(activity)==='CM'?'btn-primary-cm':'btn-primary'}`;
@@ -800,8 +831,9 @@ async function confirmStartWithPermit(){
   if(!pendingStart) return;
   const sel = document.getElementById('startPermitSelect');
   const idx = Number(sel.value);
-  const permit = Number.isInteger(idx) ? pendingStart.permits[idx] : null;
-  if(!permit || !permit.link){
+  const hasPermitChoices = Array.isArray(pendingStart.permits) && pendingStart.permits.length > 0;
+  const permit = hasPermitChoices && Number.isInteger(idx) ? pendingStart.permits[idx] : null;
+  if(hasPermitChoices && (!permit || !permit.link)){
     showToast('Please select a permit', 'error');
     return;
   }
@@ -818,8 +850,8 @@ async function confirmStartWithPermit(){
       body:JSON.stringify({
         activity_id: pendingStart.activityId,
         date: pendingStart.date,
-        selected_permit_name: permit.name || '',
-        selected_permit_link: permit.link || ''
+        selected_permit_name: permit ? (permit.name || '') : '',
+        selected_permit_link: permit ? (permit.link || '') : ''
       })
     });
     const d=await r.json();
@@ -870,7 +902,7 @@ async function deleteActivity(id, scheduledDate){
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-async function loadChecklistActivities(){
+async function loadChecklistActivitiesLegacy(){
   try{
     const r=await fetch('/api/cmms/checklist-activities/');
     const d=await r.json();
@@ -903,6 +935,84 @@ function openAddModal(date){
 }
 function closeAddModal(){ document.getElementById('addModal').classList.remove('open'); }
 
+function activityChecklistLink(activity){
+  return String((activity && (activity.checklist_link || activity.link)) || '').trim();
+}
+
+function activityReportLink(activity){
+  return String((activity && activity.report_link) || '').trim();
+}
+
+function activityFormLabel(type){
+  return type === 'CM' ? 'report' : 'checklist';
+}
+
+function activityHasFormForType(activity, type){
+  const link = type === 'CM' ? activityReportLink(activity) : activityChecklistLink(activity);
+  return link.startsWith('http');
+}
+
+function getActivityNameValue(){
+  const type = document.getElementById('f_type').value || activeTab || 'PM';
+  if(type === 'CM'){
+    return String(document.getElementById('f_name_custom').value || '').trim();
+  }
+  return String(document.getElementById('f_name').value || '').trim();
+}
+
+function renderChecklistActivityOptions(){
+  const sel = document.getElementById('f_name');
+  const custom = document.getElementById('f_name_custom');
+  const customWrap = document.getElementById('f_name_custom_wrap');
+  const hint = document.getElementById('f_name_hint');
+  if(!sel || !hint) return;
+  const type = document.getElementById('f_type').value || activeTab || 'PM';
+  if(type === 'CM'){
+    sel.style.display = 'none';
+    sel.disabled = true;
+    if(customWrap) customWrap.style.display = '';
+    if(custom) custom.disabled = false;
+    if(custom && !custom.value && sel.value){
+      custom.value = sel.value;
+    }
+    hint.textContent = 'Write the CM activity name yourself. PTW stays available and CM uses the standard report.';
+    return;
+  }
+  sel.style.display = '';
+  sel.disabled = false;
+  if(customWrap) customWrap.style.display = 'none';
+  if(custom) custom.disabled = true;
+  if(!checklistActs.length){
+    sel.innerHTML='<option value="">— No activities found —</option>';
+    hint.textContent='Sheet temporarily unavailable';
+    return;
+  }
+  const currentValue = sel.value;
+  const label = activityFormLabel(type);
+  const mappedCount = checklistActs.filter(a => activityHasFormForType(a, type)).length;
+  sel.innerHTML='<option value="">— Select activity —</option>';
+  checklistActs.forEach(a=>{
+    const opt=document.createElement('option');
+    opt.value=a.name;
+    opt.textContent=a.name + (activityHasFormForType(a, type) ? '' : ` [No ${label}]`);
+    sel.appendChild(opt);
+  });
+  if(currentValue) sel.value = currentValue;
+  hint.textContent=`${checklistActs.length} activities loaded from Google Sheets; ${mappedCount} with ${label} links`;
+}
+
+async function loadChecklistActivitiesLive(){
+  try{
+    const r=await fetch('/api/cmms/checklist-activities/');
+    const d=await r.json();
+    checklistActs=d.activities||[];
+    renderChecklistActivityOptions();
+  }catch(e){
+    document.getElementById('f_name').innerHTML='<option value="">— Failed to load —</option>';
+    document.getElementById('f_name_hint').textContent='Could not load the Google Sheet';
+  }
+}
+
 function setModalType(type){
   document.getElementById('f_type').value=type;
   document.getElementById('typePM').className='type-opt'+(type==='PM'?' active-pm':'');
@@ -921,6 +1031,7 @@ function setModalType(type){
     freq.value=lastPmFrequency||'monthly';
     hint.textContent='PM activities can repeat automatically from the selected start date.';
   }
+  renderChecklistActivityOptions();
 }
 
 async function submitActivity(){
@@ -929,7 +1040,7 @@ async function submitActivity(){
   const payload={
     type:                document.getElementById('f_type').value,
     scheduled_date:      document.getElementById('f_date').value,
-    name:                document.getElementById('f_name').value.trim(),
+    name:                getActivityNameValue(),
     equipment:           document.getElementById('f_equipment').value.trim(),
     location:            document.getElementById('f_location').value.trim(),
     frequency:           document.getElementById('f_frequency').value,
@@ -963,12 +1074,13 @@ async function submitActivity(){
 }
 
 function clearForm(){
-  ['f_date','f_equipment','f_location','f_engineer','f_technician','f_notes'].forEach(id=>document.getElementById(id).value='');
+  ['f_date','f_equipment','f_location','f_engineer','f_technician','f_notes','f_name_custom'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f_name').value='';
   document.getElementById('f_frequency').value='monthly';
   lastPmFrequency='monthly';
   document.getElementById('f_frequency').disabled=false;
   document.getElementById('f_frequency_hint').textContent='PM activities can repeat automatically from the selected start date.';
+  renderChecklistActivityOptions();
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

@@ -27,20 +27,30 @@
   .filter.active,.filter:hover{color:var(--text);border-color:var(--a1)}
   .list{display:grid;gap:12px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;display:flex;gap:14px;justify-content:space-between;align-items:flex-start}
+  .card.selected{border-color:rgba(239,68,68,.45);box-shadow:0 0 0 1px rgba(239,68,68,.18)}
   .title{font-size:15px;font-weight:700;margin-bottom:8px}
   .meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--tm)}
   .meta span{background:var(--surface2);padding:3px 9px;border-radius:999px;border:1px solid var(--border)}
   .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
   .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;text-decoration:none;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:700;cursor:pointer}
   .btn-primary{background:var(--a1);border-color:transparent;color:#fff}
+  .btn-danger{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.28);color:#fecaca}
+  .btn-danger:disabled{opacity:.45;cursor:not-allowed}
+  .bulk-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+  .bulk-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--tm)}
+  .bulk-meta strong{color:var(--text)}
+  .select-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border-radius:999px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);font-size:11px;font-weight:700;color:#fecaca;cursor:pointer}
+  .select-chip input{accent-color:#ef4444}
   .status{padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid}
   .s-draft,.s-pending_issue{color:#fbbf24;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3)}
   .s-pending_hse,.s-pending_receiver_number,.s-pending_closure_issuer,.s-pending_closure_hse{color:#fb923c;background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.3)}
+  .s-rejected_by_issuer,.s-rejected_by_hse,.s-closure_rejected_by_issuer,.s-closure_rejected_by_hse{color:#f87171;background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28)}
   .s-active{color:#4ade80;background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)}
   .s-closed{color:#94a3b8;background:rgba(148,163,184,.12);border-color:rgba(148,163,184,.28)}
   .empty{padding:70px 20px;text-align:center;color:var(--td);background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
   @media(max-width:860px){
     .page{padding:18px}
+    .bulk-bar{flex-direction:column;align-items:flex-start}
     .card{flex-direction:column}
     .actions{justify-content:flex-start}
   }
@@ -51,6 +61,7 @@
   <a href="{{ cmms_back_url }}" class="back-btn">← Back</a>
   <span class="topbar-title">PTW Section</span>
   <div class="topbar-right">
+    {% include 'core/includes/notification_bell.html' %}
     {% if can_view_activities %}
     <a href="{{ cmms_back_url }}" class="link-btn">CMMS</a>
     <a href="{{ cmms_back_url }}" class="link-btn">Done</a>
@@ -70,18 +81,35 @@
   <div class="filters">
     <a class="filter {% if not status_filter %}active{% endif %}" href="/cmms/ptw/?back={{ cmms_back_url|urlencode }}">All</a>
     <a class="filter {% if status_filter == 'pending_issue' %}active{% endif %}" href="/cmms/ptw/?status=pending_issue&amp;back={{ cmms_back_url|urlencode }}">Pending Issuer</a>
+    <a class="filter {% if status_filter == 'rejected_by_issuer' %}active{% endif %}" href="/cmms/ptw/?status=rejected_by_issuer&amp;back={{ cmms_back_url|urlencode }}">Rejected Issuer</a>
     <a class="filter {% if status_filter == 'pending_hse' %}active{% endif %}" href="/cmms/ptw/?status=pending_hse&amp;back={{ cmms_back_url|urlencode }}">Pending HSE</a>
+    <a class="filter {% if status_filter == 'rejected_by_hse' %}active{% endif %}" href="/cmms/ptw/?status=rejected_by_hse&amp;back={{ cmms_back_url|urlencode }}">Rejected HSE</a>
     <a class="filter {% if status_filter == 'pending_receiver_number' %}active{% endif %}" href="/cmms/ptw/?status=pending_receiver_number&amp;back={{ cmms_back_url|urlencode }}">Receiver Unlock</a>
     <a class="filter {% if status_filter == 'active' %}active{% endif %}" href="/cmms/ptw/?status=active&amp;back={{ cmms_back_url|urlencode }}">Active</a>
     <a class="filter {% if status_filter == 'pending_closure_issuer' %}active{% endif %}" href="/cmms/ptw/?status=pending_closure_issuer&amp;back={{ cmms_back_url|urlencode }}">Closure Issuer</a>
+    <a class="filter {% if status_filter == 'closure_rejected_by_issuer' %}active{% endif %}" href="/cmms/ptw/?status=closure_rejected_by_issuer&amp;back={{ cmms_back_url|urlencode }}">Closure Rejected Issuer</a>
     <a class="filter {% if status_filter == 'pending_closure_hse' %}active{% endif %}" href="/cmms/ptw/?status=pending_closure_hse&amp;back={{ cmms_back_url|urlencode }}">Closure HSE</a>
+    <a class="filter {% if status_filter == 'closure_rejected_by_hse' %}active{% endif %}" href="/cmms/ptw/?status=closure_rejected_by_hse&amp;back={{ cmms_back_url|urlencode }}">Closure Rejected HSE</a>
     <a class="filter {% if status_filter == 'closed' %}active{% endif %}" href="/cmms/ptw/?status=closed&amp;back={{ cmms_back_url|urlencode }}">Closed</a>
   </div>
 
   {% if permits %}
+  {% if can_delete_permits %}
+  <div class="bulk-bar">
+    <div class="bulk-meta">
+      <label class="select-chip">
+        <input type="checkbox" id="selectAllPermits">
+        <span>Select visible PTWs</span>
+      </label>
+      <span><strong id="selectedPermitCount">0</strong> selected</span>
+      <span>Delete is for old test PTWs you no longer need.</span>
+    </div>
+    <button class="btn btn-danger" id="deleteSelectedBtn" type="button" disabled>Delete Selected</button>
+  </div>
+  {% endif %}
   <div class="list">
     {% for permit in permits %}
-    <div class="card">
+    <div class="card" data-permit-card="{{ permit.id }}">
       <div>
         <div class="title">{{ permit.activity_name|default:permit.equipment|default:"Electrical Permit" }}</div>
         <div class="meta">
@@ -94,6 +122,12 @@
         </div>
       </div>
       <div class="actions">
+        {% if permit.can_delete %}
+        <label class="select-chip">
+          <input type="checkbox" class="permit-select" value="{{ permit.id }}" data-label="{{ permit.activity_name|default:permit.equipment|default:'PTW'|escape }}">
+          <span>Select</span>
+        </label>
+        {% endif %}
         <a class="btn btn-primary" href="{{ permit.ptw_url }}">Open PTW</a>
         {% if permit.document_link %}
         <a class="btn" href="{{ permit.document_link }}" target="_blank" rel="noopener">Open Permit Doc</a>
@@ -127,6 +161,88 @@ function goBack(event, fallback){
   }catch(_){}
   return true;
 }
+
+function csrf(){
+  return document.cookie.split(';').map(v=>v.trim()).find(v=>v.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+
+function updatePermitSelectionState(){
+  const boxes = Array.from(document.querySelectorAll('.permit-select'));
+  if(!boxes.length) return;
+  const checked = boxes.filter(box => box.checked);
+  const countEl = document.getElementById('selectedPermitCount');
+  const deleteBtn = document.getElementById('deleteSelectedBtn');
+  const selectAll = document.getElementById('selectAllPermits');
+  if(countEl) countEl.textContent = String(checked.length);
+  if(deleteBtn) deleteBtn.disabled = checked.length === 0;
+  if(selectAll){
+    selectAll.checked = checked.length > 0 && checked.length === boxes.length;
+    selectAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
+  }
+  boxes.forEach(box => {
+    const card = document.querySelector(`[data-permit-card="${box.value}"]`);
+    if(card){
+      card.classList.toggle('selected', box.checked);
+    }
+  });
+}
+
+async function deleteSelectedPermits(){
+  const selected = Array.from(document.querySelectorAll('.permit-select:checked'));
+  if(!selected.length) return;
+  const names = selected.map(box => box.dataset.label || 'PTW');
+  const summary = names.slice(0, 4).join(', ') + (names.length > 4 ? ` and ${names.length - 4} more` : '');
+  if(!confirm(`Delete ${selected.length} selected PTW item(s)?\n\n${summary}`)){
+    return;
+  }
+  const deleteBtn = document.getElementById('deleteSelectedBtn');
+  if(deleteBtn){
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'Deleting...';
+  }
+  const errors = [];
+  for(const box of selected){
+    try{
+      const response = await fetch(`/api/cmms/ptw/${box.value}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrf(),
+        },
+        body: JSON.stringify({action: 'delete'}),
+      });
+      const data = await response.json();
+      if(!response.ok || !data.ok){
+        throw new Error(data.error || 'Delete failed');
+      }
+    }catch(error){
+      errors.push(`${box.dataset.label || box.value}: ${error.message}`);
+    }
+  }
+  if(errors.length){
+    alert(errors.join('\n'));
+    if(deleteBtn){
+      deleteBtn.textContent = 'Delete Selected';
+    }
+    updatePermitSelectionState();
+    return;
+  }
+  window.location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const boxes = Array.from(document.querySelectorAll('.permit-select'));
+  if(!boxes.length) return;
+  boxes.forEach(box => box.addEventListener('change', updatePermitSelectionState));
+  document.getElementById('selectAllPermits')?.addEventListener('change', event => {
+    boxes.forEach(box => {
+      box.checked = event.target.checked;
+    });
+    updatePermitSelectionState();
+  });
+  document.getElementById('deleteSelectedBtn')?.addEventListener('click', deleteSelectedPermits);
+  updatePermitSelectionState();
+});
 </script>
 </body>
 </html>

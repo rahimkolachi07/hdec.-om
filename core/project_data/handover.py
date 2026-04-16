@@ -99,6 +99,8 @@ def _normalize_handover(raw: dict | None, handover_id: str = '') -> dict | None:
         'updated_at': _clean_text(raw.get('updated_at')),
         'updated_by': _clean_text(raw.get('updated_by')),
         'submitted_at': _clean_text(raw.get('submitted_at')),
+        'deleted_at': _clean_text(raw.get('deleted_at')),
+        'deleted_by': _clean_text(raw.get('deleted_by')),
     }
     for field in TEXT_FIELDS:
         if field in handover:
@@ -113,13 +115,16 @@ def handover_list(cid: str, pid: str) -> list[dict]:
     items = []
     for path in sorted(_dir(cid, pid).glob('*.json')):
         handover = _normalize_handover(load_json(path), path.stem)
-        if handover:
+        if handover and not handover.get('deleted_at'):
             items.append(handover)
     return sorted(items, key=_sort_key, reverse=True)
 
 
-def handover_get(cid: str, pid: str, handover_id: str) -> dict | None:
-    return _normalize_handover(load_json(_path(cid, pid, handover_id)), handover_id)
+def handover_get(cid: str, pid: str, handover_id: str, include_deleted: bool = False) -> dict | None:
+    handover = _normalize_handover(load_json(_path(cid, pid, handover_id)), handover_id)
+    if handover and (include_deleted or not handover.get('deleted_at')):
+        return handover
+    return None
 
 
 def handover_find_by_date_shift(cid: str, pid: str, date_value: str, shift: str) -> dict | None:
@@ -182,11 +187,15 @@ def handover_update(cid: str, pid: str, handover_id: str, updates: dict, updated
     return handover
 
 
-def handover_delete(cid: str, pid: str, handover_id: str) -> bool:
-    path = _path(cid, pid, handover_id)
-    if not path.exists():
+def handover_delete(cid: str, pid: str, handover_id: str, deleted_by: str = '') -> bool:
+    current = handover_get(cid, pid, handover_id, include_deleted=True)
+    if not current:
         return False
-    path.unlink()
+    current['deleted_at'] = datetime.now().isoformat()
+    current['deleted_by'] = _clean_text(deleted_by)
+    current['updated_at'] = current['deleted_at']
+    current['updated_by'] = current['deleted_by']
+    save_json(_path(cid, pid, handover_id), current)
     return True
 
 
