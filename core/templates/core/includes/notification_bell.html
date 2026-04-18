@@ -29,6 +29,8 @@
     color:inherit;font:inherit;cursor:pointer;transition:border-color .2s,background .2s,transform .2s
   }
   .ntf-btn:hover{border-color:rgba(59,158,255,.38);background:rgba(59,158,255,.08)}
+  html[data-theme=ocean] .ntf-btn,html[data-theme=executive] .ntf-btn,html[data-theme=ivory] .ntf-btn,html[data-theme=mint] .ntf-btn,html[data-theme=rose] .ntf-btn{border-color:rgba(0,0,0,.12)!important;background:rgba(0,0,0,.04)!important}
+  html[data-theme=ocean] .ntf-btn:hover,html[data-theme=executive] .ntf-btn:hover,html[data-theme=ivory] .ntf-btn:hover,html[data-theme=mint] .ntf-btn:hover,html[data-theme=rose] .ntf-btn:hover{border-color:var(--a1)!important;background:rgba(0,0,0,.06)!important}
   .ntf-icon{font-size:13px;line-height:1}
   .ntf-label{font-size:12px;font-weight:700;opacity:.92}
   .ntf-badge{
@@ -36,10 +38,10 @@
     font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center
   }
   .ntf-menu{
-    position:absolute;top:calc(100% + 10px);right:0;width:min(380px,calc(100vw - 24px));
+    position:fixed;width:min(380px,calc(100vw - 24px));
     max-height:min(70vh,560px);display:flex;flex-direction:column;overflow:hidden;
     border-radius:16px;border:1px solid rgba(255,255,255,.12);background:#0a101b;
-    box-shadow:0 24px 60px rgba(0,0,0,.42);z-index:1200
+    box-shadow:0 24px 60px rgba(0,0,0,.42);z-index:99999
   }
   .ntf-menu[hidden]{display:none !important}
   .ntf-head{
@@ -86,10 +88,25 @@
   .ntf-item-time{font-size:10px;color:rgba(232,234,240,.46)}
   .ntf-item-state{font-size:10px;font-weight:800;color:#7ec3ff}
   .ntf-empty{padding:18px 12px;font-size:12px;color:rgba(232,234,240,.55);text-align:center}
+  /* ── Light theme overrides for notification bell ── */
+  html[data-theme=ocean] .ntf-menu,html[data-theme=executive] .ntf-menu,html[data-theme=ivory] .ntf-menu,html[data-theme=mint] .ntf-menu,html[data-theme=rose] .ntf-menu{background:#fff;border-color:rgba(0,0,0,.1);box-shadow:0 12px 40px rgba(0,0,0,.14)}
+  html[data-theme=ocean] .ntf-head,html[data-theme=executive] .ntf-head,html[data-theme=ivory] .ntf-head,html[data-theme=mint] .ntf-head,html[data-theme=rose] .ntf-head{border-bottom-color:rgba(0,0,0,.08);background:rgba(0,0,0,.02)}
+  html[data-theme=ocean] .ntf-title,html[data-theme=executive] .ntf-title,html[data-theme=ivory] .ntf-title,html[data-theme=mint] .ntf-title,html[data-theme=rose] .ntf-title{color:#1e293b}
+  html[data-theme=ocean] .ntf-sub,html[data-theme=executive] .ntf-sub,html[data-theme=ivory] .ntf-sub,html[data-theme=mint] .ntf-sub,html[data-theme=rose] .ntf-sub{color:rgba(30,41,59,.55)}
+  html[data-theme=ocean] .ntf-mark-all,html[data-theme=executive] .ntf-mark-all,html[data-theme=ivory] .ntf-mark-all,html[data-theme=mint] .ntf-mark-all,html[data-theme=rose] .ntf-mark-all{color:#2563eb}
+  html[data-theme=ocean] .ntf-close,html[data-theme=executive] .ntf-close,html[data-theme=ivory] .ntf-close,html[data-theme=mint] .ntf-close,html[data-theme=rose] .ntf-close{color:#475569;background:rgba(0,0,0,.04)}
+  html[data-theme=ocean] .ntf-item,html[data-theme=executive] .ntf-item,html[data-theme=ivory] .ntf-item,html[data-theme=mint] .ntf-item,html[data-theme=rose] .ntf-item{color:#1e293b}
+  html[data-theme=ocean] .ntf-item:hover,html[data-theme=executive] .ntf-item:hover,html[data-theme=ivory] .ntf-item:hover,html[data-theme=mint] .ntf-item:hover,html[data-theme=rose] .ntf-item:hover{background:rgba(0,0,0,.04)}
+  html[data-theme=ocean] .ntf-item-title,html[data-theme=executive] .ntf-item-title,html[data-theme=ivory] .ntf-item-title,html[data-theme=mint] .ntf-item-title,html[data-theme=rose] .ntf-item-title{color:#0f172a}
+  html[data-theme=ocean] .ntf-item-text,html[data-theme=executive] .ntf-item-text,html[data-theme=ivory] .ntf-item-text,html[data-theme=mint] .ntf-item-text,html[data-theme=rose] .ntf-item-text{color:rgba(15,23,42,.6)}
+  html[data-theme=ocean] .ntf-item-time,html[data-theme=executive] .ntf-item-time,html[data-theme=ivory] .ntf-item-time,html[data-theme=mint] .ntf-item-time,html[data-theme=rose] .ntf-item-time{color:rgba(15,23,42,.42)}
+  html[data-theme=ocean] .ntf-item-state,html[data-theme=executive] .ntf-item-state,html[data-theme=ivory] .ntf-item-state,html[data-theme=mint] .ntf-item-state,html[data-theme=rose] .ntf-item-state{color:#2563eb}
+  html[data-theme=ocean] .ntf-empty,html[data-theme=executive] .ntf-empty,html[data-theme=ivory] .ntf-empty,html[data-theme=mint] .ntf-empty,html[data-theme=rose] .ntf-empty{color:rgba(15,23,42,.45)}
   @media(max-width:640px){
     .ntf-label{display:none}
     .ntf-menu{right:-6px}
   }
+/* nuclear-light */html[data-theme=ocean] *,html[data-theme=executive] *,html[data-theme=ivory] *,html[data-theme=mint] *,html[data-theme=rose] *{color:var(--text)!important;font-weight:600!important}html[data-theme=ocean] .ntf-badge,html[data-theme=executive] .ntf-badge,html[data-theme=ivory] .ntf-badge,html[data-theme=mint] .ntf-badge,html[data-theme=rose] .ntf-badge{color:#fff!important;font-weight:700!important}
 </style>
 
 <script>
@@ -223,22 +240,51 @@
     }
 
     function closeAllMenus(){
+      // Close the portalled menu first if open
+      const portal = document.getElementById('hdec-ntf-menu-portal');
+      if(portal && portal._ntfShell) closeMenu(portal._ntfShell);
+      // Then close any remaining in-shell menus
       document.querySelectorAll('[data-notification-shell]').forEach(shell => {
-        closeMenu(shell);
+        const m = shell.querySelector('[data-notification-menu]');
+        if(m && !m.hidden) closeMenu(shell);
       });
     }
 
     function openMenu(shell){
-      const menu = shell.querySelector('[data-notification-menu]');
       const toggle = shell.querySelector('[data-notification-toggle]');
-      if(menu) menu.hidden = false;
-      if(toggle) toggle.setAttribute('aria-expanded', 'true');
+      // Find menu — may be on body if already portalled
+      let menu = document.getElementById('hdec-ntf-menu-portal');
+      if(!menu) menu = shell.querySelector('[data-notification-menu]');
+      if(!menu || !toggle) return;
+
+      // Portal: move to body so stacking contexts can't clip it
+      menu.id = 'hdec-ntf-menu-portal';
+      menu._ntfShell = shell;
+      document.body.appendChild(menu);
+
+      const rect = toggle.getBoundingClientRect();
+      const menuW = Math.min(380, window.innerWidth - 24);
+      let left = rect.right - menuW;
+      if(left < 8) left = 8;
+      const top = rect.bottom + 8;
+      menu.style.top  = top  + 'px';
+      menu.style.left = left + 'px';
+      menu.style.right = 'auto';
+
+      menu.hidden = false;
+      toggle.setAttribute('aria-expanded', 'true');
     }
 
     function closeMenu(shell){
-      const menu = shell.querySelector('[data-notification-menu]');
       const toggle = shell.querySelector('[data-notification-toggle]');
-      if(menu) menu.hidden = true;
+      const menu = document.getElementById('hdec-ntf-menu-portal')
+                   || shell.querySelector('[data-notification-menu]');
+      if(menu){
+        menu.hidden = true;
+        // Return menu to its shell so shell.querySelector still finds it
+        if(menu.parentNode !== shell) shell.appendChild(menu);
+        menu.id = '';
+      }
       if(toggle) toggle.setAttribute('aria-expanded', 'false');
     }
 
@@ -256,7 +302,9 @@
 
       toggle.addEventListener('click', async event => {
         event.stopPropagation();
-        if(menu.hidden){
+        const activeMenu = document.getElementById('hdec-ntf-menu-portal')
+                           || shell.querySelector('[data-notification-menu]');
+        if(!activeMenu || activeMenu.hidden){
           closeAllMenus();
           openMenu(shell);
           await fetchNotifications(shell);
@@ -303,6 +351,12 @@
     };
 
     window.HDECNotificationsLoaded = initAll;
+
+    // Exposed so the global-alerts poller can trigger an immediate badge refresh
+    window.hdecBellRefresh = function(){
+      document.querySelectorAll('[data-notification-shell]').forEach(fetchNotifications);
+    };
+
     initAll();
   })();
 </script>

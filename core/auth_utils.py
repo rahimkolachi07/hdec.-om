@@ -51,6 +51,7 @@ MODULES = {
     'documents':    '📄 Documents',
     'daily_report': '📊 Daily Report',
     'sjn_portal':   '🌿 SJN Portal (HSE)',
+    'meeting':      '🏢 Meeting Room',
 }
 
 DEFAULT_ACCESS = {
@@ -73,6 +74,7 @@ DEFAULT_PERMISSIONS = {
         'documents':    'view',
         'daily_report': 'view',
         'sjn_portal':   'view',
+        'meeting':      'edit',
     },
     'operation_engineer': {
         'activities':   'view',
@@ -85,6 +87,7 @@ DEFAULT_PERMISSIONS = {
         'documents':    'view',
         'daily_report': 'view',
         'sjn_portal':   'view',
+        'meeting':      'edit',
     },
     'hse_engineer': {
         'activities':   'view',
@@ -97,6 +100,7 @@ DEFAULT_PERMISSIONS = {
         'documents':    'view',
         'daily_report': 'view',
         'sjn_portal':   'edit',
+        'meeting':      'edit',
     },
     'technician': {
         'activities':   'edit',
@@ -109,8 +113,21 @@ DEFAULT_PERMISSIONS = {
         'documents':    'view',
         'daily_report': 'none',
         'sjn_portal':   'view',
+        'meeting':      'edit',
     },
-    'viewer': {m: 'view' for m in MODULES},
+    'viewer': {
+        'activities':   'view',
+        'permits':      'view',
+        'handover':     'view',
+        'manpower':     'view',
+        'store':        'view',
+        'tracing':      'view',
+        'annual_plan':  'view',
+        'documents':    'view',
+        'daily_report': 'view',
+        'sjn_portal':   'view',
+        'meeting':      'view',
+    },
 }
 
 

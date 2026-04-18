@@ -1,0 +1,527 @@
+[
+  {
+    "id": "7a439222-caea-41cd-861a-2c251c28f7f6",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "hi",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T11:07:32.778662+00:00",
+    "seen_by": [
+      "admin"
+    ]
+  },
+  {
+    "id": "97a368bf-678e-4436-89bc-65646910c16d",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "hi",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T11:08:42.745444+00:00",
+    "seen_by": [
+      "admin"
+    ]
+  },
+  {
+    "id": "310e3696-4ee4-4741-9e2f-d0cfc8c76b66",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "Image_20260411180301_108_92.jpg",
+    "type": "file",
+    "file_id": "2d78b310-2ffb-47f4-9624-2b7e01f0b6f7",
+    "created_at": "2026-04-18T11:08:54.140854+00:00",
+    "seen_by": [
+      "admin"
+    ]
+  },
+  {
+    "id": "93b60a4b-03e5-4f39-8686-3674a900cbac",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "ugu",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T11:24:05.444560+00:00",
+    "seen_by": [
+      "admin"
+    ]
+  },
+  {
+    "id": "e1caae66-907a-4036-b252-0e23677a8638",
+    "thread_id": "dm:admin:tech",
+    "sender": "admin",
+    "content": "hi",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T11:54:41.898561+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "",
+    "translation_target_label": "",
+    "translation_source_language": "",
+    "translation_source_text": "",
+    "translation_engine": ""
+  },
+  {
+    "id": "f403d04f-19df-4e47-91b6-5ffddedbc668",
+    "thread_id": "dm:admin:tech",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T11:54:51.713944+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "cc9df30d-a9b1-42a4-853d-0f4d84fe8a8e",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:00:09.859964+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "0b9212c0-31fa-493c-8029-99b75f94ce5f",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:00:19.923613+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "f6c3a5f8-6b23-4983-a7e6-5443dc21781b",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "你好",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:05:06.791665+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "zh-CN",
+    "translation_target_label": "Chinese (Simplified)",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "5a48ca29-32c1-449a-a011-2a4920aee094",
+    "thread_id": "dm:admin:khalid",
+    "sender": "admin",
+    "content": "你好",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:07:48.852054+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "zh-CN",
+    "translation_target_label": "Chinese (Simplified)",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "0b192012-a551-4206-ad62-7ffda36a2191",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "你好",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:08:04.796814+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "zh-CN",
+    "translation_target_label": "Chinese (Simplified)",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "17275dbe-4db9-4f4e-8703-58f6e1da874b",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "كيف أنت عزيزي ؟",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:08:26.244893+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "how are you dear ?",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "82fb0503-3441-4156-8788-0a55b1ab43c4",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "كيف حالك ؟",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T12:08:37.625965+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "how are you ?",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "3bdddd10-c250-4d79-9117-4439c4ba0db1",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T14:52:47.614197+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "efcf326f-8f61-45d4-ae6f-4596b70d93f6",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T15:19:21.645731+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "1196f73b-04e1-4e58-879f-e3fdf906687d",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "raheem2",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T15:24:45.142689+00:00",
+    "seen_by": [
+      "raheem2",
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "f6205f77-b3a1-4cff-80a5-7a896644ce2c",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T15:31:16.532577+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "bbbc4c74-5cd8-43e3-8ae6-79b98c0fb1af",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "Image_20260411180301_108_92.jpg",
+    "type": "file",
+    "file_id": "12e35bc0-0ec5-4ff9-a2e9-217c819ed12f",
+    "created_at": "2026-04-18T18:20:16.474123+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "",
+    "translation_target_label": "",
+    "translation_source_language": "",
+    "translation_source_text": "",
+    "translation_engine": ""
+  },
+  {
+    "id": "ad539e41-c215-4a7f-93d4-f4cc1c5c1a73",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:20:26.307114+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "f33946d8-a5ee-4682-9d74-fd90fc78bb5c",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:20:35.555278+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "16e415ba-4221-47db-b9ed-ffc696490c39",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "raheem2",
+    "content": "hi",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:36:39.351241+00:00",
+    "seen_by": [
+      "raheem2",
+      "admin"
+    ],
+    "translation_target": "",
+    "translation_target_label": "",
+    "translation_source_language": "",
+    "translation_source_text": "",
+    "translation_engine": ""
+  },
+  {
+    "id": "d88c296d-290e-4761-a8f0-e185d25223f1",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:38:41.340417+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "9de2ae4a-965b-46ac-9336-4e7a77065fc8",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:38:54.332921+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "e056e2c0-ba4e-4b1b-9fb8-5fdbd201c64a",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "raheem2",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:39:42.178992+00:00",
+    "seen_by": [
+      "raheem2",
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "410a0c76-8907-4d46-8b6c-f33bbaeb43ed",
+    "thread_id": "dm:khalid:raheem2",
+    "sender": "raheem2",
+    "content": "hi",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:40:44.569075+00:00",
+    "seen_by": [
+      "raheem2"
+    ],
+    "translation_target": "",
+    "translation_target_label": "",
+    "translation_source_language": "",
+    "translation_source_text": "",
+    "translation_engine": ""
+  },
+  {
+    "id": "38bb6f82-7f98-4437-8bb7-c28be3837b7b",
+    "thread_id": "dm:khalid:raheem2",
+    "sender": "raheem2",
+    "content": "sain cha hall ahen",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:40:56.883675+00:00",
+    "seen_by": [
+      "raheem2"
+    ],
+    "translation_target": "",
+    "translation_target_label": "",
+    "translation_source_language": "",
+    "translation_source_text": "",
+    "translation_engine": ""
+  },
+  {
+    "id": "7a90a103-6f98-4a33-b133-c399c496a246",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "كيف حالك",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:52:00.592273+00:00",
+    "seen_by": [
+      "admin",
+      "raheem2"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "how are you",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "f65d0a0d-37bd-4748-ac83-331cc1ede4cb",
+    "thread_id": "group:d26dba14-0b09-4902-a3e7-4c0665e151af",
+    "sender": "raheem2",
+    "content": "i am fine",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:53:01.651721+00:00",
+    "seen_by": [
+      "raheem2",
+      "admin"
+    ],
+    "translation_target": "en",
+    "translation_target_label": "English",
+    "translation_source_language": "en",
+    "translation_source_text": "i am fine",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "fc7c8d23-98c8-4822-b7fb-f05323496e32",
+    "thread_id": "group:d26dba14-0b09-4902-a3e7-4c0665e151af",
+    "sender": "raheem2",
+    "content": "أنا بخير",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T18:53:36.403473+00:00",
+    "seen_by": [
+      "raheem2",
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "i am fine",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "76194c9b-2246-44b7-8bac-758294682663",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "raheem2",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T19:19:48.916737+00:00",
+    "seen_by": [
+      "raheem2",
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  },
+  {
+    "id": "f5ce673b-8909-4c09-b763-01fba21e5133",
+    "thread_id": "dm:admin:raheem2",
+    "sender": "admin",
+    "content": "أهلاً",
+    "type": "text",
+    "file_id": "",
+    "created_at": "2026-04-18T19:39:03.401692+00:00",
+    "seen_by": [
+      "admin"
+    ],
+    "translation_target": "ar",
+    "translation_target_label": "Arabic",
+    "translation_source_language": "en",
+    "translation_source_text": "hi",
+    "translation_engine": "google-translate-web"
+  }
+]

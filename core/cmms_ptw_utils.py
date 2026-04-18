@@ -15,7 +15,11 @@ import base64
 import binascii
 import io
 import json
+import mimetypes
+import shutil
 import re
+import subprocess
+import tempfile
 import uuid
 from datetime import datetime
 from functools import lru_cache
@@ -97,6 +101,43 @@ APPLICATION_PREFILL_MAP = {
     't2_r5_c1': 'work_description',
     't2_r6_c1': 'location',
     't2_r7_c1': 'tools_equipment',
+}
+
+APPLICATION_FIELD_PLACEHOLDERS = {
+    'company_name': 'Enter company name',
+    'start_date': 'Enter start date',
+    'start_time': 'Enter start time',
+    'expected_duration': 'Enter expected duration',
+    'number_of_employees': 'Enter number of employees',
+    'energized_equipment': 'Enter energized lines or equipment',
+    'de_energized_equipment': 'Enter de-energized line or equipment',
+    'work_description': 'Describe the work to be performed',
+    'location': 'Enter the work location',
+    'tools_equipment': 'List the tools or equipment',
+}
+
+DOCUMENT_FIELD_PLACEHOLDERS = {
+    cell_key: APPLICATION_FIELD_PLACEHOLDERS.get(field_name, 'Enter permit details')
+    for cell_key, field_name in APPLICATION_PREFILL_MAP.items()
+}
+DOCUMENT_FIELD_PLACEHOLDERS.update({
+    't2_r1_c2': 'Enter PTW reference number',
+    't2_r3_c2': 'Enter isolation certificate number',
+})
+
+APPLICATION_DOCUMENT_KEYS = set(APPLICATION_PREFILL_MAP)
+SYSTEM_DOCUMENT_KEYS = {'t2_r1_c2', 't2_r3_c2'}
+INLINE_VALUE_DOCUMENT_KEYS = {
+    cell_key
+    for cell_key in APPLICATION_DOCUMENT_KEYS
+    if cell_key not in {'t2_r2_c2'}
+}
+MULTILINE_DOCUMENT_KEYS = {
+    't2_r4_c1',
+    't2_r4_c9',
+    't2_r5_c1',
+    't2_r6_c1',
+    't2_r7_c1',
 }
 
 GOOGLE_PTW_TEMPLATE_URL = getattr(
@@ -206,6 +247,43 @@ def _media_url(rel_path: str | None) -> str:
     return f"{MEDIA_URL.rstrip('/')}/{normalized}"
 
 
+def _media_path_from_url(url: str | None) -> Path | None:
+    value = str(url or '').strip()
+    if not value:
+        return None
+    media_prefix = MEDIA_URL.rstrip('/') + '/'
+    if value.startswith(media_prefix):
+        rel = value[len(media_prefix):].lstrip('/')
+        return MEDIA_ROOT / rel
+    if value.startswith('/media/'):
+        return MEDIA_ROOT / value[len('/media/'):].lstrip('/')
+    return None
+
+
+def _path_data_uri(path: Path | None) -> str:
+    if not path or not path.exists():
+        return ''
+    mime_type = mimetypes.guess_type(path.name)[0] or 'application/octet-stream'
+    payload = base64.b64encode(path.read_bytes()).decode('ascii')
+    return f'data:{mime_type};base64,{payload}'
+
+
+def _asset_src(value: str | None, *, asset_mode: str = 'web') -> str:
+    ref = str(value or '').strip()
+    if not ref:
+        return ''
+    if asset_mode == 'web':
+        return ref
+    if ref.startswith('data:'):
+        return ref
+    path = _media_path_from_url(ref)
+    if asset_mode == 'inline':
+        return _path_data_uri(path) or ref
+    if asset_mode == 'file' and path and path.exists():
+        return path.resolve().as_uri()
+    return ref
+
+
 def _now_date() -> str:
     return datetime.now().strftime('%Y-%m-%d')
 
@@ -290,6 +368,9 @@ def create_or_get_record_permit(
         'receiver_confirmed_permit_number': '',
         'receiver_confirmed_at': '',
         'isolation_cert_number': '',
+        'valid_from': '',
+        'valid_until': '',
+        'expiry_notified_at': '',
         'rejection_stage': '',
         'rejection_reason': '',
         'rejected_at': '',
@@ -916,6 +997,162 @@ def _special_document_blocks(
     return special
 
 
+def _style_string(style_map: dict[str, str | int | None]) -> str:
+    parts = []
+    for key, value in style_map.items():
+        if value in (None, ''):
+            continue
+        parts.append(f'{key}:{value}')
+    return ';'.join(parts)
+
+
+def _paragraph_plain_text(paragraph: dict) -> str:
+    text_parts = []
+    for item in paragraph.get('items', []):
+        if item.get('type') == 'text':
+            text_parts.append(str(item.get('text', '')))
+    return ''.join(text_parts).strip()
+
+
+def _prepare_paragraph(paragraph: dict, *, asset_mode: str = 'web') -> dict:
+    prepared_items = []
+    for item in paragraph.get('items', []):
+        if item.get('type') == 'image':
+            prepared_items.append({
+                **item,
+                'src': _asset_src(item.get('src'), asset_mode=asset_mode),
+                'style': _style_string({
+                    'width': f"{int(item.get('width', 0))}px" if item.get('width') else '',
+                    'height': f"{int(item.get('height', 0))}px" if item.get('height') else '',
+                }),
+            })
+            continue
+        prepared_items.append({
+            **item,
+            'style': _style_string({
+                'font-weight': '700' if item.get('bold') else '',
+                'font-style': 'italic' if item.get('italic') else '',
+                'text-decoration': 'underline' if item.get('underline') else '',
+                'font-size': f"{int(item.get('font_size'))}px" if item.get('font_size') else '',
+                'font-family': item.get('font_name') or '',
+                'color': item.get('color') or '',
+                'white-space': 'pre-wrap',
+            }),
+        })
+    return {
+        **paragraph,
+        'plain_text': _paragraph_plain_text(paragraph),
+        'items': prepared_items,
+        'style': _style_string({
+            'text-align': paragraph.get('align') or '',
+            'margin-top': f"{int(paragraph.get('space_before', 0))}px" if paragraph.get('space_before') else '',
+            'margin-bottom': f"{int(paragraph.get('space_after', 0))}px" if paragraph.get('space_after') else '',
+            'min-height': '12px' if paragraph.get('empty') else '',
+        }),
+    }
+
+
+def _cell_plain_text(paragraphs: list[dict]) -> str:
+    lines = []
+    for paragraph in paragraphs:
+        text = _paragraph_plain_text(paragraph)
+        if text:
+            lines.append(text)
+    return '\n'.join(lines).strip()
+
+
+def _document_values_with_system_fields(permit: dict) -> dict:
+    values = dict(permit.get('document_values', {}) or {})
+    permit_number = str(permit.get('permit_number') or '').strip()
+    isolation_number = str(permit.get('isolation_cert_number') or '').strip()
+    if permit_number or values.get('t2_r1_c2'):
+        values['t2_r1_c2'] = permit_number or str(values.get('t2_r1_c2') or '')
+    if isolation_number or values.get('t2_r3_c2'):
+        values['t2_r3_c2'] = isolation_number or str(values.get('t2_r3_c2') or '')
+    return values
+
+
+def _prepare_special_block(special: dict, *, asset_mode: str = 'web') -> dict:
+    if not special:
+        return {}
+    prepared = dict(special)
+    prepared['image_src'] = _asset_src(special.get('image_url'), asset_mode=asset_mode)
+    prepared['has_lines'] = bool(prepared.get('lines'))
+    prepared['has_signature'] = bool(prepared.get('image_src'))
+    prepared['text_rows'] = 4 if prepared.get('text_editable') else 0
+    return prepared
+
+
+def _cell_input_kind(cell: dict) -> str:
+    if cell.get('key') in MULTILINE_DOCUMENT_KEYS:
+        return 'textarea'
+    if cell.get('min_height', 0) >= 40:
+        return 'textarea'
+    if cell.get('rowspan', 1) > 1:
+        return 'textarea'
+    return 'input'
+
+
+def _prepare_table_block(block: dict, *, asset_mode: str = 'web') -> dict:
+    total_width = sum(int(width or 0) for width in block.get('column_widths', [])) or 1
+    application_editable_keys = APPLICATION_DOCUMENT_KEYS
+    rows = [{
+        'index': row_index + 1,
+        'style': _style_string({
+            'height': f"{int(block.get('row_heights', [])[row_index])}px"
+            if row_index < len(block.get('row_heights', [])) and block.get('row_heights', [])[row_index]
+            else '',
+        }),
+        'cells': [],
+    } for row_index in range(len(block.get('row_heights', [])))]
+
+    prepared_cells = []
+    for cell in block.get('cells', []):
+        key = cell.get('key', '')
+        inline_value = key in INLINE_VALUE_DOCUMENT_KEYS
+        paragraphs = [_prepare_paragraph(paragraph, asset_mode=asset_mode) for paragraph in cell.get('paragraphs', [])]
+        plain_text = _cell_plain_text(cell.get('paragraphs', []))
+        prepared = {
+            **cell,
+            'paragraphs': paragraphs,
+            'plain_text': plain_text,
+            'inline_value': inline_value,
+            'input_kind': _cell_input_kind(cell),
+            'input_rows': 4 if _cell_input_kind(cell) == 'textarea' else 1,
+            'placeholder': DOCUMENT_FIELD_PLACEHOLDERS.get(key, 'Enter permit details'),
+            'compact_input': cell.get('colspan', 1) <= 3 and cell.get('min_height', 0) <= 32,
+            'special': _prepare_special_block(cell.get('special', {}), asset_mode=asset_mode),
+            'style': _style_string({
+                'background': cell.get('background') or '',
+                'text-align': cell.get('text_align') or '',
+                'vertical-align': cell.get('vertical_align') or '',
+                'font-weight': '700' if cell.get('bold') else '',
+                'font-style': 'italic' if cell.get('italic') else '',
+                'font-size': f"{int(cell.get('font_size'))}px" if cell.get('font_size') else '',
+                'min-height': f"{int(cell.get('min_height', 0))}px" if cell.get('min_height') else '',
+                'border-top': (cell.get('borders') or {}).get('top', ''),
+                'border-left': (cell.get('borders') or {}).get('left', ''),
+                'border-bottom': (cell.get('borders') or {}).get('bottom', ''),
+                'border-right': (cell.get('borders') or {}).get('right', ''),
+            }),
+        }
+        prepared['show_template_value'] = bool(prepared.get('value')) and not prepared.get('editable') and not inline_value and not prepared['special']
+        prepared_cells.append(prepared)
+        row_index = int(cell.get('row', 1) or 1) - 1
+        if 0 <= row_index < len(rows):
+            rows[row_index]['cells'].append(prepared)
+
+    return {
+        **block,
+        'column_widths_percent': [
+            round(((int(width or 0) or 1) / total_width) * 100, 4)
+            for width in block.get('column_widths', [])
+        ],
+        'rows': rows,
+        'cells': prepared_cells,
+    }
+
+
 def build_document_payload(
     permit: dict,
     *,
@@ -925,9 +1162,10 @@ def build_document_payload(
     closure_text_editable: bool = False,
     closure_issuer_signable: bool = False,
     closure_hse_signable: bool = False,
+    asset_mode: str = 'web',
 ) -> dict:
     schema = load_template_schema()
-    doc_values = permit.get('document_values', {})
+    doc_values = _document_values_with_system_fields(permit)
     special = _special_document_blocks(
         permit,
         receiver_signable=application_editable,
@@ -938,14 +1176,14 @@ def build_document_payload(
         closure_issuer_signable=closure_issuer_signable,
         closure_hse_signable=closure_hse_signable,
     )
-    explicit_editable_keys = set()
+    explicit_editable_keys = set(APPLICATION_DOCUMENT_KEYS if application_editable else ())
     if hse_editable:
-        explicit_editable_keys.update({'t2_r1_c2', 't2_r3_c2'})
+        explicit_editable_keys.update(SYSTEM_DOCUMENT_KEYS)
 
     blocks = []
     for block in schema.get('blocks', []):
         if block.get('type') != 'table':
-            blocks.append(block)
+            blocks.append(_prepare_paragraph(block, asset_mode=asset_mode))
             continue
         rendered_cells = []
         for cell in block.get('cells', []):
@@ -953,13 +1191,16 @@ def build_document_payload(
             rendered_cells.append({
                 **cell,
                 'value': doc_values.get(key, ''),
-                'editable': bool((application_editable and cell.get('blank')) or key in explicit_editable_keys),
+                'editable': bool(
+                    (application_editable and cell.get('blank'))
+                    or key in explicit_editable_keys
+                ),
                 'special': special.get(key, {}),
             })
-        blocks.append({
+        blocks.append(_prepare_table_block({
             **block,
             'cells': rendered_cells,
-        })
+        }, asset_mode=asset_mode))
     return {'blocks': blocks}
 
 
@@ -1122,6 +1363,84 @@ def _download_google_export(url: str, export_format: str = 'pdf') -> bytes | Non
 
 
 def build_permit_pdf(permit: dict) -> io.BytesIO:
+    from django.template.loader import render_to_string
+
+    annotated = annotate_permit(permit) or permit
+    _sig_fields = [
+        'receiver_signature', 'issuer_signature', 'hse_signature',
+        'closure_receiver_signature', 'closure_issuer_signature', 'closure_hse_signature',
+    ]
+    sig_inline = {}
+    for _f in _sig_fields:
+        _rel = str(annotated.get(_f) or '').strip()
+        sig_inline[_f] = _path_data_uri(MEDIA_ROOT / _rel) if _rel else ''
+    html = render_to_string('core/cmms_ptw_pdf.html', {
+        'permit': annotated,
+        'document': build_document_payload(annotated, asset_mode='inline'),
+        'sig_inline': sig_inline,
+    })
+    browser = _find_pdf_browser()
+    if browser:
+        pdf_bytes = _render_pdf_with_browser(browser, html)
+        if pdf_bytes:
+            buffer = io.BytesIO(pdf_bytes)
+            buffer.seek(0)
+            return buffer
+
+    return _build_summary_permit_pdf(annotated)
+
+
+def _find_pdf_browser() -> str:
+    configured = str(getattr(settings, 'CMMS_PTW_PDF_BROWSER', '') or '').strip()
+    if configured and Path(configured).exists():
+        return configured
+    for candidate in (
+        shutil.which('chrome'),
+        shutil.which('chrome.exe'),
+        shutil.which('msedge'),
+        shutil.which('msedge.exe'),
+        r'C:\Program Files\Google\Chrome\Application\chrome.exe',
+        r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe',
+    ):
+        if candidate and Path(candidate).exists():
+            return str(candidate)
+    return ''
+
+
+def _render_pdf_with_browser(browser: str, html: str) -> bytes | None:
+    try:
+        with tempfile.TemporaryDirectory(prefix='cmms-ptw-', dir=tempfile.gettempdir()) as temp_dir:
+            temp_path = Path(temp_dir)
+            html_path = temp_path / 'permit.html'
+            pdf_path = temp_path / 'permit.pdf'
+            html_path.write_text(html, encoding='utf-8')
+            command = [
+                browser,
+                '--headless=new',
+                '--disable-gpu',
+                '--no-first-run',
+                '--no-default-browser-check',
+                '--allow-file-access-from-files',
+                '--hide-scrollbars',
+                '--no-pdf-header-footer',
+                f'--print-to-pdf={pdf_path}',
+                html_path.resolve().as_uri(),
+            ]
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                check=False,
+                timeout=45,
+            )
+            if result.returncode != 0 or not pdf_path.exists():
+                return None
+            payload = pdf_path.read_bytes()
+            return payload or None
+    except Exception:
+        return None
+
+
+def _build_summary_permit_pdf(permit: dict) -> io.BytesIO:
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.lib.utils import simpleSplit
@@ -1191,6 +1510,8 @@ def build_permit_pdf(permit: dict) -> io.BytesIO:
         ('Equipment', permit.get('equipment') or 'N/A'),
         ('Location', permit.get('location') or 'N/A'),
         ('Scheduled Date', permit.get('scheduled_date') or 'N/A'),
+        ('Valid From', permit.get('valid_from') or 'N/A'),
+        ('Valid Until', permit.get('valid_until') or 'N/A'),
         ('Work Type', (permit.get('work_type') or '').replace('_', ' ').title() or 'N/A'),
         ('Isolation Cert.', permit.get('isolation_cert_number') or 'N/A'),
         ('Google Permit Link', permit.get('document_link') or 'N/A'),
@@ -1235,9 +1556,11 @@ def ensure_final_permit_pdf(permit: dict | None) -> dict | None:
         if pdf_path.exists():
             return annotated
 
-    pdf_bytes = _download_google_export(annotated.get('document_link') or annotated.get('template_link'), 'pdf')
+    pdf_bytes = build_permit_pdf(annotated).getvalue()
     if not pdf_bytes:
-        pdf_bytes = build_permit_pdf(annotated).getvalue()
+        pdf_bytes = _download_google_export(annotated.get('document_link') or annotated.get('template_link'), 'pdf')
+    if not pdf_bytes:
+        pdf_bytes = _build_summary_permit_pdf(annotated).getvalue()
     if not pdf_bytes:
         return annotated
 
@@ -1283,9 +1606,8 @@ def build_permit_docx(permit: dict) -> io.BytesIO:
 
 def permit_filename(permit: dict) -> str:
     number = permit.get('permit_number') or permit.get('id') or 'permit'
-    date_part = permit.get('scheduled_date') or _now_date()
     slug = _slug(permit.get('activity_name') or permit.get('equipment') or 'electrical-permit')
-    return f'{slug}_{number}_{date_part}.docx'.replace(' ', '_')
+    return f'permit_{slug}_{number}.docx'.replace(' ', '_')
 
 
 def annotate_permit(permit: dict | None) -> dict | None:

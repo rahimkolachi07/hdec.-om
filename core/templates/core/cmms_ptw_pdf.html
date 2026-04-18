@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Electrical Work Permit – {{ permit.permit_number|default:"PTW" }}</title>
+<style>
+/* ════════════════════════════════════════════════
+   A4 PDF PAGE SETUP  (Chrome headless / print)
+════════════════════════════════════════════════ */
+@page {
+  size: A4 portrait;
+  margin: 10mm 10mm 10mm 10mm;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 190mm;            /* A4 content width */
+  font-family: Arial, Calibri, sans-serif;
+  font-size: 9pt;
+  color: #000;
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ════════════════════════════════════════════════
+   PERMIT DOCUMENT CORE STYLES
+════════════════════════════════════════════════ */
+.permit-document { width: 100%; }
+
+/* ── Paragraphs ── */
+.permit-paragraph {
+  line-height: 1.35;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.permit-paragraph--empty { display: block; min-height: 5px; }
+
+/* ── Tables ── */
+.permit-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 1px;
+  page-break-inside: auto;
+}
+.permit-table tr { page-break-inside: avoid; }
+
+/* ── Cells ── */
+.permit-cell {
+  border: 0.75pt solid #000;
+  padding: 2px 4px;
+  vertical-align: top;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+/* cell inner flex so content stacks */
+.permit-cell-inner {
+  width: 100%;
+  min-height: inherit;
+}
+/* paragraph inside cell */
+.permit-paragraph--cell { line-height: 1.25; }
+
+/* ── Static text values ── */
+.permit-field-static {
+  font-size: inherit;
+  color: #000;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.permit-field-static--after-copy {
+  margin-top: 1px;
+  padding-top: 2px;
+  border-top: 1px dotted #aaa;
+}
+.permit-field-static--notes { font-style: italic; }
+
+/* ── Special blocks (signature area) ── */
+.permit-special-block { display: flex; flex-direction: column; gap: 1px; }
+.permit-special-line  { font-size: 8.5pt; line-height: 1.35; color: #000; }
+
+/* ── Signature image ── */
+.permit-signature-area    { margin-top: 2px; }
+.permit-signature-preview { display: none; max-width: 120px; max-height: 42px; border: 0.5pt solid #ccc; }
+.permit-signature-preview.is-visible { display: block; }
+
+/* ── HIDE ALL INTERACTIVE ELEMENTS ── */
+.permit-field,
+.permit-field--textarea,
+.permit-signature-upload,
+input, textarea, button, select {
+  display: none !important;
+}
+
+/* ── Images ── */
+.permit-inline-image { vertical-align: middle; max-width: 100%; }
+
+/* ── Inline text ── */
+.permit-inline-text { display: inline; }
+/* nuclear-light */html[data-theme=ocean] *,html[data-theme=executive] *,html[data-theme=ivory] *,html[data-theme=mint] *,html[data-theme=rose] *{color:var(--text)!important;font-weight:600!important}html[data-theme=ocean] .btn-primary,html[data-theme=executive] .btn-primary,html[data-theme=ivory] .btn-primary,html[data-theme=mint] .btn-primary,html[data-theme=rose] .btn-primary,html[data-theme=ocean] .btn-ok,html[data-theme=executive] .btn-ok,html[data-theme=ivory] .btn-ok,html[data-theme=mint] .btn-ok,html[data-theme=rose] .btn-ok,html[data-theme=ocean] .ntf-badge,html[data-theme=executive] .ntf-badge,html[data-theme=ivory] .ntf-badge,html[data-theme=mint] .ntf-badge,html[data-theme=rose] .ntf-badge{color:#fff!important;font-weight:700!important}html[data-theme=ocean] i,html[data-theme=executive] i,html[data-theme=ivory] i,html[data-theme=mint] i,html[data-theme=rose] i{color:inherit!important}
+</style>
+</head>
+<body>
+{% with document_print=True %}
+{% include 'core/includes/cmms_permit_document.html' %}
+{% endwith %}
+</body>
+</html>

@@ -1,0 +1,2772 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meeting Room — HDEC</title>
+<script>(function(){var s=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',s);})();</script>
+<style>
+html[data-theme=dark]     {--bg:#070d1a;--sf:rgba(255,255,255,.06);--sf2:rgba(255,255,255,.1);--bd:rgba(255,255,255,.1);--tx:#e8eaf0;--tm:rgba(232,234,240,.72);--td:rgba(232,234,240,.42);--a1:#3b9eff;--a2:#00e5c8;--ao:#f97316;--r:14px;--rs:8px;--acc:#8b5cf6}
+html[data-theme=aurora]   {--bg:#0d0b1a;--sf:rgba(167,139,250,.07);--sf2:rgba(167,139,250,.13);--bd:rgba(167,139,250,.18);--tx:#e8e4ff;--tm:rgba(232,228,255,.72);--td:rgba(232,228,255,.42);--a1:#a78bfa;--a2:#818cf8;--ao:#f472b6;--r:18px;--rs:12px;--acc:#a78bfa}
+html[data-theme=forge]    {--bg:#110a00;--sf:rgba(249,115,22,.07);--sf2:rgba(249,115,22,.13);--bd:rgba(249,115,22,.2);--tx:#fde8cc;--tm:rgba(253,232,204,.7);--td:rgba(253,232,204,.42);--a1:#f97316;--a2:#fb923c;--ao:#facc15;--r:6px;--rs:4px;--acc:#f97316}
+html[data-theme=ocean]    {--bg:#e0f2fe;--sf:rgba(255,255,255,.85);--sf2:#fff;--bd:rgba(14,165,233,.25);--tx:#0c4a6e;--tm:rgba(12,74,110,.72);--td:rgba(12,74,110,.48);--a1:#0ea5e9;--a2:#06b6d4;--ao:#f97316;--r:22px;--rs:16px;--acc:#0ea5e9}
+html[data-theme=executive]{--bg:#faf6f0;--sf:rgba(0,0,0,.04);--sf2:#fff;--bd:rgba(0,0,0,.12);--tx:#2a1a08;--tm:rgba(42,26,8,.7);--td:rgba(42,26,8,.45);--a1:#b45309;--a2:#059669;--ao:#dc2626;--r:8px;--rs:6px;--acc:#b45309}
+html[data-theme=ivory]    {--bg:#fff;--sf:rgba(0,0,0,.04);--sf2:rgba(0,0,0,.07);--bd:rgba(0,0,0,.12);--tx:#1e1b4b;--tm:rgba(30,27,75,.68);--td:rgba(30,27,75,.42);--a1:#6366f1;--a2:#8b5cf6;--ao:#f59e0b;--r:12px;--rs:8px;--acc:#6366f1}
+html[data-theme=mint]     {--bg:#f0fdf4;--sf:rgba(0,0,0,.04);--sf2:#fff;--bd:rgba(0,0,0,.12);--tx:#064e3b;--tm:rgba(6,78,59,.7);--td:rgba(6,78,59,.45);--a1:#10b981;--a2:#06b6d4;--ao:#f59e0b;--r:16px;--rs:12px;--acc:#10b981}
+html[data-theme=rose]     {--bg:#fff1f2;--sf:rgba(0,0,0,.04);--sf2:#fff;--bd:rgba(0,0,0,.12);--tx:#4c0519;--tm:rgba(76,5,25,.68);--td:rgba(76,5,25,.42);--a1:#f43f5e;--a2:#ec4899;--ao:#f97316;--r:18px;--rs:12px;--acc:#f43f5e}
+html[data-theme=terminal] {--bg:#000d00;--sf:rgba(0,255,65,.05);--sf2:rgba(0,255,65,.1);--bd:rgba(0,255,65,.2);--tx:#00ff41;--tm:rgba(0,255,65,.7);--td:rgba(0,255,65,.42);--a1:#00ff41;--a2:#00cc33;--ao:#ffcc00;--r:0px;--rs:0px;--acc:#00ff41}
+html[data-theme=crimson]  {--bg:#0f0005;--sf:rgba(248,113,113,.06);--sf2:rgba(248,113,113,.12);--bd:rgba(248,113,113,.18);--tx:#ffe4e6;--tm:rgba(255,228,230,.72);--td:rgba(255,228,230,.42);--a1:#f87171;--a2:#fb7185;--ao:#fbbf24;--r:10px;--rs:6px;--acc:#f87171}
+html[data-theme=dusk]     {--bg:#0e0f1e;--sf:rgba(129,140,248,.07);--sf2:rgba(129,140,248,.13);--bd:rgba(129,140,248,.18);--tx:#e0e2ff;--tm:rgba(224,226,255,.72);--td:rgba(224,226,255,.42);--a1:#818cf8;--a2:#a5b4fc;--ao:#fb923c;--r:16px;--rs:10px;--acc:#818cf8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+button{font-family:inherit;cursor:pointer}
+a{text-decoration:none;color:inherit}
+input,textarea,select{font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+
+/* ── TOPBAR ──────────────────────────────────────────────── */
+.topbar{height:52px;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;backdrop-filter:blur(14px)}
+.topbar-logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;letter-spacing:-.3px}
+.logo-badge{width:30px;height:30px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.topbar-sep{flex:1}
+.topbar-user{font-size:12px;color:var(--tm);display:flex;align-items:center;gap:6px}
+.topbar-user strong{color:var(--tx)}
+.btn-sm{background:var(--sf2);border:1px solid var(--bd);color:var(--tm);padding:6px 12px;border-radius:var(--rs);font-size:12px;font-weight:600;transition:.18s;display:inline-flex;align-items:center;gap:5px}
+.btn-sm:hover{color:var(--tx);border-color:var(--a1)}
+.btn-acc{background:var(--acc);color:#fff;border:none;padding:8px 18px;border-radius:var(--rs);font-size:13px;font-weight:700;transition:.18s}
+.btn-acc:hover{filter:brightness(1.12)}
+.btn-acc:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{background:var(--sf2);border:1px solid var(--bd);color:var(--tm);padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;transition:.18s}
+.btn-ghost:hover{color:var(--tx);border-color:var(--a1)}
+.btn-danger{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.3);color:#ef4444;padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;transition:.18s}
+.btn-danger:hover{background:rgba(239,68,68,.22)}
+
+/* ── THEME PICKER ─────────────────────────────────────────── */
+#themeShell{position:relative}
+.theme-btn{background:var(--sf2);border:1px solid var(--bd);color:var(--tm);padding:6px 11px;border-radius:var(--rs);font-size:12px;display:flex;align-items:center;gap:6px;transition:.18s}
+.theme-btn:hover{border-color:var(--a1)}
+#tDot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+#tDropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:5px;z-index:9999;min-width:170px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+.t-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--rs);cursor:pointer;transition:.14s;font-size:12px}
+.t-opt:hover{background:var(--sf2)}
+.t-dot{width:11px;height:11px;border-radius:50%}
+.t-chk{margin-left:auto;font-size:11px;color:var(--a1)}
+
+/* ── LAYOUT ──────────────────────────────────────────────── */
+.app{display:flex;flex:1;overflow:hidden}
+
+/* ── LEFT SIDEBAR ────────────────────────────────────────── */
+.sidebar{width:270px;flex-shrink:0;display:flex;flex-direction:column;background:var(--sf);border-right:1px solid var(--bd)}
+.sb-search{padding:10px 10px 6px}
+.sb-search input{width:100%;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:7px 11px;border-radius:var(--rs);font-size:12px;outline:none;transition:.18s}
+.sb-search input:focus{border-color:var(--a1)}
+.sb-search input::placeholder{color:var(--td)}
+.sb-tabs{display:flex;border-bottom:1px solid var(--bd)}
+.sb-tab{flex:1;padding:9px 4px;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--td);cursor:pointer;transition:.18s}
+.sb-tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.sb-tab:hover:not(.on){color:var(--tm)}
+.sb-list{flex:1;overflow-y:auto;padding:5px 5px}
+.sb-row{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:var(--rs);cursor:pointer;transition:.14s;margin-bottom:1px;position:relative}
+.sb-row:hover{background:var(--sf2)}
+.sb-row.active{background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.av.sq{border-radius:10px}
+.av.room{border-radius:10px;background:linear-gradient(135deg,var(--a1),var(--acc))!important}
+.on-dot,.off-dot{position:absolute;bottom:0;right:0;width:9px;height:9px;border-radius:50%;border:2px solid var(--bg)}
+.on-dot{background:#22c55e}
+.off-dot{background:#6b7280}
+.sb-info{flex:1;min-width:0}
+.sb-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)}
+.sb-sub{font-size:10px;color:var(--td);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{background:var(--acc);color:#fff;font-size:9px;font-weight:700;border-radius:9px;padding:1px 5px;min-width:16px;text-align:center;flex-shrink:0}
+.sb-sec{padding:8px 9px 3px;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--td);display:flex;align-items:center;justify-content:space-between}
+.sb-add{background:none;border:none;color:var(--a1);font-size:18px;line-height:1;cursor:pointer;padding:0 2px;transition:.14s}
+.sb-add:hover{opacity:.7}
+.sb-empty{text-align:center;padding:28px 12px;color:var(--td)}
+.sb-empty-icon{font-size:28px;opacity:.45;margin-bottom:6px}
+
+/* ── CENTER ───────────────────────────────────────────────── */
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* Welcome */
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center}
+.welcome-icon{font-size:60px;filter:drop-shadow(0 0 20px var(--acc))}
+.welcome h2{font-size:21px;font-weight:800;letter-spacing:-.4px}
+.welcome p{color:var(--td);font-size:13px;max-width:340px;line-height:1.65}
+.welcome-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+
+/* Chat */
+.chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-head{padding:11px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--sf)}
+.chat-head-info{flex:1;min-width:0}
+.chat-head-name{font-size:13px;font-weight:800}
+.chat-head-sub{font-size:10px;color:var(--td);margin-top:1px}
+.chat-actions{display:flex;gap:5px}
+.icon-btn{background:var(--sf2);border:1px solid var(--bd);color:var(--tm);width:32px;height:32px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:15px;transition:.18s}
+.icon-btn:hover{color:var(--tx);border-color:var(--a1)}
+.messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px}
+.day-sep{text-align:center;font-size:9px;font-weight:700;color:var(--td);text-transform:uppercase;letter-spacing:.6px;padding:5px 0}
+.msg-row{display:flex;gap:7px;max-width:75%}
+.msg-row.me{align-self:flex-end;flex-direction:row-reverse}
+.msg-row.them{align-self:flex-start}
+.bubble{padding:8px 12px;border-radius:15px;font-size:13px;line-height:1.5;word-break:break-word;position:relative}
+.msg-row.me   .bubble{background:var(--acc);color:#fff;border-radius:15px 15px 3px 15px}
+.msg-row.them .bubble{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);border-radius:15px 15px 15px 3px}
+.bubble-sender{font-size:9px;font-weight:700;color:var(--acc);margin-bottom:3px}
+.bubble-meta{font-size:9px;margin-top:4px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:3px}
+.msg-row.them .bubble-meta{color:var(--td)}
+.translation-bubble{display:flex;flex-direction:column;gap:8px}
+.translation-part{display:flex;flex-direction:column;gap:3px}
+.translation-tag{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;opacity:.78}
+.translation-text{line-height:1.5}
+.translation-sep{height:1px;background:rgba(255,255,255,.18)}
+.msg-row.them .translation-sep{background:rgba(0,0,0,.08)}
+.file-bubble{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:9px 11px;min-width:180px;transition:.18s}
+.msg-row.them .file-bubble{background:var(--sf2);border-color:var(--bd)}
+.file-bubble:hover{background:rgba(255,255,255,.15)}
+.file-ico{font-size:22px;flex-shrink:0}
+.file-info{min-width:0;flex:1}
+.file-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)}
+.file-meta{font-size:9px;color:var(--td);margin-top:2px}
+.file-preview-btn{background:none;border:none;color:var(--a1);font-size:10px;font-weight:700;cursor:pointer;margin-top:3px;padding:0;text-align:left}
+.file-preview-btn:hover{opacity:.7}
+.file-card{display:flex;flex-direction:column;gap:8px;min-width:220px;max-width:min(420px,70vw)}
+.file-inline-preview{display:block;overflow:hidden;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);cursor:pointer}
+.msg-row.them .file-inline-preview{border-color:var(--bd);background:rgba(0,0,0,.05)}
+.file-inline-image{display:block;max-width:100%;max-height:280px;width:auto;height:auto}
+.file-inline-video{display:block;width:100%;max-height:320px;background:#000}
+.file-inline-pdf{display:block;width:100%;height:320px;border:none;background:#fff}
+.file-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.file-action{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:10px;font-weight:700;text-decoration:none;transition:.16s}
+.msg-row.me .file-action{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.2);color:#fff}
+.msg-row.them .file-action{background:var(--sf2);border:1px solid var(--bd);color:var(--tx)}
+.file-action:hover{filter:brightness(1.08)}
+.file-caption{font-size:10px;color:var(--td)}
+.input-bar{padding:10px 12px;border-top:1px solid var(--bd);display:flex;align-items:flex-end;gap:8px;background:var(--sf);flex-shrink:0}
+.composer-stack{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.lang-btn{background:none;border:none;color:var(--td);font-size:18px;padding:2px 3px;transition:.18s;flex-shrink:0;position:relative;line-height:1;cursor:pointer}
+.lang-btn:hover{color:var(--a1)}
+.lang-btn.active{color:var(--a1)}
+.lang-badge{position:absolute;top:-4px;right:-5px;background:var(--acc);color:#fff;font-size:7px;font-weight:800;border-radius:999px;padding:1px 4px;line-height:1.4;min-width:14px;text-align:center;pointer-events:none}
+.lang-picker{position:absolute;bottom:calc(100% + 10px);left:0;right:0;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px;z-index:300;box-shadow:0 -6px 32px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:6px}
+.lang-search{background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:7px 10px;border-radius:var(--rs);font-size:12px;outline:none;transition:.18s}
+.lang-search:focus{border-color:var(--a1)}
+.lang-search::placeholder{color:var(--td)}
+.lang-list{overflow-y:auto;max-height:210px;display:flex;flex-direction:column;gap:1px}
+.lang-opt{padding:7px 10px;border-radius:var(--rs);cursor:pointer;font-size:12px;color:var(--tx);transition:.14s;display:flex;align-items:center;gap:8px;user-select:none}
+.lang-opt:hover{background:var(--sf2)}
+.lang-opt.sel{background:color-mix(in srgb,var(--acc) 13%,transparent);font-weight:700}
+.lang-opt-check{margin-left:auto;color:var(--acc);font-size:12px}
+.input-wrap{flex:1;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);display:flex;align-items:flex-end;padding:7px 10px;gap:6px;transition:.18s}
+.input-wrap:focus-within{border-color:var(--a1)}
+.msg-ta{flex:1;background:none;border:none;color:var(--tx);resize:none;outline:none;max-height:110px;line-height:1.5;font-size:13px;font-family:inherit}
+.msg-ta::placeholder{color:var(--td)}
+.attach-btn,.emoji-btn{background:none;border:none;color:var(--td);font-size:17px;padding:2px;transition:.18s;flex-shrink:0}
+.attach-btn:hover,.emoji-btn:hover{color:var(--a1)}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--acc);border:none;color:#fff;font-size:17px;flex-shrink:0;transition:.18s;display:flex;align-items:center;justify-content:center}
+.send-btn:hover{filter:brightness(1.14)}
+.emoji-grid{position:absolute;bottom:68px;left:12px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.4);display:none}
+.emoji-grid.open{display:grid}
+.e-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px;border-radius:6px;transition:.14s}
+.e-btn:hover{background:var(--sf2)}
+
+/* ── CALL SCREEN ─────────────────────────────────────────── */
+.call-screen{flex:1;display:flex;flex-direction:column;background:var(--bg);position:relative;overflow:hidden}
+.call-grid{flex:1;display:grid;overflow:hidden}
+.call-grid.g1{grid-template-columns:1fr}
+.call-grid.g2{grid-template-columns:1fr 1fr}
+.call-grid.g3{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.call-grid.g4{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr)}
+.call-tile{position:relative;overflow:hidden;background:var(--sf);display:flex;align-items:center;justify-content:center;border:1px solid var(--bd)}
+.call-tile video{width:100%;height:100%;object-fit:cover}
+.tile-label{position:absolute;bottom:7px;left:7px;background:var(--sf2);color:var(--tx);border:1px solid var(--bd);font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;backdrop-filter:blur(6px)}
+.tile-muted{position:absolute;top:7px;right:7px;background:rgba(239,68,68,.85);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.tile-av{font-size:32px;font-weight:700;color:#fff;width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.call-status{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--tx);text-align:center}
+.call-status-icon{font-size:52px;animation:cring 1.4s ease infinite}
+@keyframes cring{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.call-status-name{font-size:20px;font-weight:800}
+.call-status-state{font-size:13px;opacity:.7;animation:blink 1.6s ease infinite}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:.9}}
+.call-timer{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--sf2);color:var(--tx);border:1px solid var(--bd);padding:4px 12px;border-radius:16px;font-size:12px;font-weight:700;backdrop-filter:blur(8px)}
+.pip{position:absolute;bottom:84px;right:12px;width:130px;height:90px;border-radius:10px;overflow:hidden;border:2px solid var(--bd);box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:10;cursor:pointer}
+.pip video{width:100%;height:100%;object-fit:cover}
+.call-translate-panel{position:absolute;left:12px;right:12px;bottom:96px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:var(--sf2);border:1px solid var(--bd);backdrop-filter:blur(12px);z-index:12;flex-wrap:wrap}
+.call-translate-status{font-size:11px;font-weight:700;color:var(--tx);flex:1;min-width:220px;line-height:1.45}
+.call-translate-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:100%}
+.call-translate-select{background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:7px 10px;border-radius:999px;font-size:11px;outline:none;min-width:190px;max-width:100%}
+.call-translate-select:focus{border-color:var(--a1)}
+.call-translate-select option{background:var(--bg);color:var(--tx)}
+.ctrl-translate-on{background:var(--acc);color:#fff}
+.ctrl-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.call-controls{position:absolute;bottom:0;left:0;right:0;padding:16px;display:flex;justify-content:center;align-items:center;gap:12px;background:linear-gradient(transparent,var(--bg));flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden}
+.ctrl-btn{min-width:78px;height:46px;padding:0 14px;border-radius:999px;border:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;letter-spacing:.2px;transition:.18s;flex-shrink:0;white-space:nowrap}
+.ctrl-btn:hover{transform:scale(1.07)}
+.ctrl-on {background:var(--sf2);color:var(--tx);border:1px solid var(--bd)}
+.ctrl-off{background:var(--sf);color:var(--td);border:1px solid var(--bd)}
+.ctrl-end{background:#ef4444;color:#fff;border:none;min-width:76px;height:50px;font-size:12px;font-weight:800}
+.ctrl-share-on{background:var(--acc);color:#fff;border:none}
+.share-bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:16px;z-index:15;animation:blink 2s ease infinite}
+.call-controls::-webkit-scrollbar{display:none}
+
+@media (max-width: 700px){
+  .call-translate-panel{bottom:92px;flex-direction:column;align-items:stretch}
+  .call-translate-status{min-width:0}
+  .call-translate-row{width:100%}
+  .call-translate-select{width:100%;min-width:0}
+  .pip{width:104px;height:72px;right:10px;bottom:150px}
+  .call-controls{justify-content:flex-start;padding:12px}
+  .ctrl-btn{min-width:70px;height:42px;padding:0 12px;font-size:11px}
+  .ctrl-end{min-width:70px;height:44px;font-size:11px}
+}
+
+/* ── ROOM SCREEN ─────────────────────────────────────────── */
+.room-screen{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.room-head{padding:13px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;background:var(--sf);flex-shrink:0}
+.room-head-info{flex:1;min-width:0}
+.room-head-title{font-size:14px;font-weight:800}
+.room-head-sub{font-size:10px;color:var(--td);margin-top:2px}
+.room-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.room-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.room-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;text-align:center}
+.room-card-val{font-size:26px;font-weight:800;color:var(--acc)}
+.room-card-lbl{font-size:10px;color:var(--td);margin-top:3px}
+.room-section{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px}
+.room-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td);margin-bottom:10px}
+.part-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--rs);transition:.14s}
+.part-row:hover{background:var(--sf2)}
+.part-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;position:relative}
+.part-name{font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.host-tag{font-size:9px;color:var(--ao);font-weight:700}
+.room-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── RIGHT PANEL ─────────────────────────────────────────── */
+.right-panel{width:230px;flex-shrink:0;background:var(--sf);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.rp-head{padding:11px 12px;border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--td)}
+.rp-body{flex:1;overflow-y:auto;padding:8px}
+.rp-section{margin-bottom:14px}
+.rp-section-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--td);margin-bottom:6px;padding:0 3px}
+.rp-file{display:flex;align-items:center;gap:7px;padding:7px 6px;border-radius:var(--rs);transition:.14s;cursor:pointer;text-decoration:none;color:inherit}
+.rp-file:hover{background:var(--sf2)}
+.rp-file-ico{font-size:18px;flex-shrink:0}
+.rp-file-name{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx)}
+.rp-file-meta{font-size:9px;color:var(--td)}
+
+/* ── FILE VIEWER MODAL ───────────────────────────────────── */
+.viewer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:2000;flex-direction:column}
+.viewer-overlay.open{display:flex}
+.viewer-bar{height:50px;display:flex;align-items:center;padding:0 14px;gap:10px;background:rgba(0,0,0,.7);flex-shrink:0}
+.viewer-name{flex:1;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.viewer-close{background:rgba(255,255,255,.12);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;transition:.18s}
+.viewer-close:hover{background:rgba(255,255,255,.22)}
+.viewer-body{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:10px}
+.viewer-body iframe,.viewer-body img,.viewer-body video{width:100%;height:100%;border:none;border-radius:8px;object-fit:contain}
+.viewer-notice{color:rgba(255,255,255,.6);text-align:center;font-size:13px;line-height:1.7}
+.viewer-notice a{color:var(--a1)}
+
+/* ── MODALS ──────────────────────────────────────────────── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-ov.open{display:flex}
+.modal{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);width:400px;max-width:94vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 70px rgba(0,0,0,.6)}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:14px;font-weight:800}
+.modal-x{background:none;border:none;color:var(--td);font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:.14s}
+.modal-x:hover{color:var(--tx);background:var(--sf2)}
+.modal-body{padding:18px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--tm);margin-bottom:4px}
+.field input,.field textarea,.field select{width:100%;background:var(--sf2);border:1px solid var(--bd);color:var(--tx);padding:8px 11px;border-radius:var(--rs);font-size:12px;outline:none;transition:.18s;font-family:inherit}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--a1)}
+.field input::placeholder,.field textarea::placeholder{color:var(--td)}
+.field select option{background:var(--bg)}
+.field textarea{resize:vertical;min-height:60px}
+.members-list{border:1px solid var(--bd);border-radius:var(--rs);max-height:140px;overflow-y:auto;padding:5px}
+.member-chk{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--rs);cursor:pointer;font-size:12px;transition:.14s}
+.member-chk:hover{background:var(--sf2)}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:7px}
+
+/* ── INCOMING CALL ───────────────────────────────────────── */
+.incoming{position:fixed;bottom:20px;right:20px;width:280px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:18px;z-index:3000;box-shadow:0 12px 50px rgba(0,0,0,.65);animation:slideup .28s ease}
+@keyframes slideup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.ic-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;margin:0 auto 9px;animation:ring 1.1s ease infinite}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 55%,transparent)}70%{box-shadow:0 0 0 12px transparent}}
+.ic-name{text-align:center;font-size:13px;font-weight:800;margin-bottom:3px}
+.ic-type{text-align:center;font-size:11px;color:var(--td);margin-bottom:14px}
+.ic-btns{display:flex;gap:8px;justify-content:center}
+.ic-accept{background:#22c55e;color:#fff;border:none;padding:9px 20px;border-radius:var(--rs);font-size:12px;font-weight:700;transition:.18s}
+.ic-accept:hover{filter:brightness(1.1)}
+.ic-reject{background:rgba(239,68,68,.14);color:#ef4444;border:1px solid rgba(239,68,68,.3);padding:9px 20px;border-radius:var(--rs);font-size:12px;font-weight:700;transition:.18s}
+.ic-reject:hover{background:rgba(239,68,68,.22)}
+
+/* ── TOAST ───────────────────────────────────────────────── */
+.toast-area{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:4000;display:flex;flex-direction:column;gap:7px;pointer-events:none;align-items:center}
+.toast{background:var(--sf);border:1px solid var(--bd);color:var(--tx);padding:9px 16px;border-radius:var(--r);font-size:12px;font-weight:600;box-shadow:0 6px 28px rgba(0,0,0,.4);animation:tin .22s ease;pointer-events:all;display:flex;align-items:center;gap:7px;white-space:nowrap}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.toast.ok{border-color:rgba(34,197,94,.35)}
+.toast.err{border-color:rgba(239,68,68,.35)}
+.toast.inf{border-color:color-mix(in srgb,var(--acc) 35%,transparent)}
+
+/* ── MISC ────────────────────────────────────────────────── */
+.empty{text-align:center;padding:32px 12px;color:var(--td)}
+.empty-ico{font-size:30px;opacity:.4;margin-bottom:8px}
+.empty p{font-size:12px;line-height:1.6}
+.chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid}
+.chip-online{background:rgba(34,197,94,.12);color:#22c55e;border-color:rgba(34,197,94,.25)}
+.chip-offline{background:rgba(107,114,128,.1);color:#9ca3af;border-color:rgba(107,114,128,.2)}
+@media(max-width:900px){.right-panel{display:none}}
+@media(max-width:640px){.sidebar{width:220px}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-badge">🏢</div>
+    Meeting Room
+  </div>
+  <div class="topbar-sep"></div>
+  {% if country_id and project_id %}
+  <a href="/p/{{ country_id }}/{{ project_id }}/" class="btn-sm">← Back</a>
+  {% else %}
+  <a href="/" class="btn-sm">← Home</a>
+  {% endif %}
+  <div id="themeShell">
+    <button class="theme-btn" onclick="toggleTheme()">
+      <span id="tDot"></span><span id="tLbl">Theme</span> ▾
+    </button>
+    <div id="tDropdown" hidden></div>
+  </div>
+  <div class="topbar-user">👤 <strong>{{ me_name }}</strong></div>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-search"><input type="text" id="q" placeholder="🔍 Search…" oninput="renderSidebar()"></div>
+  <div class="sb-tabs">
+    <button class="sb-tab on"  id="tab-dms"    onclick="setTab('dms')">DMs</button>
+    <button class="sb-tab"     id="tab-groups" onclick="setTab('groups')">Groups</button>
+    <button class="sb-tab"     id="tab-rooms"  onclick="setTab('rooms')">Rooms</button>
+  </div>
+  <div class="sb-list" id="sbList"></div>
+</div>
+
+<!-- CENTER -->
+<div class="center" id="center">
+
+  <!-- Welcome -->
+  <div class="welcome" id="scWelcome">
+    <div class="welcome-icon">🏢</div>
+    <h2>Welcome to Meeting Room</h2>
+    <p>Start a private chat, create a group, or open a meeting room with video, audio, screen sharing and file sharing.</p>
+    <div class="welcome-btns">
+      <button class="btn-acc" onclick="setTab('dms')">💬 Start Chat</button>
+      <button class="btn-acc" onclick="openCreateGroup()">👥 New Group</button>
+      <button class="btn-acc" onclick="openCreateRoom()">🏠 Create Room</button>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-wrap" id="scChat" style="display:none">
+    <div class="chat-head">
+      <div class="av" id="chAv">?</div>
+      <div class="chat-head-info">
+        <div class="chat-head-name" id="chName">—</div>
+        <div class="chat-head-sub"  id="chSub">—</div>
+      </div>
+      <div class="chat-actions">
+        <button class="icon-btn" id="btnAudioCall" onclick="startCall('audio')" title="Audio Call">🎙️</button>
+        <button class="icon-btn" id="btnVideoCall" onclick="startCall('video')" title="Video Call">📹</button>
+        <button class="icon-btn" onclick="rpToggle()" title="Info / Files">ℹ️</button>
+      </div>
+    </div>
+    <div class="messages" id="msgs"></div>
+    <div style="position:relative">
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <div class="input-bar">
+      <div class="composer-stack">
+        <div class="input-wrap" style="position:relative">
+          <button class="emoji-btn" onclick="toggleEmoji()" title="Emoji">😊</button>
+          <textarea class="msg-ta" id="msgTa" placeholder="Type a message… (Enter to send)" rows="1"
+            onkeydown="msgKey(event)" oninput="taResize(this)"></textarea>
+          <button class="attach-btn" onclick="document.getElementById('fileIn').click()" title="Attach file">📎</button>
+          <button class="lang-btn" id="langBtn" onclick="toggleLangPicker(event)" title="Translate messages">🌐</button>
+          <input type="file" id="fileIn" style="display:none" onchange="sendFile(this)" accept="*/*">
+          <select id="translateTo" style="display:none" onchange="persistTranslateTarget()"></select>
+          <div class="lang-picker" id="langPicker" style="display:none">
+            <input class="lang-search" id="langSearch" placeholder="🔍 Search language…" oninput="filterLangs()" autocomplete="off">
+            <div class="lang-list" id="langList"></div>
+          </div>
+        </div>
+      </div>
+      <button class="send-btn" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+  <!-- Call Screen -->
+  <div class="call-screen" id="scCall" style="display:none">
+    <div class="share-bar" id="shareBar" style="display:none">Screen sharing is on</div>
+    <div class="call-timer" id="callTimer" style="display:none">00:00</div>
+    <div class="call-grid g1" id="callGrid">
+      <div class="call-tile" id="remoteTile">
+        <div class="call-status" id="callStatus">
+          <div class="call-status-icon">📞</div>
+        <div class="call-status-name" id="callStatusName">-</div>
+        <div class="call-status-state" id="callStatusState">Calling...</div>
+      </div>
+        <video id="remoteVid" autoplay playsinline muted style="display:none"></video>
+        <audio id="remoteAud" autoplay playsinline style="display:none"></audio>
+        <audio id="translatorPreviewAud" autoplay playsinline muted style="display:none"></audio>
+        <audio id="inTranslatedAud" autoplay playsinline style="display:none"></audio>
+        <div class="tile-label" id="remoteLabel">Remote</div>
+      </div>
+    </div>
+    <div class="pip" id="pip" style="display:none">
+      <video id="localVid" autoplay muted playsinline></video>
+    </div>
+    <div class="call-translate-panel" id="callTranslatePanel" style="display:none">
+      <div class="call-translate-status" id="callTranslateStatus">Start a call to use live translation.</div>
+      <div class="call-translate-row">
+        <select id="callTranslateTo" class="call-translate-select" onchange="handleCallTranslateTargetChange()"></select>
+      </div>
+    </div>
+    <div class="call-controls">
+      <button class="ctrl-btn ctrl-on"  id="micBtn"   onclick="toggleMic()"   title="Mute microphone">Mute</button>
+      <button class="ctrl-btn ctrl-on"  id="camBtn"   onclick="toggleCam()"   title="Toggle video" style="display:none">Video On</button>
+      <button class="ctrl-btn ctrl-on"  id="shareBtn" onclick="toggleShare()"  title="Share your screen">Share</button>
+      <button class="ctrl-btn ctrl-end"               onclick="endCall()"      title="End the call">End</button>
+    </div>
+  </div>
+
+  <!-- Room Screen -->
+  <div class="room-screen" id="scRoom" style="display:none">
+    <div class="room-head">
+      <div class="av room" id="roomAv">🏠</div>
+      <div class="room-head-info">
+        <div class="room-head-title" id="roomTitle">Room</div>
+        <div class="room-head-sub"   id="roomSub">Virtual Meeting Room</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-acc"   id="roomJoinBtn"  onclick="joinRoom()">Join Room</button>
+        <button class="btn-danger" id="roomLeaveBtn" onclick="leaveRoom()" style="display:none">Leave</button>
+      </div>
+    </div>
+    <div class="room-body" id="roomBody"></div>
+  </div>
+
+</div><!-- /center -->
+
+<!-- RIGHT PANEL -->
+<div class="right-panel" id="rp">
+  <div class="rp-head" id="rpTitle">Info</div>
+  <div class="rp-body" id="rpBody">
+    <div class="empty"><div class="empty-ico">ℹ️</div><p>Select a chat to see details and shared files.</p></div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- FILE VIEWER -->
+<div class="viewer-overlay" id="viewerOv">
+  <div class="viewer-bar">
+    <div class="viewer-name" id="viewerName">File</div>
+    <a id="viewerDl" href="#" download class="btn-sm">⬇ Download</a>
+    <button class="viewer-close" onclick="closeViewer()">✕</button>
+  </div>
+  <div class="viewer-body" id="viewerBody"></div>
+</div>
+
+<!-- MODALS -->
+<!-- Create Group -->
+<div class="modal-ov" id="modalGroup">
+  <div class="modal">
+    <div class="modal-head"><h3>👥 New Group</h3><button class="modal-x" onclick="closeModal('modalGroup')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Group Name *</label><input id="gName" placeholder="e.g. Project Team Alpha"></div>
+      <div class="field"><label>Members</label><div class="members-list" id="gMembers"></div></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modalGroup')">Cancel</button>
+      <button class="btn-acc"   onclick="submitGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Room -->
+<div class="modal-ov" id="modalRoom">
+  <div class="modal">
+    <div class="modal-head"><h3>🏠 Create Meeting Room</h3><button class="modal-x" onclick="closeModal('modalRoom')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Room Name *</label><input id="rName" placeholder="e.g. Weekly Sync"></div>
+      <div class="field"><label>Meeting Title</label><input id="rTitle" placeholder="e.g. Q1 Planning"></div>
+      <div class="field"><label>Description</label><textarea id="rDesc" placeholder="What's this meeting about?"></textarea></div>
+      <div class="field"><label><input type="checkbox" id="rPrivate" style="margin-right:6px">Private Room</label></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closeModal('modalRoom')">Cancel</button>
+      <button class="btn-acc"   onclick="submitRoom()">Create Room</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-area" id="toastArea"></div>
+<!-- Incoming call -->
+<div id="incoming" style="display:none" class="incoming">
+  <div class="ic-av" id="icAv">?</div>
+  <div class="ic-name" id="icName">Caller</div>
+  <div class="ic-type" id="icType">Audio Call</div>
+  <div class="ic-btns">
+    <button class="ic-accept" onclick="acceptCall()">✅ Accept</button>
+    <button class="ic-reject" onclick="rejectCall()">❌ Decline</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// BOOTSTRAP DATA
+// ═══════════════════════════════════════════════════
+const ME      = '{{ me }}';
+const ME_NAME = '{{ me_name }}';
+const CSRF    = '{{ csrf_token }}';
+let USERS     = {{ all_users_json|safe }};
+let GROUPS    = {{ groups_json|safe }};
+let ROOMS     = {{ rooms_json|safe }};
+let ROOM_MEETINGS = {{ room_meetings_json|safe }};
+const TRANSLATION_LANGUAGES = {{ translation_languages_json|safe }};
+let UNREAD    = {{ unread_json|safe }};
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+const S = {
+  tab: 'dms',
+  thread: null,       // { type:'dm'|'group'|'room', id, name, peer?, groupId?, roomId? }
+  msgs: [],
+  afterTs: '',
+  online: new Set(),
+  call: null,         // active call object
+  pendingCall: null,  // incoming call
+  callPollInt: null,
+  timerInt: null,
+  timerStart: 0,
+  callMode: null,
+  pc: null,
+  localStream: null,
+  screenStream: null,
+  remoteStream: null,
+  roomMeeting: null,
+  roomPeers: {},
+  roomSignalAfter: '',
+  micOn: true,
+  camOn: true,
+  shareOn: false,
+  room: null,
+  rpOpen: true,
+  callTranslateOn: false,
+  callTranslateBusy: false,
+  callTranslatePc: null,
+  callTranslateTrack: null,
+  callTranslateStream: null,
+  callTranslateTarget: '',
+  callTranslateInPc: null,
+  callTranslateInStream: null,
+  _inTranslateAudioCtx: null,
+};
+
+// ═══════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function ini(n){ return (n||'?').split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?'; }
+function aColor(s){ let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return `hsl(${Math.abs(h)%360},55%,42%)`; }
+function fmtTime(iso){ try{return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}catch{return '';} }
+function fmtSize(b){ return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+function fmtDate(iso){ try{return new Date(iso).toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'});}catch{return '';} }
+function dmThread(a,b){ return 'dm:'+[a,b].sort().join(':'); }
+function groupThread(id){ return 'group:'+id; }
+function roomThread(id){ return 'room:'+id; }
+function safeId(v){ return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'_'); }
+function userMap(){ const m={}; USERS.forEach(u=>m[u.username]=u); return m; }
+function findUser(u){ return USERS.find(x=>x.username===u)||{username:u,name:u,role:''}; }
+function liveRoomMeeting(roomId){ return ROOM_MEETINGS.find(m=>m.room_id===roomId&&m.status==='live')||null; }
+function hasVideoTrack(stream){ return !!(stream&&stream.getVideoTracks&&stream.getVideoTracks().some(t=>t.readyState==='live')); }
+function meetingSubText(meeting){
+  if(!meeting) return 'No live meeting';
+  const count=(meeting.participants||[]).length;
+  const mode=meeting.call_type==='video'?'Video meeting':'Audio meeting';
+  const sharing=meeting.screen_sharing_by?` · Sharing: ${meeting.screen_sharing_by}`:'';
+  return `${mode} · ${count} participant${count!==1?'s':''}${sharing}`;
+}
+
+const TRANSLATE_PREF_KEY='meeting.translateTo';
+function translationLabel(code){
+  return (TRANSLATION_LANGUAGES.find(item=>item.code===code)||{}).label||'';
+}
+function getTranslateTarget(){
+  const el=document.getElementById('translateTo');
+  return el ? el.value : '';
+}
+function renderTextMessage(m){
+  const translatedText=esc(m.content).replace(/\n/g,'<br>');
+  const originalText=String(m.translation_source_text||'').trim();
+  if(!m.translation_target_label || !originalText || originalText===m.content){
+    return `<div class="bubble">${translatedText}</div>`;
+  }
+  return `<div class="bubble translation-bubble">
+    <div class="translation-part">
+      <div class="translation-text">${esc(originalText).replace(/\n/g,'<br>')}</div>
+    </div>
+    <div class="translation-sep"></div>
+    <div class="translation-part">
+      <div class="translation-text">${translatedText}</div>
+    </div>
+  </div>`;
+}
+function updateTranslateHint(){
+  const btn=document.getElementById('langBtn');
+  if(!btn) return;
+  const code=getTranslateTarget();
+  const existing=btn.querySelector('.lang-badge');
+  if(existing) existing.remove();
+  if(code){
+    const badge=document.createElement('span');
+    badge.className='lang-badge';
+    const label=translationLabel(code);
+    badge.textContent=label.slice(0,3).toUpperCase();
+    btn.appendChild(badge);
+    btn.classList.add('active');
+  } else {
+    btn.classList.remove('active');
+  }
+}
+function persistTranslateTarget(){
+  const code=getTranslateTarget();
+  try{ localStorage.setItem(TRANSLATE_PREF_KEY, code); }catch(e){}
+  updateTranslateHint();
+  renderLangList();
+}
+function initTranslateOptions(){
+  const el=document.getElementById('translateTo');
+  if(!el) return;
+  const saved=(()=>{ try{return localStorage.getItem(TRANSLATE_PREF_KEY)||'';}catch(e){return '';} })();
+  const options=[{code:'',label:'No translation'}, ...TRANSLATION_LANGUAGES];
+  el.innerHTML=options.map(item=>`<option value="${esc(item.code)}">${esc(item.label)}</option>`).join('');
+  if(saved && options.some(item=>item.code===saved)) el.value=saved;
+  updateTranslateHint();
+}
+function renderLangList(filter=''){
+  const list=document.getElementById('langList');
+  const current=getTranslateTarget();
+  if(!list) return;
+  const all=[{code:'',label:'No translation'}, ...TRANSLATION_LANGUAGES];
+  const q=filter.trim().toLowerCase();
+  const items=q ? all.filter(i=>i.label.toLowerCase().includes(q)||i.code.toLowerCase().includes(q)) : all;
+  list.innerHTML=items.map(item=>`
+    <div class="lang-opt${item.code===current?' sel':''}" onclick="setLangTarget('${esc(item.code)}')">
+      ${esc(item.label)}
+      ${item.code===current?'<span class="lang-opt-check">✓</span>':''}
+    </div>`).join('');
+}
+function filterLangs(){
+  const q=document.getElementById('langSearch')?.value||'';
+  renderLangList(q);
+}
+function setLangTarget(code){
+  const el=document.getElementById('translateTo');
+  if(el){ el.value=code; persistTranslateTarget(); }
+  closeLangPicker();
+}
+function toggleLangPicker(e){
+  if(e){ e.stopPropagation(); }
+  const picker=document.getElementById('langPicker');
+  if(!picker) return;
+  const open=picker.style.display!=='none';
+  if(open){ closeLangPicker(); return; }
+  const search=document.getElementById('langSearch');
+  if(search) search.value='';
+  renderLangList();
+  picker.style.display='flex';
+  picker.style.flexDirection='column';
+  setTimeout(()=>{ if(search) search.focus(); },50);
+}
+function closeLangPicker(){
+  const picker=document.getElementById('langPicker');
+  if(picker) picker.style.display='none';
+}
+
+const CALL_TRANSLATE_PREF_KEY='meeting.callTranslateTo';
+function getCallTranslateTarget(){
+  const el=document.getElementById('callTranslateTo');
+  return el ? el.value : '';
+}
+function ensureCallTranslateButton(){
+  const controls=document.querySelector('#scCall .call-controls');
+  if(!controls || document.getElementById('translateBtn')) return;
+  const btn=document.createElement('button');
+  btn.className='ctrl-btn ctrl-on';
+  btn.id='translateBtn';
+  btn.type='button';
+  btn.title='Live Translation';
+  btn.textContent='Translate';
+  btn.onclick=()=>toggleCallTranslation();
+  const share=document.getElementById('shareBtn');
+  if(share) controls.insertBefore(btn, share);
+  else controls.appendChild(btn);
+}
+function initCallTranslateOptions(){
+  ensureCallTranslateButton();
+  const el=document.getElementById('callTranslateTo');
+  if(!el) return;
+  const saved=(()=>{
+    try{return localStorage.getItem(CALL_TRANSLATE_PREF_KEY)||'';}catch(e){return '';}
+  })() || getTranslateTarget() || 'ar';
+  el.innerHTML=TRANSLATION_LANGUAGES.map(item=>
+    `<option value="${esc(item.code)}">${esc(item.label)}</option>`
+  ).join('');
+  if(saved && TRANSLATION_LANGUAGES.some(item=>item.code===saved)) el.value=saved;
+  updateCallTranslateUi();
+}
+function persistCallTranslateTarget(){
+  const value=getCallTranslateTarget();
+  try{ localStorage.setItem(CALL_TRANSLATE_PREF_KEY, value); }catch(e){}
+  updateCallTranslateUi();
+}
+async function handleCallTranslateTargetChange(){
+  const nextTarget=getCallTranslateTarget();
+  persistCallTranslateTarget();
+  if(S.callTranslateOn && nextTarget && nextTarget!==S.callTranslateTarget){
+    await enableCallTranslation();
+  }
+}
+function currentOriginalAudioTrack(){
+  return S.localStream&&S.localStream.getAudioTracks ? (S.localStream.getAudioTracks()[0]||null) : null;
+}
+function currentOutgoingAudioTrack(){
+  if(S.callTranslateOn && S.callTranslateTrack) return S.callTranslateTrack;
+  return currentOriginalAudioTrack();
+}
+function currentOutgoingAudioStream(){
+  if(S.callTranslateOn && S.callTranslateStream) return S.callTranslateStream;
+  return S.localStream||null;
+}
+function clearMediaStream(el){
+  if(!el) return;
+  if(typeof el.pause==='function'){
+    try{ el.pause(); }catch(e){}
+  }
+  if(el.srcObject) el.srcObject=null;
+}
+function attachMediaStream(el, stream){
+  if(!el) return;
+  if(!stream){
+    clearMediaStream(el);
+    return;
+  }
+  if(el.srcObject!==stream) el.srcObject=stream;
+  if(typeof el.play==='function'){
+    const playPromise=el.play();
+    if(playPromise && typeof playPromise.catch==='function') playPromise.catch(()=>{});
+  }
+}
+function bindRemoteCallStream(stream){
+  if(!stream) return;
+  S.remoteStream=stream;
+  const remoteAudio=document.getElementById('remoteAud');
+  const remoteVideo=document.getElementById('remoteVid');
+  attachMediaStream(remoteAudio, stream);
+  if(remoteVideo){
+    remoteVideo.muted=true;
+    if(hasVideoTrack(stream)){
+      remoteVideo.style.display='';
+      attachMediaStream(remoteVideo, stream);
+    }else{
+      remoteVideo.style.display='none';
+      clearMediaStream(remoteVideo);
+    }
+  }
+  const status=document.getElementById('callStatus');
+  if(status) status.style.display='none';
+  const state=document.getElementById('callStatusState');
+  if(state) state.textContent='Connected';
+  startTimer();
+}
+function syncRoomTileMedia(username, stream){
+  const tileId=safeId(username);
+  const video=document.getElementById(`roomVid-${tileId}`);
+  const audio=document.getElementById(`roomAud-${tileId}`);
+  const avatar=document.getElementById(`roomAv-${tileId}`);
+  const showVideo=hasVideoTrack(stream);
+  if(video){
+    video.muted=true;
+    if(showVideo){
+      video.style.display='';
+      attachMediaStream(video, stream);
+    }else{
+      video.style.display='none';
+      clearMediaStream(video);
+    }
+  }
+  if(audio){
+    if(username===ME) clearMediaStream(audio);
+    else attachMediaStream(audio, stream);
+  }
+  if(avatar) avatar.style.display=showVideo?'none':'flex';
+}
+function updateCallTranslateUi(){
+  ensureCallTranslateButton();
+  const panel=document.getElementById('callTranslatePanel');
+  const status=document.getElementById('callTranslateStatus');
+  const select=document.getElementById('callTranslateTo');
+  const btn=document.getElementById('translateBtn');
+  const inCall=!!(S.call||S.callMode||S.roomMeeting);
+  const hasMic=!!currentOriginalAudioTrack();
+  const targetLabel=translationLabel(getCallTranslateTarget())||'the selected language';
+  if(panel) panel.style.display=inCall ? '' : 'none';
+  if(select) select.disabled=!inCall || S.callTranslateBusy;
+  if(btn){
+    btn.textContent=S.callTranslateBusy ? 'Starting' : (S.callTranslateOn ? 'Translating' : 'Translate');
+    btn.title=S.callTranslateOn ? 'Disable Live Translation' : 'Enable Live Translation';
+    btn.disabled=!inCall || !hasMic || !getCallTranslateTarget();
+    btn.classList.toggle('ctrl-translate-on', S.callTranslateOn);
+    btn.classList.toggle('ctrl-on', !S.callTranslateOn);
+    btn.classList.toggle('ctrl-off', !hasMic && !S.callTranslateOn);
+  }
+  if(!status) return;
+  if(!inCall) status.textContent='Start a call to use live translation.';
+  else if(!hasMic) status.textContent='Microphone access is required for live translation.';
+  else if(S.callTranslateBusy) status.textContent=`Connecting live interpreter — you will hear ${targetLabel}, others will hear English...`;
+  else if(S.callTranslateOn) status.textContent=`You hear ${targetLabel} · Others hear English`;
+  else status.textContent=`Translation off. Enable to hear ${targetLabel} and speak to others in English.`;
+}
+function closeIncomingTranslationSession(){
+  if(S.callTranslateInPc){
+    try{ S.callTranslateInPc.ontrack=null; S.callTranslateInPc.close(); }catch(e){}
+  }
+  S.callTranslateInPc=null;
+  S.callTranslateInStream=null;
+  // Restore original remote audio
+  const remoteAud=document.getElementById('remoteAud');
+  if(remoteAud) remoteAud.muted=false;
+  clearMediaStream(document.getElementById('inTranslatedAud'));
+}
+function closeCallTranslationConnection(){
+  if(S.callTranslatePc){
+    try{ S.callTranslatePc.ontrack=null; S.callTranslatePc.close(); }catch(e){}
+  }
+  S.callTranslatePc=null;
+  S.callTranslateTrack=null;
+  S.callTranslateStream=null;
+  S.callTranslateTarget='';
+  clearMediaStream(document.getElementById('translatorPreviewAud'));
+  closeIncomingTranslationSession();
+}
+
+async function openIncomingTranslationSession(targetLanguage){
+  if(!S.remoteStream) throw new Error('No remote audio available yet');
+  // Re-stream the incoming remote audio through Web Audio API so it can be
+  // fed into a second WebRTC PeerConnection (browsers block direct re-use of
+  // received MediaStreamTracks in another RTCPeerConnection).
+  if(!S._inTranslateAudioCtx){
+    S._inTranslateAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  }
+  const ctx=S._inTranslateAudioCtx;
+  if(ctx.state==='suspended') await ctx.resume();
+  const source=ctx.createMediaStreamSource(S.remoteStream);
+  const dest=ctx.createMediaStreamDestination();
+  source.connect(dest);
+
+  const pc=new RTCPeerConnection();
+  S.callTranslateInPc=pc;
+  try{ pc.createDataChannel('oai-events'); }catch(e){}
+
+  const trackReady=new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(new Error('Incoming translator timed out')),15000);
+    pc.ontrack=e=>{
+      const track=e.track||(e.streams[0]&&e.streams[0].getAudioTracks()[0]);
+      if(!track) return;
+      clearTimeout(timeout);
+      S.callTranslateInStream=e.streams[0]||new MediaStream([track]);
+      resolve();
+    };
+    pc.onconnectionstatechange=()=>{
+      if(['failed','closed'].includes(pc.connectionState)){
+        clearTimeout(timeout);
+        reject(new Error('Incoming translation connection failed'));
+      }
+    };
+  });
+
+  const inTrack=dest.stream.getAudioTracks()[0];
+  if(!inTrack) throw new Error('Could not capture remote audio for translation');
+  pc.addTrack(inTrack, dest.stream);
+
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  // Send offer.sdp immediately — OpenAI does not need client ICE candidates
+  const d=await api('/api/meeting/realtime/session/',{
+    method:'POST',
+    body:JSON.stringify({sdp:offer.sdp, target_language:targetLanguage})
+  });
+  if(!d.sdp) throw new Error(d.error||'Could not start incoming translation');
+  await pc.setRemoteDescription({type:'answer',sdp:d.sdp});
+  await trackReady;
+  return d;
+}
+async function replaceOutgoingAudioTrack(track, stream){
+  const outgoingTrack=track||null;
+  const outgoingStream=stream || (outgoingTrack ? new MediaStream([outgoingTrack]) : null);
+  if(S.callMode==='room'){
+    for(const username of Object.keys(S.roomPeers)){
+      const pc=S.roomPeers[username]?.pc;
+      if(!pc) continue;
+      const sender=pc.getSenders().find(s=>s.track&&s.track.kind==='audio');
+      if(sender){
+        try{ await sender.replaceTrack(outgoingTrack); }catch(e){ console.warn('room audio replace failed', e); }
+      }else if(outgoingTrack && outgoingStream){
+        pc.addTrack(outgoingTrack, outgoingStream);
+      }
+    }
+    return;
+  }
+  if(!S.pc) return;
+  const sender=S.pc.getSenders().find(s=>s.track&&s.track.kind==='audio');
+  if(sender){
+    try{ await sender.replaceTrack(outgoingTrack); }catch(e){ console.warn('call audio replace failed', e); }
+  }else if(outgoingTrack && outgoingStream){
+    S.pc.addTrack(outgoingTrack, outgoingStream);
+  }
+}
+async function openCallTranslationSession(targetLanguage){
+  const micTrack=currentOriginalAudioTrack();
+  if(!micTrack) throw new Error('Microphone is required for live translation');
+  closeCallTranslationConnection();
+  const pc=new RTCPeerConnection();
+  S.callTranslatePc=pc;
+  try{ pc.createDataChannel('oai-events'); }catch(e){}
+  const trackReady=new Promise((resolve, reject)=>{
+    const timeout=setTimeout(()=>reject(new Error('Translator did not become ready in time')), 15000);
+    pc.ontrack=e=>{
+      const remoteTrack=e.track || (e.streams[0]&&e.streams[0].getAudioTracks()[0]);
+      if(!remoteTrack) return;
+      clearTimeout(timeout);
+      S.callTranslateTrack=remoteTrack;
+      S.callTranslateStream=e.streams[0] || new MediaStream([remoteTrack]);
+      attachMediaStream(document.getElementById('translatorPreviewAud'), S.callTranslateStream);
+      resolve();
+    };
+    pc.onconnectionstatechange=()=>{
+      if(['failed','closed'].includes(pc.connectionState)){
+        clearTimeout(timeout);
+        reject(new Error('Live interpreter connection failed'));
+      }
+    };
+  });
+  pc.addTrack(micTrack, S.localStream);
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  // Send offer.sdp immediately — OpenAI does not need client ICE candidates
+  const d=await api('/api/meeting/realtime/session/',{
+    method:'POST',
+    body:JSON.stringify({
+      sdp: offer.sdp,
+      target_language: targetLanguage,
+    })
+  });
+  if(!d.sdp) throw new Error(d.error||'Could not start live translation');
+  await pc.setRemoteDescription({type:'answer', sdp:d.sdp});
+  await trackReady;
+  S.callTranslateTarget=d.target_language || targetLanguage;
+  return d;
+}
+async function stopCallTranslation({restoreOriginal=true,silent=false}={}){
+  S.callTranslateOn=false;
+  S.callTranslateBusy=false;
+  closeCallTranslationConnection();
+  if(restoreOriginal && S.callMode){
+    await replaceOutgoingAudioTrack(currentOriginalAudioTrack(), S.localStream);
+  }
+  updateCallTranslateUi();
+  if(!silent) toast('Live translation disabled','inf',2000);
+}
+async function enableCallTranslation(){
+  if(!(S.call || S.callMode==='room')){toast('Start or join a call first','err');return;}
+  const targetLanguage=getCallTranslateTarget();
+  if(!targetLanguage){toast('Choose a translation language first','inf');return;}
+  S.callTranslateBusy=true;
+  S.callTranslateOn=false;
+  updateCallTranslateUi();
+  try{
+    closeCallTranslationConnection();
+    await replaceOutgoingAudioTrack(currentOriginalAudioTrack(), S.localStream);
+    // Outgoing: your speech → translated to English so others hear English
+    const session=await openCallTranslationSession('en');
+    await replaceOutgoingAudioTrack(S.callTranslateTrack, S.callTranslateStream);
+    // Incoming: others' speech → translated to your chosen language
+    if(S.remoteStream){
+      try{
+        await openIncomingTranslationSession(targetLanguage);
+        // Mute raw remote audio and play translated version instead
+        const remoteAud=document.getElementById('remoteAud');
+        if(remoteAud) remoteAud.muted=true;
+        if(S.callTranslateInStream){
+          attachMediaStream(document.getElementById('inTranslatedAud'), S.callTranslateInStream);
+        }
+      }catch(inErr){
+        console.warn('Incoming translation failed, outgoing still active:', inErr);
+      }
+    }
+    S.callTranslateOn=true;
+    S.callTranslateBusy=false;
+    updateCallTranslateUi();
+    const targetLabel=translationLabel(targetLanguage)||targetLanguage;
+    toast(`Live translation active — you hear ${targetLabel}, others hear English`,'ok',3000);
+  }catch(e){
+    closeCallTranslationConnection();
+    S.callTranslateBusy=false;
+    S.callTranslateOn=false;
+    await replaceOutgoingAudioTrack(currentOriginalAudioTrack(), S.localStream);
+    updateCallTranslateUi();
+    toast(e.message||'Live translation failed','err',4500);
+  }
+}
+async function toggleCallTranslation(){
+  if(S.callTranslateBusy) return;
+  if(S.callTranslateOn) await stopCallTranslation({restoreOriginal:true});
+  else await enableCallTranslation();
+}
+
+function fileIcon(mime,name){
+  const ext=(name||'').split('.').pop().toLowerCase();
+  if(/image/.test(mime)) return '🖼️';
+  if(/pdf/.test(mime)||ext==='pdf') return '📄';
+  if(/word|msword/.test(mime)||['doc','docx'].includes(ext)) return '📝';
+  if(/excel|spreadsheet/.test(mime)||['xls','xlsx','csv'].includes(ext)) return '📊';
+  if(/powerpoint|presentation/.test(mime)||['ppt','pptx'].includes(ext)) return '📑';
+  if(/zip|rar|7z/.test(mime)) return '🗜️';
+  if(/video/.test(mime)) return '🎬';
+  if(/audio/.test(mime)) return '🎵';
+  return '📎';
+}
+
+function canPreview(mime,name){
+  const ext=(name||'').split('.').pop().toLowerCase();
+  if(/image/.test(mime)||['jpg','jpeg','png','gif','webp','bmp','svg'].includes(ext)) return 'image';
+  if(/video/.test(mime)||['mp4','webm','ogg','mov','m4v'].includes(ext)) return 'video';
+  if(/pdf/.test(mime)||ext==='pdf') return 'pdf';
+  if(['ppt','pptx','doc','docx','xls','xlsx'].includes(ext)) return 'office';
+  return null;
+}
+
+function fileUrl(fileId){ return `/api/meeting/files/${fileId}/`; }
+function inlineFileUrl(fileId){ return `${fileUrl(fileId)}?inline=1`; }
+function filePreviewData(fileId,name,mime){
+  return `data-file-id="${esc(fileId)}" data-file-name="${esc(name)}" data-file-mime="${esc(mime||'')}"`;
+}
+
+async function api(url,opts={}){
+  const r = await fetch(url,{
+    headers:{'Content-Type':'application/json','X-CSRFToken':CSRF,...(opts.headers||{})},
+    ...opts
+  });
+  return r.json().catch(()=>({}));
+}
+
+// ═══════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════
+function toast(msg, type='inf', dur=3200){
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.textContent=msg;
+  document.getElementById('toastArea').appendChild(el);
+  setTimeout(()=>el.remove(),dur);
+}
+
+// ═══════════════════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════════════════
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════
+function setTab(t){
+  S.tab=t;
+  ['dms','groups','rooms'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('on',x===t));
+  renderSidebar();
+}
+
+function renderSidebar(){
+  const q=document.getElementById('q').value.toLowerCase();
+  const el=document.getElementById('sbList');
+  let h='';
+
+  if(S.tab==='dms'){
+    const list=USERS.filter(u=>!q||u.name.toLowerCase().includes(q)||u.username.includes(q));
+    if(!list.length){ h='<div class="sb-empty"><div class="sb-empty-icon">🔍</div><p>No users found</p></div>'; }
+    list.forEach(u=>{
+      const tid=dmThread(ME,u.username);
+      const unread=UNREAD[tid]||0;
+      const active=S.thread&&S.thread.id===tid;
+      const on=S.online.has(u.username);
+      h+=`<div class="sb-row${active?' active':''}" onclick="openDM('${u.username}')">
+        <div class="av" style="background:${aColor(u.username)}">${ini(u.name)}
+          <span class="${on?'on-dot':'off-dot'}"></span>
+        </div>
+        <div class="sb-info">
+          <div class="sb-name">${esc(u.name)}</div>
+          <div class="sb-sub">${on?'🟢 Online':'⚫ Offline'} · ${esc(u.role||'')}</div>
+        </div>
+        ${unread?`<span class="badge">${unread}</span>`:''}
+      </div>`;
+    });
+  }
+
+  else if(S.tab==='groups'){
+    h+=`<div class="sb-sec">Groups<button class="sb-add" onclick="openCreateGroup()">+</button></div>`;
+    const list=GROUPS.filter(g=>!q||g.name.toLowerCase().includes(q));
+    if(!list.length){ h+='<div class="sb-empty"><div class="sb-empty-icon">👥</div><p>No groups yet</p></div>'; }
+    list.forEach(g=>{
+      const tid=groupThread(g.id);
+      const unread=UNREAD[tid]||0;
+      const active=S.thread&&S.thread.id===tid;
+      h+=`<div class="sb-row${active?' active':''}" onclick="openGroup('${g.id}')">
+        <div class="av sq" style="background:${aColor(g.id)}">${ini(g.name)}</div>
+        <div class="sb-info">
+          <div class="sb-name">${esc(g.name)}</div>
+          <div class="sb-sub">${g.members.length} members</div>
+        </div>
+        ${unread?`<span class="badge">${unread}</span>`:''}
+      </div>`;
+    });
+  }
+
+  else if(S.tab==='rooms'){
+    h+=`<div class="sb-sec">Meeting Rooms<button class="sb-add" onclick="openCreateRoom()">+</button></div>`;
+    const list=ROOMS.filter(r=>!q||r.name.toLowerCase().includes(q));
+    if(!list.length){ h+='<div class="sb-empty"><div class="sb-empty-icon">🏠</div><p>No rooms yet</p></div>'; }
+    list.forEach(r=>{
+      const active=S.room&&S.room.id===r.id;
+      const pc=r.participants.length;
+      const meeting=liveRoomMeeting(r.id);
+      h+=`<div class="sb-row${active?' active':''}" onclick="openRoomView('${r.id}')">
+        <div class="av room">${pc||'🏠'}</div>
+        <div class="sb-info">
+          <div class="sb-name">${esc(r.name)}</div>
+          <div class="sb-sub">${meeting?'ðŸ”´ Live meeting · ':''}${pc} participant${pc!==1?'s':''} · ${esc(r.host)}</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  el.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════════════
+// SCREEN SWITCHER
+// ═══════════════════════════════════════════════════
+function showScreen(name){
+  ['scWelcome','scChat','scCall','scRoom'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display=(id==='sc'+name[0].toUpperCase()+name.slice(1))?'flex':'none';
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// DMs
+// ═══════════════════════════════════════════════════
+async function openDM(username){
+  const u=findUser(username);
+  const tid=dmThread(ME,username);
+  S.thread={type:'dm',id:tid,name:u.name||username,peer:username};
+  S.msgs=[];S.afterTs='';
+  document.getElementById('btnAudioCall').style.display='';
+  document.getElementById('btnVideoCall').style.display='';
+  setChatHead(u.name||username, S.online.has(username)?'🟢 Online':'⚫ Offline', ini(u.name), aColor(username));
+  showScreen('chat'); renderSidebar(); renderRP(); await loadMsgs();
+}
+
+// ═══════════════════════════════════════════════════
+// GROUPS
+// ═══════════════════════════════════════════════════
+async function openGroup(groupId){
+  const g=GROUPS.find(x=>x.id===groupId)||{};
+  const tid=groupThread(groupId);
+  S.thread={type:'group',id:tid,name:g.name||'Group',groupId};
+  S.msgs=[];S.afterTs='';
+  document.getElementById('btnAudioCall').style.display='none';
+  document.getElementById('btnVideoCall').style.display='none';
+  setChatHead(g.name||'Group',`${(g.members||[]).length} members`,ini(g.name),aColor(groupId));
+  showScreen('chat'); renderSidebar(); renderRP(); await loadMsgs();
+}
+
+function openCreateGroup(){
+  document.getElementById('gName').value='';
+  document.getElementById('gMembers').innerHTML=USERS.map(u=>
+    `<label class="member-chk"><input type="checkbox" value="${u.username}"> ${esc(u.name)} <span style="font-size:9px;color:var(--td);margin-left:3px">${u.role||''}</span></label>`
+  ).join('');
+  openModal('modalGroup');
+}
+
+async function submitGroup(){
+  const name=document.getElementById('gName').value.trim();
+  if(!name){toast('Enter a group name','err');return;}
+  const members=[...document.querySelectorAll('#gMembers input:checked')].map(i=>i.value);
+  const d=await api('/api/meeting/groups/',{method:'POST',body:JSON.stringify({name,members})});
+  if(d.group){
+    GROUPS.push(d.group);
+    closeModal('modalGroup');
+    toast('Group created!','ok');
+    openGroup(d.group.id);
+  } else toast(d.error||'Failed','err');
+}
+
+// ═══════════════════════════════════════════════════
+// MEETING ROOMS
+// ═══════════════════════════════════════════════════
+async function openRoomView(roomId){
+  const room=ROOMS.find(r=>r.id===roomId); if(!room)return;
+  S.room=room;
+  S.thread={type:'room',id:roomThread(roomId),name:room.name,roomId};
+  renderRoomScreen(room);
+  showScreen('room'); renderSidebar(); renderRP();
+  await refreshRoomMeeting(roomId);
+}
+
+async function refreshRoomMeeting(roomId, {quiet=false}={}){
+  const d=await api(`/api/meeting/room-meetings/?room_id=${encodeURIComponent(roomId)}`);
+  if(d.error){
+    return liveRoomMeeting(roomId);
+  }
+  if(Object.prototype.hasOwnProperty.call(d,'meeting')&&d.meeting){
+    ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.room_id!==roomId||m.id===d.meeting.id);
+    if(!ROOM_MEETINGS.find(m=>m.id===d.meeting.id)) ROOM_MEETINGS.push(d.meeting);
+  }else if(Object.prototype.hasOwnProperty.call(d,'meeting')){
+    ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.room_id!==roomId);
+  }
+  if(d.room){
+    ROOMS=ROOMS.map(r=>r.id===d.room.id?d.room:r);
+    if(S.room&&S.room.id===d.room.id) S.room=d.room;
+  }
+  if(!quiet&&S.room&&S.room.id===roomId) renderRoomScreen(S.room);
+  return d.meeting||null;
+}
+
+function renderRoomScreen(room){
+  const meeting=liveRoomMeeting(room.id);
+  document.getElementById('roomTitle').textContent=room.name;
+  document.getElementById('roomSub').textContent=meeting?meetingSubText(meeting):(room.title||room.description||'Virtual Meeting Room');
+  const inRoom=room.participants.includes(ME);
+  const inMeeting=meeting&&(meeting.participants||[]).includes(ME);
+  document.getElementById('roomJoinBtn').style.display=inRoom?'none':'';
+  document.getElementById('roomLeaveBtn').style.display=inRoom?'':'none';
+  const um=userMap();
+  const parts=room.participants.map(p=>um[p]||{username:p,name:p});
+  document.getElementById('roomBody').innerHTML=`
+    <div class="room-cards">
+      <div class="room-card"><div class="room-card-val">${room.participants.length}</div><div class="room-card-lbl">Participants</div></div>
+      <div class="room-card"><div class="room-card-val">${room.is_private?'🔒':'🌐'}</div><div class="room-card-lbl">${room.is_private?'Private':'Public'}</div></div>
+      <div class="room-card"><div class="room-card-val">${meeting?'🔴':'⏸️'}</div><div class="room-card-lbl">${meeting?'Meeting Live':'Meeting Idle'}</div></div>
+      <div class="room-card"><div class="room-card-val">${meeting&&meeting.screen_sharing_by?'🖥️':'📑'}</div><div class="room-card-lbl">${meeting&&meeting.screen_sharing_by?'Screen Sharing':'PPT / Files Ready'}</div></div>
+    </div>
+    <div class="room-section">
+      <div class="room-section-title">Room Info</div>
+      ${room.title?`<div style="margin-bottom:6px;font-size:12px"><span style="color:var(--td)">Title: </span>${esc(room.title)}</div>`:''}
+      ${room.description?`<div style="margin-bottom:6px;font-size:12px"><span style="color:var(--td)">About: </span>${esc(room.description)}</div>`:''}
+      <div style="font-size:12px;margin-bottom:4px"><span style="color:var(--td)">Host: </span>${esc(room.host)}</div>
+      <div style="font-size:11px;color:var(--td)">ID: <span style="font-family:monospace;color:var(--a1)">${room.id.slice(0,8)}…</span>
+        <button onclick="navigator.clipboard.writeText('${room.id}').then(()=>toast('Copied!','ok'))" style="background:none;border:none;color:var(--a1);font-size:10px;cursor:pointer;margin-left:4px">📋 Copy</button>
+      </div>
+    </div>
+    ${meeting?`
+      <div class="room-section">
+        <div class="room-section-title">Live Meeting</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">${meeting.call_type==='video'?'📹 Video Meeting':'🎙️ Audio Meeting'}</div>
+        <div style="font-size:11px;color:var(--td);margin-bottom:8px">${(meeting.participants||[]).length} participant${(meeting.participants||[]).length!==1?'s':''}${meeting.screen_sharing_by?` • ${esc(meeting.screen_sharing_by)} is sharing screen`:''}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${inMeeting?`<button class="btn-acc" onclick="joinRoomCall('${meeting.id}')">🎛 Rejoin Meeting</button>`:`<button class="btn-acc" onclick="joinRoomCall('${meeting.id}')">▶ Join Meeting</button>`}
+          <button class="btn-ghost" onclick="openRoomChat()">💬 Room Chat</button>
+          ${meeting.host===ME?`<button class="btn-danger" onclick="endRoomMeeting('${meeting.id}')">⏹ End For All</button>`:''}
+        </div>
+      </div>
+    `:''}
+    <div class="room-section">
+      <div class="room-section-title">Participants (${parts.length})</div>
+      ${parts.length?parts.map(p=>`<div class="part-row">
+        <div class="part-av" style="background:${aColor(p.username)}">${ini(p.name)}
+          <span class="${S.online.has(p.username)?'on-dot':'off-dot'}" style="width:7px;height:7px"></span>
+        </div>
+        <div class="part-name">${esc(p.name||p.username)}</div>
+        ${meeting&&(meeting.participants||[]).includes(p.username)?'<span class="host-tag">LIVE</span>':''}
+        ${p.username===room.host?'<span class="host-tag">HOST</span>':''}
+      </div>`).join(''):'<div class="empty"><div class="empty-ico">👤</div><p>No participants yet</p></div>'}
+    </div>
+    <div class="room-actions">
+      ${inRoom?`
+        ${meeting?'':`<button class="btn-acc" onclick="startRoomCall('audio')">🎙️ Start Audio Meeting</button>
+        <button class="btn-acc" onclick="startRoomCall('video')">📹 Start Video Meeting</button>`}
+        <button class="btn-ghost" onclick="openRoomChat()">💬 Room Chat</button>
+      `:`<button class="btn-acc" onclick="joinRoom()">▶ Join Room</button>`}
+      ${room.host===ME?`<button class="btn-danger" onclick="deleteRoomConfirm('${room.id}')">🗑 Delete</button>`:''}
+    </div>`;
+}
+
+function openCreateRoom(){
+  ['rName','rTitle','rDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rPrivate').checked=false;
+  openModal('modalRoom');
+}
+
+async function submitRoom(){
+  const name=document.getElementById('rName').value.trim();
+  if(!name){toast('Enter a room name','err');return;}
+  const d=await api('/api/meeting/rooms/',{method:'POST',body:JSON.stringify({
+    name,
+    title:document.getElementById('rTitle').value.trim(),
+    description:document.getElementById('rDesc').value.trim(),
+    is_private:document.getElementById('rPrivate').checked,
+  })});
+  if(d.room){
+    ROOMS.push(d.room);
+    closeModal('modalRoom');
+    toast('Room created!','ok');
+    openRoomView(d.room.id);
+  } else toast(d.error||'Failed','err');
+}
+
+async function joinRoom(){
+  if(!S.room)return;
+  const d=await api(`/api/meeting/rooms/${S.room.id}/join/`,{method:'POST',body:'{}'});
+  if(d.room){ S.room=d.room; ROOMS=ROOMS.map(r=>r.id===d.room.id?d.room:r); await refreshRoomMeeting(d.room.id,{quiet:true}); renderRoomScreen(d.room); renderSidebar(); renderRP(); toast('Joined!','ok'); }
+}
+
+async function leaveRoom(){
+  if(!S.room)return;
+  if(S.roomMeeting&&S.roomMeeting.room_id===S.room.id) await endCall();
+  const d=await api(`/api/meeting/rooms/${S.room.id}/leave/`,{method:'POST',body:'{}'});
+  if(d.room){ S.room=d.room; ROOMS=ROOMS.map(r=>r.id===d.room.id?d.room:r); ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.room_id!==d.room.id); renderRoomScreen(d.room); renderSidebar(); renderRP(); toast('Left room','inf'); }
+}
+
+async function deleteRoomConfirm(id){
+  if(!confirm('Delete this meeting room permanently?'))return;
+  const d=await api(`/api/meeting/rooms/${id}/`,{method:'DELETE'});
+  if(d.ok){ ROOMS=ROOMS.filter(r=>r.id!==id); ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.room_id!==id); S.room=null; showScreen('welcome'); renderSidebar(); toast('Room deleted','inf'); }
+}
+
+async function openRoomChat(){
+  if(!S.room)return;
+  const tid=roomThread(S.room.id);
+  S.thread={type:'room',id:tid,name:S.room.name,roomId:S.room.id};
+  S.msgs=[];S.afterTs='';
+  document.getElementById('btnAudioCall').style.display='none';
+  document.getElementById('btnVideoCall').style.display='none';
+  setChatHead(S.room.name,`${S.room.participants.length} participants`,'🏠',null);
+  showScreen('chat'); await loadMsgs();
+}
+
+// ═══════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════
+function setChatHead(name,sub,av,color){
+  document.getElementById('chName').textContent=name;
+  document.getElementById('chSub').textContent=sub;
+  const el=document.getElementById('chAv');
+  el.textContent=av; el.style.background=color||'var(--acc)';
+}
+
+async function loadMsgs(){
+  if(!S.thread)return;
+  const d=await api(`/api/meeting/messages/?thread=${encodeURIComponent(S.thread.id)}&after=${encodeURIComponent(S.afterTs)}`);
+  if(d.messages&&d.messages.length){
+    if(!S.afterTs) S.msgs=d.messages; else S.msgs=[...S.msgs,...d.messages];
+    S.afterTs=S.msgs[S.msgs.length-1].created_at||'';
+    delete UNREAD[S.thread.id];
+    renderMsgs();
+    renderSidebar();
+  } else if(!S.afterTs) renderMsgs();
+}
+
+function renderMsgs(){
+  const area=document.getElementById('msgs');
+  const um=userMap();
+  if(!S.msgs.length){
+    area.innerHTML='<div class="empty"><div class="empty-ico">💬</div><p>No messages yet.<br>Say hello!</p></div>';
+    return;
+  }
+  let lastDate='',h='';
+  S.msgs.forEach(m=>{
+    const isMe=m.sender===ME;
+    const u=um[m.sender]||{name:m.sender};
+    const d=fmtDate(m.created_at);
+    if(d!==lastDate){ h+=`<div class="day-sep">${esc(d)}</div>`; lastDate=d; }
+    const time=fmtTime(m.created_at);
+    const seen=m.seen_by&&m.seen_by.filter(x=>x!==ME).length>0?'✓✓':'✓';
+    let content='';
+    if(m.type==='file'){
+      const fi=fileIcon(m.mime||'',m.content);
+      const ptype=canPreview(m.mime||'',m.content);
+      content=`<a href="/api/meeting/files/${m.file_id}/" class="file-bubble" download onclick="previewFile(event,'${m.file_id}','${esc(m.content)}','${m.mime||''}')">
+        <span class="file-ico">${fi}</span>
+        <div class="file-info">
+          <div class="file-name">${esc(m.content)}</div>
+          <div class="file-meta">${ptype?'Click to preview · ':''}Download</div>
+        </div>
+      </a>`;
+    } else {
+      content=renderTextMessage(m);
+    }
+    h+=`<div class="msg-row ${isMe?'me':'them'}">
+      ${!isMe?`<div class="av" style="background:${aColor(m.sender)};width:26px;height:26px;font-size:10px;flex-shrink:0">${ini(u.name)}</div>`:''}
+      <div>
+        ${!isMe&&S.thread&&S.thread.type!=='dm'?`<div class="bubble-sender">${esc(u.name||m.sender)}</div>`:''}
+        ${content}
+        <div class="bubble-meta"><span>${time}</span>${isMe?`<span>${seen}</span>`:''}</div>
+      </div>
+    </div>`;
+  });
+  area.innerHTML=h;
+  area.scrollTop=area.scrollHeight;
+}
+
+async function sendMsg(){
+  const ta=document.getElementById('msgTa');
+  const content=ta.value.trim();
+  if(!content||!S.thread)return;
+  const translateTo=getTranslateTarget();
+  ta.value=''; ta.style.height='auto';
+  const d=await api('/api/meeting/messages/',{
+    method:'POST',
+    body:JSON.stringify({thread_id:S.thread.id,content,type:'text',translate_to:translateTo})
+  });
+  if(d.message){
+    S.msgs.push(d.message);
+    S.afterTs=d.message.created_at;
+    renderMsgs();
+    playMsgSendTone();
+  } else {
+    ta.value=content;
+    taResize(ta);
+    toast(d.error||'Message could not be sent','err');
+  }
+}
+
+function msgKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function taResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
+
+async function sendFile(input){
+  if(!input.files.length||!S.thread)return;
+  const f=input.files[0]; input.value='';
+  const fd=new FormData();
+  fd.append('file',f);
+  fd.append('thread_id',S.thread.id);
+  toast(`Uploading ${f.name}…`,'inf',2000);
+  const r=await fetch('/api/meeting/files/',{method:'POST',headers:{'X-CSRFToken':CSRF},body:fd});
+  const d=await r.json().catch(()=>({}));
+  if(d.file){ toast('File sent ✓','ok'); await loadMsgs(); playMsgSendTone(); }
+  else toast('Upload failed','err');
+}
+
+// ═══════════════════════════════════════════════════
+// EMOJI PICKER
+// ═══════════════════════════════════════════════════
+const EMOJIS=['😀','😂','🥰','😎','🤔','👍','👎','❤️','🔥','✅','⚠️','🎉','👏','🙏','💪','🤝','📋','📅','⏰','📌','✏️','📞','💬','📧','🏠','🔧','⚙️','🔐','📊','📈','💡','🎯','🚀','⭐','🌟','✨'];
+(function(){
+  const g=document.getElementById('emojiGrid');
+  g.innerHTML=EMOJIS.map(e=>`<button class="e-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+})();
+function toggleEmoji(){ document.getElementById('emojiGrid').classList.toggle('open'); }
+function insertEmoji(e){
+  const ta=document.getElementById('msgTa');
+  const p=ta.selectionStart;
+  ta.value=ta.value.slice(0,p)+e+ta.value.slice(p);
+  ta.selectionStart=ta.selectionEnd=p+e.length;
+  ta.focus();
+  document.getElementById('emojiGrid').classList.remove('open');
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.emoji-btn')&&!e.target.closest('#emojiGrid')) document.getElementById('emojiGrid').classList.remove('open'); });
+document.addEventListener('click',e=>{ if(!e.target.closest('#langBtn')&&!e.target.closest('#langPicker')) closeLangPicker(); });
+
+// ═══════════════════════════════════════════════════
+// FILE VIEWER
+// ═══════════════════════════════════════════════════
+function previewFile(e,fileId,name,mime){
+  const ptype=canPreview(mime,name);
+  if(!ptype)return; // let default download happen
+  e.preventDefault();
+  const url=`/api/meeting/files/${fileId}/`;
+  document.getElementById('viewerName').textContent=name;
+  document.getElementById('viewerDl').href=url;
+  document.getElementById('viewerDl').download=name;
+  let body='';
+  if(ptype==='image'){
+    body=`<img src="${url}" alt="${esc(name)}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px">`;
+  } else if(ptype==='pdf'){
+    body=`<iframe src="${url}" style="width:100%;height:100%;border:none;border-radius:8px"></iframe>`;
+  } else if(ptype==='office'){
+    const full=window.location.origin+url;
+    body=`<div class="viewer-notice">
+      <div style="font-size:48px;margin-bottom:12px">📑</div>
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">${esc(name)}</div>
+      <p>Office documents can be previewed via:</p>
+      <p style="margin-top:8px">
+        <a href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(full)}" target="_blank" class="btn-acc" style="display:inline-block;margin:4px">📑 Microsoft Office Online</a>
+        <a href="https://docs.google.com/viewer?url=${encodeURIComponent(full)}" target="_blank" class="btn-acc" style="display:inline-block;margin:4px">📄 Google Docs Viewer</a>
+      </p>
+      <p style="margin-top:10px;font-size:11px">Or <a href="${url}" download style="color:var(--a1)">download the file</a> to open locally.</p>
+    </div>`;
+  }
+  document.getElementById('viewerBody').innerHTML=body;
+  document.getElementById('viewerOv').classList.add('open');
+}
+function renderFileMessage(m){
+  const fileName=m.file_name||m.content;
+  const fileMime=m.mime||'';
+  const fi=fileIcon(fileMime,fileName);
+  const ptype=canPreview(fileMime,fileName);
+  const dlUrl=fileUrl(m.file_id);
+  const inUrl=inlineFileUrl(m.file_id);
+  const sizeLabel=m.file_size?fmtSize(m.file_size):'Attachment';
+  let preview='';
+  if(ptype==='image'){
+    preview=`<a href="${dlUrl}" class="file-inline-preview" download onclick="previewFile(event,'${m.file_id}','${esc(fileName)}','${fileMime}')">
+      <img src="${inUrl}" alt="${esc(fileName)}" class="file-inline-image" loading="lazy">
+    </a>`;
+  } else if(ptype==='video'){
+    preview=`<div class="file-inline-preview">
+      <video class="file-inline-video" controls preload="metadata">
+        <source src="${inUrl}" type="${esc(fileMime||'video/mp4')}">
+      </video>
+    </div>`;
+  } else if(ptype==='pdf'){
+    preview=`<a href="${dlUrl}" class="file-inline-preview" download onclick="previewFile(event,'${m.file_id}','${esc(fileName)}','${fileMime}')">
+      <iframe class="file-inline-pdf" src="${inUrl}" title="${esc(fileName)}"></iframe>
+    </a>`;
+  }
+  return `<div class="file-card">
+    ${preview}
+    <div class="file-bubble">
+      <span class="file-ico">${fi}</span>
+      <div class="file-info">
+        <div class="file-name">${esc(fileName)}</div>
+        <div class="file-meta">${sizeLabel}${ptype?` Â· ${ptype.toUpperCase()} preview`:''}</div>
+      </div>
+    </div>
+    <div class="file-actions">
+      ${ptype?`<a href="${dlUrl}" class="file-action" download onclick="previewFile(event,'${m.file_id}','${esc(fileName)}','${fileMime}')">ðŸ‘ Open</a>`:''}
+      <a href="${dlUrl}" class="file-action" download>â¬‡ Download</a>
+    </div>
+  </div>`;
+}
+
+function renderMsgs(){
+  const area=document.getElementById('msgs');
+  const um=userMap();
+  if(!S.msgs.length){
+    area.innerHTML='<div class="empty"><div class="empty-ico">ðŸ’¬</div><p>No messages yet.<br>Say hello!</p></div>';
+    return;
+  }
+  let lastDate='',h='';
+  S.msgs.forEach(m=>{
+    const isMe=m.sender===ME;
+    const u=um[m.sender]||{name:m.sender};
+    const d=fmtDate(m.created_at);
+    if(d!==lastDate){ h+=`<div class="day-sep">${esc(d)}</div>`; lastDate=d; }
+    const time=fmtTime(m.created_at);
+    const seen=m.seen_by&&m.seen_by.filter(x=>x!==ME).length>0?'âœ“âœ“':'âœ“';
+    const content=m.type==='file'
+      ? renderFileMessage(m)
+      : renderTextMessage(m);
+    h+=`<div class="msg-row ${isMe?'me':'them'}">
+      ${!isMe?`<div class="av" style="background:${aColor(m.sender)};width:26px;height:26px;font-size:10px;flex-shrink:0">${ini(u.name)}</div>`:''}
+      <div>
+        ${!isMe&&S.thread&&S.thread.type!=='dm'?`<div class="bubble-sender">${esc(u.name||m.sender)}</div>`:''}
+        ${content}
+        <div class="bubble-meta"><span>${time}</span>${isMe?`<span>${seen}</span>`:''}</div>
+      </div>
+    </div>`;
+  });
+  area.innerHTML=h;
+  area.scrollTop=area.scrollHeight;
+}
+
+function previewFile(e,fileId,name,mime){
+  const ptype=canPreview(mime,name);
+  if(!ptype)return;
+  e.preventDefault();
+  const url=fileUrl(fileId);
+  const inlineUrl=inlineFileUrl(fileId);
+  document.getElementById('viewerName').textContent=name;
+  document.getElementById('viewerDl').href=url;
+  document.getElementById('viewerDl').download=name;
+  let body='';
+  if(ptype==='image'){
+    body=`<img src="${inlineUrl}" alt="${esc(name)}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px">`;
+  } else if(ptype==='video'){
+    body=`<video controls autoplay style="max-width:100%;max-height:100%;background:#000;border-radius:8px">
+      <source src="${inlineUrl}" type="${esc(mime||'video/mp4')}">
+    </video>`;
+  } else if(ptype==='pdf'){
+    body=`<iframe src="${inlineUrl}" style="width:100%;height:100%;border:none;border-radius:8px"></iframe>`;
+  } else if(ptype==='office'){
+    const full=window.location.origin+inlineUrl;
+    body=`<div class="viewer-notice">
+      <div style="font-size:48px;margin-bottom:12px">ðŸ“‘</div>
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">${esc(name)}</div>
+      <p>Office documents can be previewed via:</p>
+      <p style="margin-top:8px">
+        <a href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(full)}" target="_blank" class="btn-acc" style="display:inline-block;margin:4px">ðŸ“‘ Microsoft Office Online</a>
+        <a href="https://docs.google.com/viewer?url=${encodeURIComponent(full)}" target="_blank" class="btn-acc" style="display:inline-block;margin:4px">ðŸ“„ Google Docs Viewer</a>
+      </p>
+      <p style="margin-top:10px;font-size:11px">Or <a href="${url}" download style="color:var(--a1)">download the file</a> to open locally.</p>
+    </div>`;
+  }
+  document.getElementById('viewerBody').innerHTML=body;
+  document.getElementById('viewerOv').classList.add('open');
+}
+
+function closeViewer(){ document.getElementById('viewerOv').classList.remove('open'); document.getElementById('viewerBody').innerHTML=''; }
+
+// ═══════════════════════════════════════════════════
+// RIGHT PANEL
+// ═══════════════════════════════════════════════════
+function rpToggle(){ S.rpOpen=!S.rpOpen; document.getElementById('rp').style.display=S.rpOpen?'':'none'; }
+
+function renderRP(){
+  const title=document.getElementById('rpTitle');
+  const body=document.getElementById('rpBody');
+  const um=userMap();
+  if(!S.thread){ title.textContent='Info'; body.innerHTML='<div class="empty"><div class="empty-ico">ℹ️</div><p>Select a chat to see details.</p></div>'; return; }
+
+  if(S.thread.type==='dm'){
+    const u=findUser(S.thread.peer);
+    const on=S.online.has(u.username);
+    title.textContent='Contact';
+    body.innerHTML=`
+      <div style="text-align:center;padding:14px 0 10px">
+        <div class="av" style="width:50px;height:50px;font-size:18px;margin:0 auto 8px;background:${aColor(u.username)}">${ini(u.name)}</div>
+        <div style="font-weight:800;font-size:13px">${esc(u.name)}</div>
+        <div style="font-size:10px;color:var(--td);margin-top:3px">${esc(u.role||'')}</div>
+        <div style="margin-top:6px"><span class="chip ${on?'chip-online':'chip-offline'}">${on?'Online':'Offline'}</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">
+        <button onclick="startCall('audio')" class="btn-ghost" style="width:100%;font-size:11px">🎙️ Audio Call</button>
+        <button onclick="startCall('video')" class="btn-ghost" style="width:100%;font-size:11px">📹 Video Call</button>
+      </div>
+      <div class="rp-section" style="margin-top:12px">
+        <div class="rp-section-title">Shared Files</div>
+        <div id="rpFiles"><div class="empty-ico" style="font-size:20px;text-align:center;opacity:.3;padding:10px">📎</div></div>
+      </div>`;
+    loadRPFiles();
+  }
+
+  else if(S.thread.type==='group'){
+    const g=GROUPS.find(x=>x.id===S.thread.groupId)||{};
+    const members=(g.members||[]).map(m=>um[m]||{username:m,name:m});
+    title.textContent='Group';
+    body.innerHTML=`
+      <div style="padding:10px 0 6px">
+        <div style="font-weight:800;font-size:13px">${esc(g.name||'')}</div>
+        <div style="font-size:10px;color:var(--td);margin-top:3px">${members.length} members</div>
+      </div>
+      ${members.map(m=>`<div class="part-row">
+        <div class="part-av" style="background:${aColor(m.username)}">${ini(m.name)}
+          <span class="${S.online.has(m.username)?'on-dot':'off-dot'}" style="width:7px;height:7px"></span>
+        </div>
+        <div><div class="part-name">${esc(m.name||m.username)}</div></div>
+        ${(g.admins||[]).includes(m.username)?'<span class="host-tag">ADMIN</span>':''}
+      </div>`).join('')}
+      <div class="rp-section" style="margin-top:12px">
+        <div class="rp-section-title">Shared Files</div>
+        <div id="rpFiles"><div style="text-align:center;opacity:.3;padding:8px;font-size:20px">📎</div></div>
+      </div>`;
+    loadRPFiles();
+  }
+
+  else if(S.thread.type==='room'){
+    const room=ROOMS.find(r=>r.id===S.thread.roomId)||S.room||{};
+    const parts=(room.participants||[]).map(p=>um[p]||{username:p,name:p});
+    title.textContent='Room';
+    body.innerHTML=`
+      <div style="padding:8px 0 6px"><div style="font-weight:800;font-size:13px">${esc(room.name||'')}</div></div>
+      ${parts.map(p=>`<div class="part-row">
+        <div class="part-av" style="background:${aColor(p.username)}">${ini(p.name)}
+          <span class="${S.online.has(p.username)?'on-dot':'off-dot'}" style="width:7px;height:7px"></span>
+        </div>
+        <div><div class="part-name">${esc(p.name||p.username)}</div></div>
+        ${p.username===room.host?'<span class="host-tag">HOST</span>':''}
+      </div>`).join('')}`;
+  }
+}
+
+async function loadRPFiles(){
+  if(!S.thread)return;
+  const d=await api(`/api/meeting/files/?thread=${encodeURIComponent(S.thread.id)}`);
+  const el=document.getElementById('rpFiles'); if(!el)return;
+  if(!d.files||!d.files.length){ el.innerHTML='<div style="text-align:center;opacity:.3;padding:8px;font-size:20px">📎</div>'; return; }
+  el.innerHTML=d.files.slice(0,12).map(f=>`
+    <a href="/api/meeting/files/${f.id}/" class="rp-file" download onclick="previewFile(event,'${f.id}','${esc(f.name)}','${f.mime||''}')">
+      <span class="rp-file-ico">${fileIcon(f.mime||'',f.name)}</span>
+      <div><div class="rp-file-name">${esc(f.name)}</div><div class="rp-file-meta">${fmtSize(f.size)} · ${fmtTime(f.created_at)}</div></div>
+    </a>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// WEBRTC — NON-TRICKLE ICE (reliable over polling)
+// ═══════════════════════════════════════════════════
+function renderFileMessage(m){
+  const fileName=m.file_name||m.content;
+  const fileMime=m.mime||'';
+  const fi=fileIcon(fileMime,fileName);
+  const ptype=canPreview(fileMime,fileName);
+  const dlUrl=m.file_url||fileUrl(m.file_id);
+  const inUrl=m.file_inline_url||inlineFileUrl(m.file_id);
+  const sizeLabel=m.file_size?fmtSize(m.file_size):'Attachment';
+  const previewData=filePreviewData(m.file_id,fileName,fileMime);
+  let preview='';
+
+  if(ptype==='image'){
+    preview=`<a href="${inUrl}" class="file-inline-preview js-file-preview" ${previewData} title="Preview ${esc(fileName)}">
+      <img src="${inUrl}" alt="${esc(fileName)}" class="file-inline-image" loading="lazy">
+    </a>`;
+  } else if(ptype==='video'){
+    preview=`<div class="file-inline-preview">
+      <video class="file-inline-video" controls preload="metadata">
+        <source src="${inUrl}" type="${esc(fileMime||'video/mp4')}">
+      </video>
+    </div>`;
+  } else if(ptype==='pdf'){
+    preview=`<div class="file-inline-preview">
+      <iframe class="file-inline-pdf" src="${inUrl}" title="${esc(fileName)}"></iframe>
+    </div>`;
+  }
+
+  return `<div class="file-card">
+    ${preview}
+    <div class="file-bubble">
+      <span class="file-ico">${fi}</span>
+      <div class="file-info">
+        <div class="file-name">${esc(fileName)}</div>
+        <div class="file-meta">${sizeLabel}${ptype?` | ${ptype.toUpperCase()} preview`:''}</div>
+      </div>
+    </div>
+    <div class="file-actions">
+      ${ptype?`<a href="${inUrl}" class="file-action js-file-preview" ${previewData}>Preview</a>`:''}
+      <a href="${dlUrl}" class="file-action" download>Download</a>
+    </div>
+  </div>`;
+}
+
+function renderMsgs(){
+  const area=document.getElementById('msgs');
+  const um=userMap();
+  if(!S.msgs.length){
+    area.innerHTML='<div class="empty"><p>No messages yet.<br>Say hello!</p></div>';
+    return;
+  }
+
+  let lastDate='',h='';
+  S.msgs.forEach(m=>{
+    const isMe=m.sender===ME;
+    const u=um[m.sender]||{name:m.sender};
+    const d=fmtDate(m.created_at);
+    if(d!==lastDate){ h+=`<div class="day-sep">${esc(d)}</div>`; lastDate=d; }
+    const time=fmtTime(m.created_at);
+    const seen=m.seen_by&&m.seen_by.filter(x=>x!==ME).length>0?'read':'sent';
+    const content=m.type==='file'
+      ? renderFileMessage(m)
+      : renderTextMessage(m);
+
+    h+=`<div class="msg-row ${isMe?'me':'them'}">
+      ${!isMe?`<div class="av" style="background:${aColor(m.sender)};width:26px;height:26px;font-size:10px;flex-shrink:0">${ini(u.name)}</div>`:''}
+      <div>
+        ${!isMe&&S.thread&&S.thread.type!=='dm'?`<div class="bubble-sender">${esc(u.name||m.sender)}</div>`:''}
+        ${content}
+        <div class="bubble-meta"><span>${time}</span>${isMe?`<span>${seen}</span>`:''}</div>
+      </div>
+    </div>`;
+  });
+
+  area.innerHTML=h;
+  area.scrollTop=area.scrollHeight;
+}
+
+function previewFile(e,fileId,name,mime){
+  const ptype=canPreview(mime,name);
+  if(!ptype)return;
+  if(e && typeof e.preventDefault==='function') e.preventDefault();
+
+  const url=fileUrl(fileId);
+  const inlineUrl=inlineFileUrl(fileId);
+  document.getElementById('viewerName').textContent=name;
+  document.getElementById('viewerDl').href=url;
+  document.getElementById('viewerDl').download=name;
+
+  let body='';
+  if(ptype==='image'){
+    body=`<img src="${inlineUrl}" alt="${esc(name)}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px">`;
+  } else if(ptype==='video'){
+    body=`<video controls autoplay playsinline style="max-width:100%;max-height:100%;background:#000;border-radius:8px">
+      <source src="${inlineUrl}" type="${esc(mime||'video/mp4')}">
+    </video>`;
+  } else if(ptype==='pdf'){
+    body=`<iframe src="${inlineUrl}" style="width:100%;height:100%;border:none;border-radius:8px"></iframe>`;
+  } else if(ptype==='office'){
+    const full=window.location.origin+inlineUrl;
+    body=`<div class="viewer-notice">
+      <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:8px">${esc(name)}</div>
+      <p>Office documents can be previewed via:</p>
+      <p style="margin-top:8px">
+        <a href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(full)}" target="_blank" rel="noopener noreferrer" class="btn-acc" style="display:inline-block;margin:4px">Open in Microsoft Office Online</a>
+        <a href="https://docs.google.com/viewer?url=${encodeURIComponent(full)}" target="_blank" rel="noopener noreferrer" class="btn-acc" style="display:inline-block;margin:4px">Open in Google Docs Viewer</a>
+      </p>
+      <p style="margin-top:10px;font-size:11px">Or <a href="${url}" download style="color:var(--a1)">download the file</a> to open locally.</p>
+    </div>`;
+  }
+
+  document.getElementById('viewerBody').innerHTML=body;
+  document.getElementById('viewerOv').classList.add('open');
+}
+
+function handleFilePreviewClick(e){
+  const trigger=e.target.closest('.js-file-preview');
+  if(!trigger)return;
+  previewFile(
+    e,
+    trigger.dataset.fileId||'',
+    trigger.dataset.fileName||'',
+    trigger.dataset.fileMime||''
+  );
+}
+
+document.getElementById('msgs').addEventListener('click', handleFilePreviewClick);
+const rpFilesEl=document.getElementById('rpFiles');
+if(rpFilesEl) rpFilesEl.addEventListener('click', handleFilePreviewClick);
+
+async function loadRPFiles(){
+  if(!S.thread)return;
+  const d=await api(`/api/meeting/files/?thread=${encodeURIComponent(S.thread.id)}`);
+  const el=document.getElementById('rpFiles');
+  if(!el)return;
+  if(!d.files||!d.files.length){
+    el.innerHTML='<div style="text-align:center;opacity:.6;padding:8px;font-size:11px">No files yet</div>';
+    return;
+  }
+
+  el.innerHTML=d.files.slice(0,12).map(f=>{
+    const fileMime=f.mime||'';
+    const previewType=canPreview(fileMime,f.name);
+    const href=previewType?inlineFileUrl(f.id):fileUrl(f.id);
+    const previewData=filePreviewData(f.id,f.name,fileMime);
+    return `<a href="${href}" class="rp-file js-file-preview" ${previewData}>
+      <span class="rp-file-ico">${fileIcon(fileMime,f.name)}</span>
+      <div><div class="rp-file-name">${esc(f.name)}</div><div class="rp-file-meta">${fmtSize(f.size)} | ${fmtTime(f.created_at)}</div></div>
+    </a>`;
+  }).join('');
+}
+
+const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'}];
+
+async function waitIceComplete(pc){
+  if(pc.iceGatheringState==='complete')return;
+  return new Promise(resolve=>{
+    const check=()=>{ if(pc.iceGatheringState==='complete')resolve(); };
+    pc.onicegatheringstatechange=check;
+    setTimeout(resolve,6000); // max 6s wait
+  });
+}
+
+async function startCall(callType){
+  if(!S.thread||S.thread.type!=='dm'){toast('Select a contact first','err');return;}
+  if(S.call){toast('Already in a call','err');return;}
+  try{
+    S.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:callType==='video'});
+  }catch(e){toast('Microphone/camera access denied','err');return;}
+
+  S.pc=new RTCPeerConnection({iceServers:ICE});
+  S.micOn=true; S.camOn=callType==='video'; S.shareOn=false;
+  S.localStream.getTracks().forEach(t=>S.pc.addTrack(t,S.localStream));
+
+  S.pc.ontrack=e=>{
+    const stream=e.streams[0] || (e.track ? new MediaStream([e.track]) : null);
+    bindRemoteCallStream(stream);
+  };
+
+  showCallScreen(callType,S.thread.name,false);
+  toast(`Calling ${S.thread.name}...`,'inf',8000);
+
+  const offer=await S.pc.createOffer();
+  await S.pc.setLocalDescription(offer);
+  await waitIceComplete(S.pc);
+
+  const finalSDP=S.pc.localDescription;
+  const d=await api('/api/meeting/calls/',{method:'POST',body:JSON.stringify({
+    callee:S.thread.peer,
+    call_type:callType,
+    sdp_offer:JSON.stringify({type:finalSDP.type,sdp:finalSDP.sdp})
+  })});
+  if(!d.call){toast('Call failed to start','err');cleanupCall();return;}
+  S.call=d.call;
+  if(callType==='video'){ document.getElementById('pip').style.display=''; document.getElementById('localVid').srcObject=S.localStream; }
+  document.getElementById('camBtn').style.display=callType==='video'?'':'none';
+  updateCtrlBtns();
+  startOutgoingRing();
+
+  // Poll for answer
+  S.callPollInt=setInterval(async()=>{
+    if(!S.call)return clearInterval(S.callPollInt);
+    const r=await api(`/api/meeting/calls/${S.call.id}/`);
+    if(!r.call)return;
+    S.call=r.call;
+    if(r.call.status==='rejected'||r.call.status==='ended'){stopOutgoingRing();toast('Call ended','inf');cleanupCall();return;}
+    if(r.call.status==='active'&&S.pc&&S.pc.remoteDescription===null&&r.call.sdp_answer){
+      try{
+        stopOutgoingRing();
+        const ans=JSON.parse(r.call.sdp_answer);
+        await S.pc.setRemoteDescription(ans);
+        document.getElementById('callStatusState').textContent='Connected';
+        startTimer();
+      }catch(e){console.warn('SDP answer error',e);}
+    }
+  },2000);
+}
+
+async function startRoomCall(callType){
+  toast('To call someone in a room, open their DM and call them directly.','inf',4000);
+}
+
+function showCallScreen(callType,name,incoming){
+  showScreen('call');
+  document.getElementById('callStatusName').textContent=name;
+  document.getElementById('callStatusState').textContent=incoming?'Connecting…':'Calling…';
+  document.getElementById('callStatus').style.display='';
+  document.getElementById('remoteVid').style.display='none';
+  document.getElementById('remoteLabel').textContent=name;
+  document.getElementById('shareBar').style.display='none';
+  document.getElementById('pip').style.display='none';
+  document.getElementById('callTimer').style.display='none';
+  updateCtrlBtns();
+}
+
+function updateCtrlBtns(){
+  const mic=document.getElementById('micBtn');
+  mic.classList.toggle('ctrl-on',S.micOn); mic.classList.toggle('ctrl-off',!S.micOn);
+  mic.textContent=S.micOn?'🎙️':'🔇';
+  const cam=document.getElementById('camBtn');
+  cam.classList.toggle('ctrl-on',S.camOn); cam.classList.toggle('ctrl-off',!S.camOn);
+  cam.textContent=S.camOn?'📹':'📷';
+  const shr=document.getElementById('shareBtn');
+  shr.classList.toggle('ctrl-share-on',S.shareOn); shr.classList.toggle('ctrl-on',!S.shareOn);
+  shr.textContent=S.shareOn?'🛑':'🖥️';
+}
+
+function toggleMic(){
+  S.micOn=!S.micOn;
+  S.localStream&&S.localStream.getAudioTracks().forEach(t=>t.enabled=S.micOn);
+  updateCtrlBtns();
+}
+
+function toggleCam(){
+  S.camOn=!S.camOn;
+  S.localStream&&S.localStream.getVideoTracks().forEach(t=>t.enabled=S.camOn);
+  updateCtrlBtns();
+}
+
+async function toggleShare(){
+  if(!S.shareOn){
+    try{
+      S.screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      const track=S.screenStream.getVideoTracks()[0];
+      if(S.pc){
+        const sender=S.pc.getSenders().find(s=>s.track&&s.track.kind==='video');
+        if(sender) sender.replaceTrack(track);
+        else S.pc.addTrack(track,S.screenStream);
+      }
+      document.getElementById('localVid').srcObject=S.screenStream;
+      S.shareOn=true;
+      document.getElementById('shareBar').style.display='';
+      document.getElementById('pip').style.display='';
+      track.onended=stopShare;
+    }catch(e){ toast('Screen sharing cancelled','inf'); }
+  } else stopShare();
+  updateCtrlBtns();
+}
+
+function stopShare(){
+  S.shareOn=false;
+  if(S.screenStream){ S.screenStream.getTracks().forEach(t=>t.stop()); S.screenStream=null; }
+  if(S.pc&&S.localStream){
+    const vt=S.localStream.getVideoTracks()[0];
+    const sender=S.pc.getSenders().find(s=>s.track&&s.track.kind==='video');
+    if(sender&&vt) sender.replaceTrack(vt);
+    document.getElementById('localVid').srcObject=S.localStream;
+  }
+  document.getElementById('shareBar').style.display='none';
+  updateCtrlBtns();
+}
+
+async function endCall(){
+  if(S.call) await api(`/api/meeting/calls/${S.call.id}/`,{method:'PATCH',body:JSON.stringify({status:'ended'})});
+  cleanupCall();
+}
+
+function cleanupCall(){
+  clearInterval(S.callPollInt); clearInterval(S.timerInt);
+  S.callPollInt=null; S.timerInt=null; S.call=null;
+  if(S.localStream){S.localStream.getTracks().forEach(t=>t.stop());S.localStream=null;}
+  if(S.screenStream){S.screenStream.getTracks().forEach(t=>t.stop());S.screenStream=null;}
+  if(S.pc){S.pc.close();S.pc=null;}
+  document.getElementById('pip').style.display='none';
+  document.getElementById('callTimer').style.display='none';
+  document.getElementById('shareBar').style.display='none';
+  S.shareOn=false;
+  if(S.thread){ if(S.thread.type==='dm')showScreen('chat'); else showScreen('welcome'); }
+  else showScreen('welcome');
+}
+
+// ── INCOMING CALL ───────────────────────────────────────────
+function renderDmCallLayout(){
+  document.getElementById('callGrid').className='call-grid g1';
+  document.getElementById('callGrid').innerHTML=`
+    <div class="call-tile" id="remoteTile">
+      <div class="call-status" id="callStatus">
+        <div class="call-status-icon">📞</div>
+        <div class="call-status-name" id="callStatusName">-</div>
+        <div class="call-status-state" id="callStatusState">Calling...</div>
+      </div>
+      <video id="remoteVid" autoplay playsinline muted style="display:none"></video>
+      <audio id="remoteAud" autoplay playsinline style="display:none"></audio>
+      <audio id="translatorPreviewAud" autoplay playsinline muted style="display:none"></audio>
+      <div class="tile-label" id="remoteLabel">Remote</div>
+    </div>`;
+}
+
+function roomMeetingUsers(){
+  if(!S.roomMeeting) return [ME];
+  const users=[...(S.roomMeeting.participants||[])];
+  if(!users.includes(ME)) users.unshift(ME);
+  return users;
+}
+
+function setRoomMeetingState(meeting){
+  S.roomMeeting=meeting;
+  ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.room_id!==meeting.room_id||m.id===meeting.id);
+  if(meeting.status==='live'&&!ROOM_MEETINGS.find(m=>m.id===meeting.id)) ROOM_MEETINGS.push(meeting);
+}
+
+function roomPeerLabel(username){
+  const u=username===ME?{name:ME_NAME,username:ME}:findUser(username);
+  const tags=[];
+  if(S.roomMeeting&&S.roomMeeting.host===username) tags.push('host');
+  if(S.roomMeeting&&S.roomMeeting.screen_sharing_by===username) tags.push('sharing');
+  return `${u.name||username}${tags.length?` · ${tags.join(' · ')}`:''}`;
+}
+
+function roomPeerStream(username){
+  if(username===ME){
+    return S.shareOn&&S.screenStream?S.screenStream:S.localStream;
+  }
+  return S.roomPeers[username]?.stream||null;
+}
+
+function renderRoomMeetingGrid(){
+  if(!S.roomMeeting) return;
+  const users=roomMeetingUsers();
+  const grid=document.getElementById('callGrid');
+  grid.className=`call-grid g${Math.min(Math.max(users.length,1),4)}`;
+  grid.innerHTML=users.map(username=>{
+    const u=username===ME?{name:ME_NAME,username:ME}:findUser(username);
+    const tileId=safeId(username);
+    const status=username===ME?'You':(S.roomPeers[username]?.status||'Connecting');
+    return `
+      <div class="call-tile">
+        <video id="roomVid-${tileId}" autoplay playsinline muted style="display:none"></video>
+        <audio id="roomAud-${tileId}" autoplay playsinline style="display:none"></audio>
+        <div class="tile-av" id="roomAv-${tileId}" style="background:${aColor(username)}">${ini(u.name||username)}</div>
+        <div class="tile-label">${esc(roomPeerLabel(username))}</div>
+        <div class="tile-label" style="top:7px;bottom:auto;right:7px;left:auto;background:rgba(0,0,0,.55)">${esc(status)}</div>
+      </div>`;
+  }).join('');
+  users.forEach(username=>{
+    const stream=roomPeerStream(username);
+    syncRoomTileMedia(username, stream);
+  });
+}
+
+async function postRoomSignal(toUser, kind, payload){
+  if(!S.roomMeeting) return;
+  await api('/api/meeting/room-signals/',{method:'POST',body:JSON.stringify({
+    meeting_id:S.roomMeeting.id,
+    to_user:toUser,
+    kind,
+    payload,
+  })});
+}
+
+function currentOutgoingVideoTrack(){
+  if(S.shareOn&&S.screenStream&&S.screenStream.getVideoTracks()[0]) return S.screenStream.getVideoTracks()[0];
+  if(S.localStream&&S.localStream.getVideoTracks()[0]) return S.localStream.getVideoTracks()[0];
+  return null;
+}
+
+function attachLocalTracksToPeer(pc){
+  const audioTrack=currentOutgoingAudioTrack();
+  const audioStream=currentOutgoingAudioStream();
+  if(audioTrack && audioStream){
+    pc.addTrack(audioTrack, audioStream);
+  }
+  const videoTrack=currentOutgoingVideoTrack();
+  if(videoTrack){
+    pc.addTrack(videoTrack, S.shareOn&&S.screenStream?S.screenStream:S.localStream);
+  }
+}
+
+function closeRoomPeer(username){
+  const peer=S.roomPeers[username];
+  if(peer&&peer.pc){
+    try{ peer.pc.ontrack=null; peer.pc.close(); }catch(e){}
+  }
+  delete S.roomPeers[username];
+}
+
+async function ensureRoomPeer(username, initiator=false){
+  let peer=S.roomPeers[username];
+  if(peer&&peer.pc) return peer.pc;
+  const pc=new RTCPeerConnection({iceServers:ICE});
+  S.roomPeers[username]={...(peer||{}),pc,stream:peer?.stream||null,status:'Connecting',offerSent:initiator};
+  attachLocalTracksToPeer(pc);
+  pc.ontrack=e=>{
+    const stream=e.streams[0]||S.roomPeers[username]?.stream||new MediaStream();
+    if(!e.streams[0]&&e.track) stream.addTrack(e.track);
+    S.roomPeers[username]={...(S.roomPeers[username]||{}),pc,stream,status:'Connected',offerSent:true};
+    renderRoomMeetingGrid();
+  };
+  pc.onconnectionstatechange=()=>{
+    const state=pc.connectionState||'Connecting';
+    if(S.roomPeers[username]){
+      S.roomPeers[username]={...(S.roomPeers[username]||{}),pc,status:state};
+      renderRoomMeetingGrid();
+    }
+  };
+  if(initiator){
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await waitIceComplete(pc);
+    await postRoomSignal(username,'offer',JSON.stringify({
+      type:pc.localDescription.type,
+      sdp:pc.localDescription.sdp,
+    }));
+  }
+  renderRoomMeetingGrid();
+  return pc;
+}
+
+async function syncRoomMeetingPeers(){
+  if(!S.roomMeeting) return;
+  const others=(S.roomMeeting.participants||[]).filter(u=>u!==ME);
+  Object.keys(S.roomPeers).forEach(username=>{
+    if(!others.includes(username)) closeRoomPeer(username);
+  });
+  for(const username of others){
+    if(S.roomPeers[username]?.pc) continue;
+    if(ME.localeCompare(username)<0){
+      try{
+        await ensureRoomPeer(username,true);
+      }catch(e){
+        console.warn('room offer failed',e);
+        closeRoomPeer(username);
+      }
+    }else if(!S.roomPeers[username]){
+      S.roomPeers[username]={status:'Waiting',offerSent:false,pc:null,stream:null};
+    }
+  }
+  renderRoomMeetingGrid();
+}
+
+async function processRoomSignals(signals){
+  for(const signal of signals){
+    const username=signal.from_user;
+    try{
+      if(signal.kind==='offer'){
+        let pc=S.roomPeers[username]?.pc;
+        if(!pc) pc=await ensureRoomPeer(username,false);
+        if(pc.remoteDescription) continue;
+        const offer=JSON.parse(signal.payload);
+        await pc.setRemoteDescription(offer);
+        const answer=await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await waitIceComplete(pc);
+        await postRoomSignal(username,'answer',JSON.stringify({
+          type:pc.localDescription.type,
+          sdp:pc.localDescription.sdp,
+        }));
+      }else if(signal.kind==='answer'){
+        const pc=S.roomPeers[username]?.pc;
+        if(!pc||pc.remoteDescription) continue;
+        const answer=JSON.parse(signal.payload);
+        await pc.setRemoteDescription(answer);
+      }
+    }catch(e){
+      console.warn('room signal error',signal.kind,e);
+    }
+  }
+}
+
+async function pollRoomMeeting(){
+  if(!S.roomMeeting) return;
+  const detail=await api(`/api/meeting/room-meetings/${S.roomMeeting.id}/`);
+  if(!detail.meeting||detail.meeting.status!=='live'){
+    if(S.room&&S.room.id===S.roomMeeting.room_id) await refreshRoomMeeting(S.room.id,{quiet:true});
+    toast('Meeting ended','inf');
+    cleanupCall();
+    return;
+  }
+  setRoomMeetingState(detail.meeting);
+  if(detail.room){
+    S.room=detail.room;
+    ROOMS=ROOMS.map(r=>r.id===detail.room.id?detail.room:r);
+  }
+  if(S.roomMeeting.screen_sharing_by){
+    document.getElementById('shareBar').style.display='';
+    document.getElementById('shareBar').textContent=`🖥 ${S.roomMeeting.screen_sharing_by===ME?'You are':S.roomMeeting.screen_sharing_by+' is'} sharing the screen`;
+  }else if(!S.shareOn){
+    document.getElementById('shareBar').style.display='none';
+  }
+  await syncRoomMeetingPeers();
+  const sig=await api(`/api/meeting/room-signals/?meeting_id=${encodeURIComponent(S.roomMeeting.id)}&after=${encodeURIComponent(S.roomSignalAfter)}`);
+  if(sig.signals&&sig.signals.length){
+    S.roomSignalAfter=sig.signals[sig.signals.length-1].created_at||S.roomSignalAfter;
+    await processRoomSignals(sig.signals);
+  }
+  if(S.room&&S.room.id===S.roomMeeting.room_id&&document.getElementById('scRoom').style.display!=='none'){
+    renderRoomScreen(S.room);
+  }
+  renderRoomMeetingGrid();
+  renderSidebar();
+}
+
+function showRoomMeetingScreen(meeting){
+  showScreen('call');
+  S.callMode='room';
+  const callStatus=document.getElementById('callStatus');
+  if(callStatus) callStatus.style.display='none';
+  document.getElementById('pip').style.display='none';
+  document.getElementById('callTimer').style.display='';
+  document.getElementById('camBtn').style.display=meeting.call_type==='video'?'':'none';
+  document.getElementById('shareBar').style.display=meeting.screen_sharing_by?'':'none';
+  if(meeting.screen_sharing_by){
+    document.getElementById('shareBar').textContent=`${meeting.screen_sharing_by===ME?'You are':meeting.screen_sharing_by+' is'} sharing the screen`;
+  }
+  renderRoomMeetingGrid();
+  updateCtrlBtns();
+}
+
+async function joinRoomCall(meetingId){
+  if(S.call&&!(S.callMode==='room'&&S.roomMeeting&&S.roomMeeting.id===meetingId)){toast('Already in a call','err');return;}
+  if(!S.room||!S.room.participants.includes(ME)){toast('Join the room first','err');return;}
+  let detail=await api(`/api/meeting/room-meetings/${meetingId}/`);
+  if(!detail.meeting||detail.meeting.status!=='live'){toast('Meeting is no longer live','err');await refreshRoomMeeting(S.room.id,{quiet:true});return;}
+  if(!(detail.meeting.participants||[]).includes(ME)){
+    const joined=await api(`/api/meeting/room-meetings/${meetingId}/`,{method:'PATCH',body:JSON.stringify({action:'join'})});
+    if(!joined.meeting){toast(joined.error||'Could not join meeting','err');return;}
+    detail.meeting=joined.meeting;
+  }
+  if(!S.localStream){
+    try{
+      S.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:detail.meeting.call_type==='video'});
+    }catch(e){toast('Microphone/camera access denied','err');return;}
+  }
+  setRoomMeetingState(detail.meeting);
+  S.call={id:detail.meeting.id,call_type:detail.meeting.call_type};
+  S.micOn=true;
+  S.camOn=detail.meeting.call_type==='video';
+  S.shareOn=false;
+  S.remoteStream=null;
+  S.roomPeers={};
+  S.roomSignalAfter='';
+  showRoomMeetingScreen(detail.meeting);
+  startTimer();
+  await pollRoomMeeting();
+  clearInterval(S.callPollInt);
+  S.callPollInt=setInterval(pollRoomMeeting,2000);
+}
+
+async function endRoomMeeting(meetingId){
+  const d=await api(`/api/meeting/room-meetings/${meetingId}/`,{method:'PATCH',body:JSON.stringify({action:'end'})});
+  if(d.meeting){
+    ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.id!==meetingId);
+    if(S.room&&S.room.id===d.meeting.room_id) renderRoomScreen(S.room);
+    renderSidebar();
+    if(S.roomMeeting&&S.roomMeeting.id===meetingId) cleanupCall();
+    toast('Meeting ended for everyone','inf');
+  }else toast(d.error||'Could not end meeting','err');
+}
+
+async function startRoomCall(callType){
+  if(!S.room){toast('Open a room first','err');return;}
+  if(!S.room.participants.includes(ME)){toast('Join the room first','err');return;}
+  if(S.call){toast('Already in a call','err');return;}
+  const existing=liveRoomMeeting(S.room.id);
+  if(existing){ await joinRoomCall(existing.id); return; }
+  const d=await api('/api/meeting/room-meetings/',{method:'POST',body:JSON.stringify({
+    room_id:S.room.id,
+    call_type:callType,
+    title:S.room.title||S.room.name,
+  })});
+  if(!d.meeting){toast(d.error||'Failed to start meeting','err');return;}
+  setRoomMeetingState(d.meeting);
+  renderRoomScreen(S.room);
+  renderSidebar();
+  await joinRoomCall(d.meeting.id);
+}
+
+function showCallScreen(callType,name,incoming){
+  S.callMode='dm';
+  renderDmCallLayout();
+  showScreen('call');
+  document.getElementById('callStatusName').textContent=name;
+  document.getElementById('callStatusState').textContent=incoming?'Connecting...':'Calling...';
+  document.getElementById('callStatus').style.display='';
+  document.getElementById('remoteVid').style.display='none';
+  document.getElementById('remoteLabel').textContent=name;
+  document.getElementById('shareBar').style.display='none';
+  document.getElementById('pip').style.display='none';
+  document.getElementById('callTimer').style.display='none';
+  updateCtrlBtns();
+}
+
+function toggleCam(){
+  S.camOn=!S.camOn;
+  S.localStream&&S.localStream.getVideoTracks().forEach(t=>t.enabled=S.camOn);
+  updateCtrlBtns();
+  if(S.callMode==='room') renderRoomMeetingGrid();
+}
+
+async function toggleShare(){
+  if(S.callMode==='room'&&S.roomMeeting&&S.roomMeeting.call_type!=='video'){
+    toast('Start a video meeting to share your screen','inf');
+    return;
+  }
+  if(!S.shareOn){
+    try{
+      S.screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      const track=S.screenStream.getVideoTracks()[0];
+      if(S.callMode==='room'){
+        for(const username of Object.keys(S.roomPeers)){
+          const pc=S.roomPeers[username]?.pc;
+          if(!pc) continue;
+          const sender=pc.getSenders().find(s=>s.track&&s.track.kind==='video');
+          if(sender) sender.replaceTrack(track);
+        }
+        if(S.roomMeeting){
+          const updated=await api(`/api/meeting/room-meetings/${S.roomMeeting.id}/`,{method:'PATCH',body:JSON.stringify({action:'share',enabled:true})});
+          if(updated.meeting) setRoomMeetingState(updated.meeting);
+        }
+        renderRoomMeetingGrid();
+      }else if(S.pc){
+        const sender=S.pc.getSenders().find(s=>s.track&&s.track.kind==='video');
+        if(sender) sender.replaceTrack(track);
+        else S.pc.addTrack(track,S.screenStream);
+      }
+      document.getElementById('localVid').srcObject=S.screenStream;
+      S.shareOn=true;
+      document.getElementById('shareBar').style.display='';
+      document.getElementById('pip').style.display='';
+      document.getElementById('shareBar').textContent='Screen sharing is on';
+      track.onended=()=>stopShare();
+    }catch(e){ toast('Screen sharing cancelled','inf'); }
+  } else await stopShare();
+  updateCtrlBtns();
+}
+
+async function stopShare(){
+  S.shareOn=false;
+  if(S.screenStream){ S.screenStream.getTracks().forEach(t=>t.stop()); S.screenStream=null; }
+  if(S.callMode==='room'){
+    const vt=S.localStream&&S.localStream.getVideoTracks()[0];
+    for(const username of Object.keys(S.roomPeers)){
+      const pc=S.roomPeers[username]?.pc;
+      const sender=pc?.getSenders().find(s=>s.track&&s.track.kind==='video');
+      if(sender&&vt) sender.replaceTrack(vt);
+    }
+    if(S.roomMeeting){
+      const updated=await api(`/api/meeting/room-meetings/${S.roomMeeting.id}/`,{method:'PATCH',body:JSON.stringify({action:'share',enabled:false})});
+      if(updated.meeting) setRoomMeetingState(updated.meeting);
+    }
+    renderRoomMeetingGrid();
+  }else if(S.pc&&S.localStream){
+    const vt=S.localStream.getVideoTracks()[0];
+    const sender=S.pc.getSenders().find(s=>s.track&&s.track.kind==='video');
+    if(sender&&vt) sender.replaceTrack(vt);
+    document.getElementById('localVid').srcObject=S.localStream;
+  }
+  document.getElementById('shareBar').style.display='none';
+  updateCtrlBtns();
+}
+
+async function endCall(){
+  if(S.callMode==='room'&&S.roomMeeting){
+    if(S.shareOn) await stopShare();
+    const action=S.roomMeeting.host===ME?'end':'leave';
+    await api(`/api/meeting/room-meetings/${S.roomMeeting.id}/`,{method:'PATCH',body:JSON.stringify({action})});
+    ROOM_MEETINGS=ROOM_MEETINGS.filter(m=>m.id!==S.roomMeeting.id);
+    if(S.room&&S.room.id===S.roomMeeting.room_id) await refreshRoomMeeting(S.room.id,{quiet:true});
+    cleanupCall();
+    return;
+  }
+  if(S.call) await api(`/api/meeting/calls/${S.call.id}/`,{method:'PATCH',body:JSON.stringify({status:'ended'})});
+  cleanupCall();
+}
+
+function cleanupCall(){
+  const callMode=S.callMode;
+  const roomId=S.roomMeeting&&S.roomMeeting.room_id;
+  clearInterval(S.callPollInt); clearInterval(S.timerInt);
+  S.callPollInt=null; S.timerInt=null; S.call=null; S.callMode=null;
+  if(S.localStream){S.localStream.getTracks().forEach(t=>t.stop());S.localStream=null;}
+  if(S.screenStream){S.screenStream.getTracks().forEach(t=>t.stop());S.screenStream=null;}
+  if(S.pc){S.pc.close();S.pc=null;}
+  Object.keys(S.roomPeers).forEach(closeRoomPeer);
+  S.roomPeers={};
+  S.roomMeeting=null;
+  S.roomSignalAfter='';
+  S.remoteStream=null;
+  document.getElementById('pip').style.display='none';
+  document.getElementById('callTimer').style.display='none';
+  document.getElementById('shareBar').style.display='none';
+  S.shareOn=false;
+  if(callMode==='room'&&S.room&&S.room.id===roomId){
+    renderRoomScreen(S.room);
+    showScreen('room');
+  }
+  else if(S.thread){ if(S.thread.type==='dm')showScreen('chat'); else if(S.thread.type==='room')showScreen('room'); else showScreen('welcome'); }
+  else showScreen('welcome');
+}
+
+async function acceptCall(){
+  const call=S.pendingCall; if(!call)return;
+  stopRing();
+  stopOutgoingRing();
+  document.getElementById('incoming').style.display='none';
+  try{
+    S.localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:call.call_type==='video'});
+  }catch{toast('Cannot access mic/camera','err');return;}
+
+  S.pc=new RTCPeerConnection({iceServers:ICE});
+  S.micOn=true; S.camOn=call.call_type==='video'; S.shareOn=false;
+  S.localStream.getTracks().forEach(t=>S.pc.addTrack(t,S.localStream));
+
+  S.pc.ontrack=e=>{
+    const stream=e.streams[0] || (e.track ? new MediaStream([e.track]) : null);
+    bindRemoteCallStream(stream);
+  };
+
+  const callerName=findUser(call.caller).name||call.caller;
+  showCallScreen(call.call_type,callerName,true);
+  if(call.call_type==='video'){ document.getElementById('pip').style.display=''; document.getElementById('localVid').srcObject=S.localStream; }
+  document.getElementById('camBtn').style.display=call.call_type==='video'?'':'none';
+  updateCtrlBtns();
+
+  const remoteDesc=JSON.parse(call.sdp_offer);
+  await S.pc.setRemoteDescription(remoteDesc);
+  const answer=await S.pc.createAnswer();
+  await S.pc.setLocalDescription(answer);
+  await waitIceComplete(S.pc);
+
+  const finalAns=S.pc.localDescription;
+  await api(`/api/meeting/calls/${call.id}/`,{method:'PATCH',body:JSON.stringify({
+    status:'active',
+    sdp_answer:JSON.stringify({type:finalAns.type,sdp:finalAns.sdp})
+  })});
+  S.call=call;
+  startTimer();
+
+  S.callPollInt=setInterval(async()=>{
+    if(!S.call)return clearInterval(S.callPollInt);
+    const r=await api(`/api/meeting/calls/${S.call.id}/`);
+    if(r.call&&(r.call.status==='ended'||r.call.status==='rejected')){cleanupCall();}
+  },3000);
+}
+
+async function rejectCall(){
+  const call=S.pendingCall;
+  stopRing();
+  stopOutgoingRing();
+  document.getElementById('incoming').style.display='none';
+  S.pendingCall=null;
+  if(call) await api(`/api/meeting/calls/${call.id}/`,{method:'PATCH',body:JSON.stringify({status:'rejected'})});
+}
+
+// ── TIMER ────────────────────────────────────────────────────
+function updateCtrlBtns(){
+  const mic=document.getElementById('micBtn');
+  if(mic){
+    mic.classList.toggle('ctrl-on',S.micOn);
+    mic.classList.toggle('ctrl-off',!S.micOn);
+    mic.textContent=S.micOn?'Mute':'Unmute';
+    mic.title=S.micOn?'Mute microphone':'Unmute microphone';
+  }
+  const cam=document.getElementById('camBtn');
+  if(cam){
+    cam.classList.toggle('ctrl-on',S.camOn);
+    cam.classList.toggle('ctrl-off',!S.camOn);
+    cam.textContent=S.camOn?'Video On':'Video Off';
+    cam.title=S.camOn?'Turn video off':'Turn video on';
+  }
+  const shr=document.getElementById('shareBtn');
+  if(shr){
+    shr.classList.toggle('ctrl-share-on',S.shareOn);
+    shr.classList.toggle('ctrl-on',!S.shareOn);
+    shr.textContent=S.shareOn?'Stop Share':'Share';
+    shr.title=S.shareOn?'Stop screen sharing':'Start screen sharing';
+  }
+  const end=document.querySelector('#scCall .ctrl-end');
+  if(end) end.textContent='End';
+  updateCallTranslateUi();
+}
+
+function cleanupCall(){
+  const callMode=S.callMode;
+  const roomId=S.roomMeeting&&S.roomMeeting.room_id;
+  clearInterval(S.callPollInt);
+  clearInterval(S.timerInt);
+  S.callPollInt=null;
+  S.timerInt=null;
+  S.call=null;
+  S.callMode=null;
+  S.callTranslateOn=false;
+  S.callTranslateBusy=false;
+  stopRing();
+  stopOutgoingRing();
+  closeCallTranslationConnection();
+  if(S.localStream){ S.localStream.getTracks().forEach(t=>t.stop()); S.localStream=null; }
+  if(S.screenStream){ S.screenStream.getTracks().forEach(t=>t.stop()); S.screenStream=null; }
+  if(S.pc){ S.pc.close(); S.pc=null; }
+  Object.keys(S.roomPeers).forEach(closeRoomPeer);
+  S.roomPeers={};
+  S.roomMeeting=null;
+  S.roomSignalAfter='';
+  S.remoteStream=null;
+  clearMediaStream(document.getElementById('remoteVid'));
+  clearMediaStream(document.getElementById('remoteAud'));
+  clearMediaStream(document.getElementById('translatorPreviewAud'));
+  document.getElementById('pip').style.display='none';
+  document.getElementById('callTimer').style.display='none';
+  document.getElementById('shareBar').style.display='none';
+  S.shareOn=false;
+  updateCallTranslateUi();
+  if(callMode==='room'&&S.room&&S.room.id===roomId){
+    renderRoomScreen(S.room);
+    showScreen('room');
+  } else if(S.thread){
+    if(S.thread.type==='dm') showScreen('chat');
+    else if(S.thread.type==='room') showScreen('room');
+    else showScreen('welcome');
+  } else showScreen('welcome');
+}
+
+function startTimer(){
+  S.timerStart=Date.now();
+  document.getElementById('callTimer').style.display='';
+  clearInterval(S.timerInt);
+  S.timerInt=setInterval(()=>{
+    const s=Math.floor((Date.now()-S.timerStart)/1000);
+    document.getElementById('callTimer').textContent=
+      String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  },1000);
+}
+
+// ═══════════════════════════════════════════════════
+// POLLING (combined)
+// ═══════════════════════════════════════════════════
+async function poll(){
+  const params=S.thread?`?thread=${encodeURIComponent(S.thread.id)}&after=${encodeURIComponent(S.afterTs)}`:'';
+  try{
+    const d=await api('/api/meeting/poll/'+params);
+
+    if(d.online){ S.online=new Set(d.online); }
+    if(d.groups) GROUPS=d.groups;
+    if(d.rooms)  ROOMS=d.rooms;
+    if(d.room_meetings) ROOM_MEETINGS=d.room_meetings;
+    if(d.unread) UNREAD=d.unread;
+
+    if(d.messages&&d.messages.length&&S.thread){
+      S.msgs=[...S.msgs,...d.messages];
+      S.afterTs=S.msgs[S.msgs.length-1].created_at||'';
+      delete UNREAD[S.thread.id];
+      renderMsgs();
+      // play message tone for messages from others
+      if(d.messages.some(m=>m.sender!==ME)) playMsgTone();
+    }
+
+    // Update chat head online status
+    if(S.thread&&S.thread.type==='dm'){
+      document.getElementById('chSub').textContent=S.online.has(S.thread.peer)?'🟢 Online':'⚫ Offline';
+    }
+
+    // Update room if viewing
+    if(S.room){
+      const fresh=ROOMS.find(r=>r.id===S.room.id);
+      if(fresh&&JSON.stringify(fresh)!==JSON.stringify(S.room)){ S.room=fresh; renderRoomScreen(fresh); }
+      else if(document.getElementById('scRoom').style.display!=='none'){ renderRoomScreen(S.room); }
+    }
+
+    renderSidebar();
+
+    // Incoming call
+    if(d.pending_call&&!S.call&&!S.pendingCall){
+      const call=d.pending_call;
+      if(call.callee===ME&&call.status==='ringing'){
+        S.pendingCall=call;
+        const name=findUser(call.caller).name||call.caller;
+        document.getElementById('icAv').textContent=ini(name);
+        document.getElementById('icAv').style.background=aColor(call.caller);
+        document.getElementById('icName').textContent=name;
+        document.getElementById('icType').textContent=call.call_type==='video'?'📹 Video Call':'🎙️ Audio Call';
+        document.getElementById('incoming').style.display='';
+        startRing();
+        setTimeout(()=>{ if(S.pendingCall===call){ document.getElementById('incoming').style.display='none'; S.pendingCall=null; stopRing(); } },30000);
+      }
+    }
+    if(S.pendingCall&&(!d.pending_call||d.pending_call.status!=='ringing')){
+      document.getElementById('incoming').style.display='none'; S.pendingCall=null; stopRing();
+    }
+  }catch(e){ /* network blip */ }
+}
+
+// ═══════════════════════════════════════════════════
+// SOUNDS
+// ═══════════════════════════════════════════════════
+let _sndCtx=null;
+function _sCtx(){if(!_sndCtx){try{_sndCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(_){}}return _sndCtx;}
+
+function _playToneSequence(notes,type){
+  try{
+    const c=_sCtx();if(!c)return;
+    if(c.state==='suspended'&&typeof c.resume==='function') c.resume();
+    notes.forEach(([freq,when,duration,gain])=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);
+      o.type=type||'sine';
+      o.frequency.setValueAtTime(freq,c.currentTime+when);
+      g.gain.setValueAtTime(0,c.currentTime+when);
+      g.gain.linearRampToValueAtTime(gain,c.currentTime+when+0.025);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+when+duration);
+      o.start(c.currentTime+when);
+      o.stop(c.currentTime+when+duration+0.02);
+    });
+  }catch(_){}
+}
+
+function playMsgReceiveTone(){
+  _playToneSequence([
+    [880,0,0.09,0.18],
+    [660,0.1,0.18,0.14],
+  ],'sine');
+}
+
+function playMsgSendTone(){
+  _playToneSequence([
+    [1040,0,0.08,0.12],
+    [1310,0.09,0.09,0.1],
+  ],'triangle');
+}
+
+function playMsgTone(){
+  playMsgReceiveTone();
+}
+
+let _incomingRingInt=null;
+function _incomingRingOnce(){
+  _playToneSequence([
+    [880,0,0.18,0.28],
+    [1100,0.11,0.18,0.24],
+    [880,0.25,0.18,0.28],
+    [1100,0.36,0.2,0.24],
+  ],'sine');
+}
+
+let _outgoingRingInt=null;
+function _outgoingRingOnce(){
+  _playToneSequence([
+    [440,0,0.28,0.18],
+    [554,0.34,0.24,0.14],
+  ],'triangle');
+}
+
+function startIncomingRing(){if(!_incomingRingInt){_incomingRingOnce();_incomingRingInt=setInterval(_incomingRingOnce,2800);}}
+function stopIncomingRing(){if(_incomingRingInt){clearInterval(_incomingRingInt);_incomingRingInt=null;}}
+function startOutgoingRing(){if(!_outgoingRingInt){_outgoingRingOnce();_outgoingRingInt=setInterval(_outgoingRingOnce,2200);}}
+function stopOutgoingRing(){if(_outgoingRingInt){clearInterval(_outgoingRingInt);_outgoingRingInt=null;}}
+
+function startRing(){startIncomingRing();}
+function stopRing(){stopIncomingRing();}
+
+// Expose for global-alerts bridge (notification_bell.html)
+window.hdecMtgPlayRingtone = startIncomingRing;
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function init(){
+  S.online=new Set(USERS.filter(u=>u.online).map(u=>u.username));
+  initTranslateOptions();
+  initCallTranslateOptions();
+  renderSidebar();
+  showScreen('welcome');
+  renderRP();
+  setInterval(poll,2500);
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+
+<!-- THEME SYSTEM -->
+<script>
+const THEMES=[
+  {id:'dark',    name:'Void',      c:'#3b9eff'},
+  {id:'aurora',  name:'Aurora',    c:'#a78bfa'},
+  {id:'forge',   name:'Forge',     c:'#f97316'},
+  {id:'ocean',   name:'Ocean',     c:'#0ea5e9'},
+  {id:'terminal',name:'Terminal',  c:'#00ff41'},
+  {id:'executive',name:'Executive',c:'#b45309'},
+  {id:'ivory',   name:'Ivory',     c:'#6366f1'},
+  {id:'mint',    name:'Mint',      c:'#10b981'},
+  {id:'rose',    name:'Rose',      c:'#f43f5e'},
+  {id:'crimson', name:'Crimson',   c:'#f87171'},
+  {id:'dusk',    name:'Dusk',      c:'#818cf8'},
+];
+function applyTheme(id){
+  const t=THEMES.find(x=>x.id===id)||THEMES[0];
+  document.documentElement.setAttribute('data-theme',t.id);
+  localStorage.setItem('hdec-theme',t.id);
+  const dot=document.getElementById('tDot'),lbl=document.getElementById('tLbl');
+  if(dot)dot.style.background=t.c;
+  if(lbl)lbl.textContent=t.name;
+  THEMES.forEach(x=>{ const el=document.getElementById('tc-'+x.id); if(el)el.textContent=x.id===t.id?'✓':''; });
+  const d=document.getElementById('tDropdown'); if(d)d.hidden=true;
+}
+function toggleTheme(){
+  const d=document.getElementById('tDropdown'); if(!d)return;
+  if(d.hidden){
+    d.hidden=false;
+    if(!d.innerHTML.trim())
+      d.innerHTML=THEMES.map(t=>`<div class="t-opt" onclick="applyTheme('${t.id}')">
+        <span class="t-dot" style="background:${t.c}"></span>${t.name}
+        <span class="t-chk" id="tc-${t.id}"></span></div>`).join('');
+    const cur=localStorage.getItem('hdec-theme')||'dark';
+    THEMES.forEach(x=>{ const el=document.getElementById('tc-'+x.id); if(el)el.textContent=x.id===cur?'✓':''; });
+  } else d.hidden=true;
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('#themeShell')){ const d=document.getElementById('tDropdown'); if(d)d.hidden=true; } });
+(function(){applyTheme(localStorage.getItem('hdec-theme')||'dark');})();
+</script>
+{% include 'core/includes/meeting_alerts_global.html' %}
+</body>
+</html>

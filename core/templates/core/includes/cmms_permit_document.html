@@ -1,0 +1,116 @@
+<div class="permit-document{% if document_print %} permit-document--print{% endif %}">
+  {% for block in document.blocks %}
+    {% if block.type == 'paragraph' %}
+      <div class="permit-paragraph{% if block.empty %} permit-paragraph--empty{% endif %}" style="{{ block.style }}">
+        {% for item in block.items %}
+          {% if item.type == 'image' %}
+            <img src="{{ item.src }}" alt="" class="permit-inline-image" style="{{ item.style }}">
+          {% else %}
+            <span class="permit-inline-text" style="{{ item.style }}">{{ item.text|linebreaksbr }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% elif block.type == 'table' %}
+      <table class="permit-table permit-table-{{ block.index }}">
+        <colgroup>
+          {% for width in block.column_widths_percent %}
+            <col style="width:{{ width }}%">
+          {% endfor %}
+        </colgroup>
+        <tbody>
+          {% for row in block.rows %}
+            <tr style="{{ row.style }}">
+              {% for cell in row.cells %}
+                <td
+                  class="permit-cell{% if cell.editable %} permit-cell--editable{% endif %}{% if cell.inline_value %} permit-cell--inline-value{% endif %}{% if cell.compact_input %} permit-cell--compact{% endif %}"
+                  rowspan="{{ cell.rowspan }}"
+                  colspan="{{ cell.colspan }}"
+                  style="{{ cell.style }}"
+                >
+                  <div class="permit-cell-inner">
+                    {% if cell.special.signature_field or cell.special.text_editable or cell.special.has_lines or cell.special.image_src %}
+                      <div class="permit-special-block">
+                        {% for line in cell.special.lines %}
+                          <div class="permit-special-line">{{ line }}</div>
+                        {% endfor %}
+
+                        {% if cell.special.text_editable and not document_print %}
+                          <textarea
+                            class="permit-field permit-field--textarea"
+                            data-closure-status-field="true"
+                            rows="{{ cell.special.text_rows|default:4 }}"
+                            placeholder="{{ cell.special.text_placeholder }}"
+                          >{{ cell.special.text_value }}</textarea>
+                        {% elif cell.special.text_value %}
+                          <div class="permit-field-static permit-field-static--notes">{{ cell.special.text_value|linebreaksbr }}</div>
+                        {% endif %}
+
+                        {% if cell.special.has_signature or cell.special.signature_editable %}
+                          <div class="permit-signature-area">
+                            <img
+                              src="{{ cell.special.image_src|default:'data:,' }}"
+                              alt="{{ cell.special.signature_label|default:'Signature' }}"
+                              class="permit-signature-preview{% if cell.special.image_src %} is-visible{% endif %}"
+                              data-signature-preview="{{ cell.special.signature_field }}"
+                            >
+                            {% if cell.special.signature_editable and not document_print %}
+                              <label class="permit-signature-upload">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  data-signature-input="{{ cell.special.signature_field }}"
+                                >
+                                <span>{{ cell.special.signature_label|default:"Upload Signature" }}</span>
+                              </label>
+                            {% endif %}
+                          </div>
+                        {% endif %}
+                      </div>
+                    {% else %}
+                      {% if cell.paragraphs %}
+                        <div class="permit-cell-copy">
+                          {% for paragraph in cell.paragraphs %}
+                            <div class="permit-paragraph permit-paragraph--cell{% if paragraph.empty %} permit-paragraph--empty{% endif %}" style="{{ paragraph.style }}">
+                              {% for item in paragraph.items %}
+                                {% if item.type == 'image' %}
+                                  <img src="{{ item.src }}" alt="" class="permit-inline-image" style="{{ item.style }}">
+                                {% else %}
+                                  <span class="permit-inline-text" style="{{ item.style }}">{{ item.text|linebreaksbr }}</span>
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+
+                      {% if cell.editable and not document_print %}
+                        {% if cell.input_kind == 'textarea' %}
+                          <textarea
+                            class="permit-field permit-field--textarea{% if cell.inline_value %} permit-field--after-copy{% endif %}"
+                            data-doc-field="{{ cell.key }}"
+                            rows="{{ cell.input_rows }}"
+                            placeholder="{{ cell.placeholder }}"
+                          >{{ cell.value }}</textarea>
+                        {% else %}
+                          <input
+                            type="text"
+                            class="permit-field{% if cell.inline_value %} permit-field--after-copy{% endif %}{% if cell.compact_input %} permit-field--compact{% endif %}"
+                            data-doc-field="{{ cell.key }}"
+                            value="{{ cell.value }}"
+                            placeholder="{{ cell.placeholder }}"
+                          >
+                        {% endif %}
+                      {% elif cell.value %}
+                        <div class="permit-field-static{% if cell.inline_value %} permit-field-static--after-copy{% endif %}">{{ cell.value|linebreaksbr }}</div>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endfor %}
+</div>

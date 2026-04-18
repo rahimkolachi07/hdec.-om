@@ -33,7 +33,23 @@
       "Bash(ping -n 5 127.0.0.1)",
       "Bash(sc start:*)",
       "Bash(ping -n 4 127.0.0.1)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8001/hse/sjn-portal/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8001/hse/sjn-portal/)",
+      "Bash(python3 update_themes.py)",
+      "Read(//usr/**)",
+      "Read(//usr/local/**)",
+      "Bash(/c/Users/Admin/AppData/Local/Programs/Python/Python310/python update_themes.py)",
+      "Bash(python3 fix_themes.py)",
+      "Bash(python3 /tmp/fix_themes.py)",
+      "Bash(py fix_themes.py)",
+      "Bash(python3 -)",
+      "Bash(python -)",
+      "Bash(python -c \"from core.project_utils import CATEGORY_META, ALL_CATEGORY_IDS; print\\(ALL_CATEGORY_IDS\\); print\\([CATEGORY_META[c]['label'] for c in ALL_CATEGORY_IDS]\\)\")",
+      "Bash(sed -n '26,35p' core/views.py)",
+      "Bash(sed -n '90,100p' core/cmms_views.py)",
+      "Bash(python -c \"import django; import os; os.environ.setdefault\\('DJANGO_SETTINGS_MODULE','hdec_project.settings'\\); django.setup\\(\\); from django.conf import settings; print\\('MEDIA_ROOT:', settings.MEDIA_ROOT\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import core.admin_modules_data; import core.views; print\\('OK'\\)\")",
+      "Bash(python -c \"import core.urls; print\\('URLs OK'\\)\")"
     ]
   }
 }

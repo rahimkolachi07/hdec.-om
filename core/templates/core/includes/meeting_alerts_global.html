@@ -1,0 +1,676 @@
+<!-- ── MEETING ROOM GLOBAL ALERTS + NOTIFICATION BAR ── -->
+{% if request.session.hdec_user %}
+<style>
+  /* ── Online pill ── */
+  .hdec-online-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 12px;border-radius:999px;
+    border:1px solid rgba(34,197,94,.3);
+    background:transparent;
+    color:inherit;font-family:inherit;font-size:12px;font-weight:700;
+    cursor:default;white-space:nowrap;flex-shrink:0;position:relative
+  }
+  .hdec-online-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0;animation:hdecPulse 2s ease-in-out infinite}
+  @keyframes hdecPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}60%{box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+
+  /* ── Online tooltip ── */
+  .hdec-online-list{
+    display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:180px;
+    background:#0a101b;border:1px solid rgba(255,255,255,.1);border-radius:12px;
+    padding:8px 0;font-size:12px;box-shadow:0 10px 36px rgba(0,0,0,.5);z-index:9800;white-space:nowrap
+  }
+  .hdec-online-pill:hover .hdec-online-list{display:block}
+  .hdec-ol-item{display:flex;align-items:center;gap:8px;padding:7px 14px;color:#e8eaf0}
+  .hdec-ol-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+  .hdec-ol-empty{padding:10px 14px;color:rgba(232,234,240,.45);font-size:11px}
+  /* light themes */
+  html[data-theme=ocean] .hdec-online-list,html[data-theme=executive] .hdec-online-list,
+  html[data-theme=ivory] .hdec-online-list,html[data-theme=mint] .hdec-online-list,html[data-theme=rose] .hdec-online-list{background:#fff!important;border-color:rgba(0,0,0,.1)!important}
+  html[data-theme=ocean] .hdec-ol-item,html[data-theme=executive] .hdec-ol-item,
+  html[data-theme=ivory] .hdec-ol-item,html[data-theme=mint] .hdec-ol-item,html[data-theme=rose] .hdec-ol-item{color:#1e293b!important}
+
+  /* ── Fallback bar (only used if no matching right container found) ── */
+  #hdec-gbar-fallback{
+    position:fixed;bottom:84px;right:24px;z-index:9790;
+    display:none;flex-direction:row;align-items:center;gap:8px;
+    background:rgba(10,16,27,.92);border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;padding:6px 10px;backdrop-filter:blur(12px)
+  }
+
+  /* ── Message toast ── */
+  #hdec-mtg-toasts{position:fixed;bottom:24px;right:24px;z-index:9900;display:flex;flex-direction:column-reverse;gap:10px;pointer-events:none;max-width:min(400px,calc(100vw - 32px))}
+  .hdec-mtg-toast{
+    display:flex;flex-direction:column;border-radius:16px;overflow:hidden;
+    background:#0a101b;border:1px solid rgba(59,158,255,.32);color:#e8eaf0;
+    width:min(400px,calc(100vw - 32px));
+    box-shadow:0 10px 40px rgba(0,0,0,.55);pointer-events:all;
+    animation:hdecMtgSlideIn .28s ease
+  }
+  .hdec-mtg-toast-head{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(59,158,255,.07)}
+  .hdec-mtg-toast-icon{font-size:17px;line-height:1;flex-shrink:0}
+  .hdec-mtg-toast-from{font-weight:800;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hdec-mtg-toast-tag{font-size:10px;font-weight:700;color:rgba(59,158,255,.9);background:rgba(59,158,255,.12);padding:2px 8px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+  .hdec-mtg-toast-close{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:50%;background:rgba(255,255,255,.06);color:#aab;font:inherit;font-size:13px;font-weight:700;cursor:pointer;line-height:1;flex-shrink:0}
+  .hdec-mtg-toast-close:hover{background:rgba(255,255,255,.12)}
+  .hdec-mtg-toast-msg{padding:11px 14px;font-size:13px;line-height:1.55;color:rgba(232,234,240,.88);word-break:break-word;max-height:120px;overflow-y:auto}
+  .hdec-mtg-toast-foot{padding:9px 14px;display:flex;justify-content:flex-end}
+  .hdec-mtg-toast-view{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:none;border-radius:999px;background:#3b9eff;color:#fff;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer}
+  .hdec-mtg-toast-view:hover{background:#5aafff}
+  @keyframes hdecMtgSlideIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  /* toast light themes */
+  html[data-theme=ocean] .hdec-mtg-toast,html[data-theme=executive] .hdec-mtg-toast,html[data-theme=ivory] .hdec-mtg-toast,html[data-theme=mint] .hdec-mtg-toast,html[data-theme=rose] .hdec-mtg-toast{background:#fff!important;border-color:rgba(0,0,0,.12)!important;color:#1e293b!important}
+  html[data-theme=ocean] .hdec-mtg-toast-head,html[data-theme=executive] .hdec-mtg-toast-head,html[data-theme=ivory] .hdec-mtg-toast-head,html[data-theme=mint] .hdec-mtg-toast-head,html[data-theme=rose] .hdec-mtg-toast-head{background:rgba(37,99,235,.05)!important;border-bottom-color:rgba(0,0,0,.07)!important}
+  html[data-theme=ocean] .hdec-mtg-toast-msg,html[data-theme=executive] .hdec-mtg-toast-msg,html[data-theme=ivory] .hdec-mtg-toast-msg,html[data-theme=mint] .hdec-mtg-toast-msg,html[data-theme=rose] .hdec-mtg-toast-msg{color:rgba(15,23,42,.8)!important}
+
+  /* ── Call popup ── */
+  #hdec-call-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;width:min(360px,92vw);background:#0a101b;border:1px solid rgba(59,158,255,.28);border-radius:22px;padding:36px 30px 28px;text-align:center;font-family:inherit;color:#e8eaf0;box-shadow:0 24px 70px rgba(0,0,0,.65);display:none;animation:hdecCallPop .3s ease}
+  @keyframes hdecCallPop{from{opacity:0;transform:translate(-50%,-56%)}to{opacity:1;transform:translate(-50%,-50%)}}
+  #hdec-call-popup .cav{width:78px;height:78px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;margin-bottom:18px;color:#fff;animation:hdecCallPulse 1.4s ease-in-out infinite}
+  @keyframes hdecCallPulse{0%,100%{box-shadow:0 0 0 0 rgba(59,158,255,.55)}60%{box-shadow:0 0 0 18px rgba(59,158,255,0)}}
+  #hdec-call-popup .cname{font-size:21px;font-weight:800;margin-bottom:5px}
+  #hdec-call-popup .ctype{font-size:13px;color:rgba(232,234,240,.58);margin-bottom:30px}
+  #hdec-call-popup .cbts{display:flex;justify-content:center;gap:18px}
+  #hdec-call-popup .cbts button{flex:1;max-width:136px;padding:14px 0;border:none;border-radius:999px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;transition:opacity .15s,transform .12s}
+  #hdec-call-popup .cbts button:hover{opacity:.88;transform:scale(1.03)}
+  #hdec-call-popup .btn-ans{background:#22c55e;color:#fff}
+  #hdec-call-popup .btn-dec{background:rgba(255,255,255,.1);color:#e8eaf0}
+  #hdec-call-popup-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none}
+  html[data-theme=ocean] #hdec-call-popup,html[data-theme=executive] #hdec-call-popup,html[data-theme=ivory] #hdec-call-popup,html[data-theme=mint] #hdec-call-popup,html[data-theme=rose] #hdec-call-popup{background:#fff;color:#1e293b;border-color:rgba(0,0,0,.12)}
+  html[data-theme=ocean] #hdec-call-popup .ctype,html[data-theme=executive] #hdec-call-popup .ctype,html[data-theme=ivory] #hdec-call-popup .ctype,html[data-theme=mint] #hdec-call-popup .ctype,html[data-theme=rose] #hdec-call-popup .ctype{color:rgba(30,41,59,.5)}
+  html[data-theme=ocean] #hdec-call-popup .btn-dec,html[data-theme=executive] #hdec-call-popup .btn-dec,html[data-theme=ivory] #hdec-call-popup .btn-dec,html[data-theme=mint] #hdec-call-popup .btn-dec,html[data-theme=rose] #hdec-call-popup .btn-dec{background:rgba(0,0,0,.07)!important;color:#1e293b!important}
+
+  /* fallback theme picker for pages that do not render their own */
+  .hdec-theme-shell{position:relative;display:inline-flex;align-items:center;flex-shrink:0}
+  .hdec-theme-btn{
+    display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit;
+    font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap
+  }
+  .hdec-theme-btn:hover{border-color:rgba(59,158,255,.35);color:#8cc5ff}
+  .hdec-theme-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.15)}
+  .hdec-theme-caret{font-size:10px;opacity:.65}
+  .hdec-theme-dropdown{
+    position:absolute;top:calc(100% + 8px);right:0;min-width:210px;padding:6px;border-radius:14px;
+    border:1px solid rgba(255,255,255,.1);background:#0a101b;box-shadow:0 20px 50px rgba(0,0,0,.45);z-index:99999
+  }
+  .hdec-theme-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;cursor:pointer;transition:.15s}
+  .hdec-theme-item:hover,.hdec-theme-item.active-theme{background:rgba(255,255,255,.06)}
+  .hdec-theme-swatch{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:inline-block}
+  .hdec-theme-name{font-size:12.5px;font-weight:700;line-height:1.3}
+  .hdec-theme-desc{font-size:10.5px;color:rgba(232,234,240,.6);margin-top:2px}
+  .hdec-theme-check{margin-left:auto;font-size:11px;opacity:.7;color:#3b9eff}
+  html[data-theme=ocean] .hdec-theme-btn,html[data-theme=executive] .hdec-theme-btn,html[data-theme=ivory] .hdec-theme-btn,html[data-theme=mint] .hdec-theme-btn,html[data-theme=rose] .hdec-theme-btn{border-color:rgba(0,0,0,.12)!important;background:rgba(0,0,0,.04)!important;color:#1e293b!important}
+  html[data-theme=ocean] .hdec-theme-dot,html[data-theme=executive] .hdec-theme-dot,html[data-theme=ivory] .hdec-theme-dot,html[data-theme=mint] .hdec-theme-dot,html[data-theme=rose] .hdec-theme-dot{box-shadow:0 0 0 2px rgba(0,0,0,.12)!important}
+  html[data-theme=ocean] .hdec-theme-dropdown,html[data-theme=executive] .hdec-theme-dropdown,html[data-theme=ivory] .hdec-theme-dropdown,html[data-theme=mint] .hdec-theme-dropdown,html[data-theme=rose] .hdec-theme-dropdown{background:#fff!important;border-color:rgba(0,0,0,.12)!important;box-shadow:0 12px 36px rgba(0,0,0,.18)!important}
+  html[data-theme=ocean] .hdec-theme-desc,html[data-theme=executive] .hdec-theme-desc,html[data-theme=ivory] .hdec-theme-desc,html[data-theme=mint] .hdec-theme-desc,html[data-theme=rose] .hdec-theme-desc{color:rgba(30,41,59,.55)!important}
+  html[data-theme=ocean] .hdec-theme-item:hover,html[data-theme=executive] .hdec-theme-item:hover,html[data-theme=ivory] .hdec-theme-item:hover,html[data-theme=mint] .hdec-theme-item:hover,html[data-theme=rose] .hdec-theme-item:hover,
+  html[data-theme=ocean] .hdec-theme-item.active-theme,html[data-theme=executive] .hdec-theme-item.active-theme,html[data-theme=ivory] .hdec-theme-item.active-theme,html[data-theme=mint] .hdec-theme-item.active-theme,html[data-theme=rose] .hdec-theme-item.active-theme{background:rgba(0,0,0,.04)!important}
+</style>
+
+<!-- Notification bell (hidden; JS moves it into the topbar) -->
+<div id="hdec-gbar-bell" style="display:none">
+  {% include 'core/includes/notification_bell.html' %}
+</div>
+
+<!-- Online pill (hidden; JS moves it into the topbar) -->
+<div class="hdec-online-pill" id="hdec-online-pill" style="display:none">
+  <span class="hdec-online-dot"></span>
+  <span id="hdec-online-label">0 online</span>
+  <div class="hdec-online-list" id="hdec-online-list">
+    <div class="hdec-ol-empty">No one else online</div>
+  </div>
+</div>
+
+<!-- Fallback bar shown only when no topbar exists -->
+<div id="hdec-gbar-fallback"></div>
+
+<!-- Toast container + call popup (always fixed) -->
+<div id="hdec-mtg-toasts"></div>
+<div id="hdec-call-popup-backdrop"></div>
+<div id="hdec-call-popup">
+  <div class="cav" id="hdec-call-av">👤</div>
+  <div class="cname" id="hdec-call-name">Calling…</div>
+  <div class="ctype" id="hdec-call-type">Incoming Call</div>
+  <div class="cbts">
+    <button class="btn-ans" id="hdec-call-ans">✅ Answer</button>
+    <button class="btn-dec" id="hdec-call-dec">✕ Decline</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  if(window.__hdecSmartBackSetup) return;
+  window.__hdecSmartBackSetup = true;
+
+  const TRAIL_KEY = 'hdec-nav-trail';
+
+  function currentPath(){
+    return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  }
+
+  function readTrail(){
+    try{
+      const saved = JSON.parse(sessionStorage.getItem(TRAIL_KEY) || '[]');
+      return Array.isArray(saved) ? saved.filter(item => typeof item === 'string' && item) : [];
+    }catch(_){
+      return [];
+    }
+  }
+
+  function writeTrail(trail){
+    try{
+      sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail.slice(-40)));
+    }catch(_){}
+  }
+
+  function rememberCurrentPage(){
+    const now = currentPath();
+    const trail = readTrail();
+    if(trail[trail.length - 1] !== now){
+      trail.push(now);
+      writeTrail(trail);
+    }
+  }
+
+  function previousTrailPath(){
+    const now = currentPath();
+    const trail = readTrail();
+    for(let i = trail.length - 2; i >= 0; i -= 1){
+      if(trail[i] && trail[i] !== now) return trail[i];
+    }
+    return '';
+  }
+
+  function sameOriginReferrer(){
+    try{
+      if(!document.referrer) return '';
+      const prev = new URL(document.referrer, window.location.origin);
+      if(prev.origin !== window.location.origin) return '';
+      const prevPath = `${prev.pathname}${prev.search}${prev.hash}`;
+      return prevPath !== currentPath() ? prev.href : '';
+    }catch(_){
+      return '';
+    }
+  }
+
+  function isSmartBackLink(link){
+    if(!link || link.tagName !== 'A') return false;
+    if(link.dataset.smartBack === 'off') return false;
+    if(link.target && link.target !== '_self') return false;
+    if(link.hasAttribute('download')) return false;
+
+    const href = String(link.getAttribute('href') || '').trim();
+    if(link.dataset.smartBack !== undefined) return true;
+    if(/^javascript:\s*history\.back\(\)\s*;?$/i.test(href)) return true;
+
+    const text = String(link.textContent || '').replace(/\s+/g, ' ').trim();
+    return text.startsWith('←');
+  }
+
+  window.hdecSmartBack = function(event, fallback){
+    if(event && typeof event.preventDefault === 'function') event.preventDefault();
+
+    const fallbackUrl = String(fallback || '').trim() || '/';
+    const previousUrl = sameOriginReferrer();
+    if(previousUrl){
+      if(window.history.length > 1){
+        window.history.back();
+        return false;
+      }
+      window.location.href = previousUrl;
+      return false;
+    }
+
+    const trailPath = previousTrailPath();
+    if(trailPath){
+      window.location.href = trailPath;
+      return false;
+    }
+
+    window.location.href = /^javascript:/i.test(fallbackUrl) ? '/' : fallbackUrl;
+    return false;
+  };
+
+  window.goBack = window.hdecSmartBack;
+
+  rememberCurrentPage();
+
+  document.addEventListener('click', function(event){
+    if(event.defaultPrevented || event.button !== 0) return;
+    if(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const link = event.target.closest('a');
+    if(!isSmartBackLink(link)) return;
+
+    const onclick = String(link.getAttribute('onclick') || '');
+    if(/hdecSmartBack|goBack\(/.test(onclick)) return;
+
+    window.hdecSmartBack(event, link.dataset.backFallback || link.href || '/');
+  }, true);
+})();
+</script>
+
+<script>
+(function(){
+  if(window.__hdecMtgGlobalAlertsRunning) return;
+  window.__hdecMtgGlobalAlertsRunning = true;
+
+  const ON_MEETING_PAGE = window.location.pathname.includes('/meeting-room');
+  const RIGHT_SELECTORS = [
+    '.topbar-right',
+    '.topbar-r',
+    '.topbar-actions',
+    '.tb-right',
+    'header .tr',
+    'nav.topbar-nav',
+  ];
+  const THEME_OPTIONS = [
+    {id:'dark',name:'Void',color:'#3b9eff',desc:'Dark space'},
+    {id:'aurora',name:'Aurora',color:'#a78bfa',desc:'Purple dream'},
+    {id:'forge',name:'Forge',color:'#f97316',desc:'Industrial heat'},
+    {id:'ocean',name:'Ocean',color:'#0ea5e9',desc:'Light and clear'},
+    {id:'terminal',name:'Terminal',color:'#00ff41',desc:'Matrix code'},
+    {id:'executive',name:'Executive',color:'#b45309',desc:'Warm boardroom'},
+    {id:'ivory',name:'Ivory',color:'#6366f1',desc:'Clean and bright'},
+    {id:'mint',name:'Mint',color:'#10b981',desc:'Fresh and calm'},
+    {id:'rose',name:'Rose',color:'#f43f5e',desc:'Soft contrast'},
+    {id:'crimson',name:'Crimson',color:'#f87171',desc:'Bold dark red'},
+    {id:'dusk',name:'Dusk',color:'#818cf8',desc:'Blue twilight'},
+  ];
+
+  function _themeMeta(id){
+    return THEME_OPTIONS.find(item => item.id === id) || THEME_OPTIONS[0];
+  }
+
+  function _storedTheme(){
+    try{
+      return localStorage.getItem('hdec-theme') || 'dark';
+    }catch(_){
+      return 'dark';
+    }
+  }
+
+  function _findTopbarTarget(){
+    for(const sel of RIGHT_SELECTORS){
+      const node = document.querySelector(sel);
+      if(node) return node;
+    }
+    const anchor = document.querySelector('.topbar-user, .user-pill, .logout-btn');
+    return anchor && anchor.parentNode ? anchor.parentNode : null;
+  }
+
+  function _syncThemeUi(themeId){
+    const theme = _themeMeta(themeId);
+    document.documentElement.setAttribute('data-theme', theme.id);
+
+    const pickerDot = document.getElementById('themePickerDot');
+    const pickerLabel = document.getElementById('themePickerLabel');
+    if(pickerDot) pickerDot.style.background = theme.color;
+    if(pickerLabel) pickerLabel.textContent = theme.name;
+
+    const meetingDot = document.getElementById('tDot');
+    const meetingLabel = document.getElementById('tLbl');
+    if(meetingDot) meetingDot.style.background = theme.color;
+    if(meetingLabel) meetingLabel.textContent = theme.name;
+
+    const fallbackDot = document.getElementById('hdecThemeDot');
+    const fallbackLabel = document.getElementById('hdecThemeLbl');
+    if(fallbackDot) fallbackDot.style.background = theme.color;
+    if(fallbackLabel) fallbackLabel.textContent = theme.name;
+
+    document.querySelectorAll('.theme-pick-item[data-tid]').forEach(item => {
+      const active = item.dataset.tid === theme.id;
+      item.classList.toggle('active-theme', active);
+      const check = document.getElementById(`chk-${item.dataset.tid}`);
+      if(check) check.textContent = active ? '✓' : '';
+    });
+    THEME_OPTIONS.forEach(item => {
+      const check = document.getElementById(`tc-${item.id}`);
+      if(check) check.textContent = item.id === theme.id ? '✓' : '';
+    });
+    document.querySelectorAll('.hdec-theme-item[data-theme-id]').forEach(item => {
+      const active = item.dataset.themeId === theme.id;
+      item.classList.toggle('active-theme', active);
+      const check = item.querySelector('.hdec-theme-check');
+      if(check) check.textContent = active ? '✓' : '';
+    });
+  }
+
+  function _applyThemeShared(themeId, persist){
+    const theme = _themeMeta(themeId);
+    if(persist !== false){
+      try{ localStorage.setItem('hdec-theme', theme.id); }catch(_){}
+    }
+    _syncThemeUi(theme.id);
+    return theme.id;
+  }
+
+  function _wrapThemeApply(){
+    if(typeof window.applyTheme === 'function' && !window.applyTheme.__hdecThemeWrapped){
+      const originalApplyTheme = window.applyTheme;
+      const wrappedApplyTheme = function(themeId){
+        const result = originalApplyTheme.call(this, themeId);
+        _applyThemeShared(themeId, false);
+        return result;
+      };
+      wrappedApplyTheme.__hdecThemeWrapped = true;
+      window.applyTheme = wrappedApplyTheme;
+    }else if(typeof window.applyTheme !== 'function'){
+      const fallbackApplyTheme = function(themeId){
+        return _applyThemeShared(themeId, true);
+      };
+      fallbackApplyTheme.__hdecThemeWrapped = true;
+      window.applyTheme = fallbackApplyTheme;
+    }
+  }
+
+  function _buildFallbackThemeDropdown(dropdown){
+    if(!dropdown || dropdown.childElementCount) return;
+    dropdown.innerHTML = THEME_OPTIONS.map(theme => `
+      <div class="hdec-theme-item" data-theme-id="${theme.id}">
+        <span class="hdec-theme-swatch" style="background:${theme.color}"></span>
+        <div>
+          <div class="hdec-theme-name">${theme.name}</div>
+          <div class="hdec-theme-desc">${theme.desc}</div>
+        </div>
+        <span class="hdec-theme-check"></span>
+      </div>`).join('');
+    dropdown.querySelectorAll('.hdec-theme-item').forEach(item => {
+      item.addEventListener('click', () => {
+        window.applyTheme(item.dataset.themeId);
+        dropdown.hidden = true;
+      });
+    });
+  }
+
+  function _ensureThemePicker(){
+    if(document.querySelector('#themeShell, .theme-shell, [data-hdec-theme-picker], .theme-btn, .theme-pick-btn')) return;
+    const target = _findTopbarTarget();
+    if(!target) return;
+
+    const shell = document.createElement('div');
+    shell.className = 'hdec-theme-shell';
+    shell.setAttribute('data-hdec-theme-picker', '1');
+    shell.innerHTML = `
+      <button class="hdec-theme-btn" id="hdecThemeBtn" type="button">
+        <span class="hdec-theme-dot" id="hdecThemeDot"></span>
+        <span id="hdecThemeLbl">Theme</span>
+        <span class="hdec-theme-caret">▾</span>
+      </button>
+      <div class="hdec-theme-dropdown" id="hdecThemeDropdown" hidden></div>`;
+
+    target.insertBefore(shell, target.firstChild);
+    const button = shell.querySelector('#hdecThemeBtn');
+    const dropdown = shell.querySelector('#hdecThemeDropdown');
+    _buildFallbackThemeDropdown(dropdown);
+    button.addEventListener('click', () => {
+      dropdown.hidden = !dropdown.hidden;
+      if(!dropdown.hidden) _syncThemeUi(_storedTheme());
+    });
+  }
+
+  // ── DOM injection: put bell + pill into the topbar ───────────────────────
+  function _setupBar(){
+    const gbell = document.getElementById('hdec-gbar-bell');
+    const pill  = document.getElementById('hdec-online-pill');
+    if (!gbell || !pill) return;
+
+    // Find any [data-notification-shell] that is NOT inside our gbell wrapper
+    const navBell = document.querySelector('[data-notification-shell]');
+    const bellIsOurs = gbell.contains(navBell);
+
+    if (navBell && !bellIsOurs) {
+      // Page already has bell in its topbar (CMMS pages)
+      // Just insert the online pill right after the existing bell
+      navBell.parentNode.insertBefore(pill, navBell.nextSibling);
+      pill.style.display = 'inline-flex';
+      return;
+    }
+
+    // No nav bell — find the topbar right container to inject bell + pill into
+    const target = _findTopbarTarget();
+
+    if (target) {
+      // Inject bell first, then pill, at the start of the right container
+      gbell.style.display = 'flex';
+      target.insertBefore(pill,  target.firstChild);
+      target.insertBefore(gbell, target.firstChild);
+      pill.style.display = 'inline-flex';
+    } else {
+      // Try inserting before a known right-side element (e.g. .topbar-user in meeting_hub)
+      const anchor = document.querySelector('.topbar-user, .user-pill, .logout-btn');
+      if (anchor && anchor.parentNode) {
+        gbell.style.display = 'flex';
+        anchor.parentNode.insertBefore(pill,  anchor);
+        anchor.parentNode.insertBefore(gbell, anchor);
+        pill.style.display = 'inline-flex';
+      } else {
+        // Last resort: fixed bottom-right (never overlaps anything)
+        const fb = document.getElementById('hdec-gbar-fallback');
+        if (fb) {
+          gbell.style.display = 'flex';
+          fb.appendChild(gbell);
+          fb.appendChild(pill);
+          pill.style.display = 'inline-flex';
+          fb.style.display = 'flex';
+        }
+      }
+    }
+
+    // Init the notification bell JS
+    if (typeof window.HDECNotificationsLoaded === 'function') {
+      window.HDECNotificationsLoaded();
+    }
+  }
+
+  // ── Audio ────────────────────────────────────────────────────────────────
+  let _aC=null;
+  function _ac(){ if(!_aC){ try{ _aC=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return _aC; }
+  function playMsgTone(){
+    try{
+      const c=_ac(); if(!c) return;
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g); g.connect(c.destination); o.type='sine';
+      o.frequency.setValueAtTime(880,c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(660,c.currentTime+0.18);
+      g.gain.setValueAtTime(0.22,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.4);
+      o.start(); o.stop(c.currentTime+0.4);
+    }catch(e){}
+  }
+  let _ringInt=null;
+  function _ringOnce(){
+    try{
+      const c=_ac(); if(!c) return;
+      [[880,0],[1100,0.11],[880,0.26],[1100,0.37]].forEach(([f,w])=>{
+        const o=c.createOscillator(),g=c.createGain();
+        o.connect(g); g.connect(c.destination); o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0,c.currentTime+w);
+        g.gain.linearRampToValueAtTime(0.3,c.currentTime+w+0.05);
+        g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+w+0.2);
+        o.start(c.currentTime+w); o.stop(c.currentTime+w+0.22);
+      });
+    }catch(e){}
+  }
+  function startRing(){ if(!_ringInt){ _ringOnce(); _ringInt=setInterval(_ringOnce,2800); } }
+  function stopRing(){ if(_ringInt){ clearInterval(_ringInt); _ringInt=null; } }
+  window.hdecMtgPlayRingtone = startRing;
+
+  // ── Online pill ──────────────────────────────────────────────────────────
+  function updateOnlinePill(users, count){
+    const lbl  = document.getElementById('hdec-online-label');
+    const list = document.getElementById('hdec-online-list');
+    if(lbl)  lbl.textContent = count + ' online';
+    if(!list) return;
+    if(!users || !users.length){
+      list.innerHTML = '<div class="hdec-ol-empty">No one else online</div>';
+    } else {
+      list.innerHTML = users.map(u =>
+        `<div class="hdec-ol-item"><span class="hdec-ol-dot"></span>${_esc(u.name||u.username)}</div>`
+      ).join('');
+    }
+  }
+
+  // ── Message toast ────────────────────────────────────────────────────────
+  function showMsgToast(thread){
+    const wrap=document.getElementById('hdec-mtg-toasts'); if(!wrap) return;
+    const label=thread.type==='dm'?(thread.peer_name||'Message'):(thread.group_name||'Group');
+    const tag=thread.type==='dm'?'Direct Message':'Group Message';
+    const count=thread.count>1?` (${thread.count})`:'';
+    const t=document.createElement('div'); t.className='hdec-mtg-toast';
+    t.innerHTML=`<div class="hdec-mtg-toast-head">
+  <span class="hdec-mtg-toast-icon">💬</span>
+  <span class="hdec-mtg-toast-from">${_esc(label+count)}</span>
+  <span class="hdec-mtg-toast-tag">${_esc(tag)}</span>
+  <button class="hdec-mtg-toast-close" title="Dismiss">✕</button>
+</div>
+${thread.preview?`<div class="hdec-mtg-toast-msg">${_esc(thread.preview)}</div>`:''}
+<div class="hdec-mtg-toast-foot"><button class="hdec-mtg-toast-view">Open Meeting Room →</button></div>`;
+    t.querySelector('.hdec-mtg-toast-close').addEventListener('click',e=>{ e.stopPropagation(); _dismiss(t); });
+    t.querySelector('.hdec-mtg-toast-view').addEventListener('click',()=>{ window.location.href='/meeting-room/'; });
+    wrap.appendChild(t);
+    t._dt=setTimeout(()=>_dismiss(t),10000);
+  }
+  function _dismiss(el){ clearTimeout(el._dt); el.style.opacity='0'; el.style.transform='translateY(12px)'; el.style.transition='opacity .35s,transform .35s'; setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); },360); }
+
+  // ── Call popup ───────────────────────────────────────────────────────────
+  let _activeCallId=null,_callTmo=null;
+  function showCallPopup(call){
+    _activeCallId=call.id;
+    const popup=document.getElementById('hdec-call-popup'),bg=document.getElementById('hdec-call-popup-backdrop');
+    if(!popup) return;
+    const name=call.caller_name||call.caller||'Someone';
+    document.getElementById('hdec-call-av').textContent=name.charAt(0).toUpperCase();
+    document.getElementById('hdec-call-av').style.background=_aColor(call.caller||'');
+    document.getElementById('hdec-call-name').textContent=name;
+    document.getElementById('hdec-call-type').textContent=call.call_type==='video'?'📹 Incoming Video Call':'🎙️ Incoming Audio Call';
+    popup.style.display='block'; if(bg) bg.style.display='block';
+    startRing(); _callTmo=setTimeout(hideCallPopup,36000);
+  }
+  function hideCallPopup(){
+    _activeCallId=null; stopRing();
+    const popup=document.getElementById('hdec-call-popup'),bg=document.getElementById('hdec-call-popup-backdrop');
+    if(popup) popup.style.display='none'; if(bg) bg.style.display='none';
+    if(_callTmo){ clearTimeout(_callTmo); _callTmo=null; }
+  }
+  document.getElementById('hdec-call-ans')?.addEventListener('click',()=>{ hideCallPopup(); window.location.href='/meeting-room/'; });
+  document.getElementById('hdec-call-dec')?.addEventListener('click',async()=>{
+    const id=_activeCallId; hideCallPopup();
+    try{ await fetch(`/api/meeting/calls/${id}/`,{method:'PATCH',headers:{'Content-Type':'application/json','X-CSRFToken':_csrf()},body:JSON.stringify({status:'declined'})}); }catch(e){}
+  });
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let _prevCounts={},_prevUnreadTotal=-1,_prevCallId=null,_seenCalls=new Set(),_initialised=false;
+
+  // ── Poll ─────────────────────────────────────────────────────────────────
+  async function poll(){
+    try{
+      const r=await fetch('/api/meeting/global-alerts/',{headers:{'X-Requested-With':'XMLHttpRequest'}});
+      if(!r.ok) return;
+      const d=await r.json();
+      updateOnlinePill(d.online_users||[], d.online_count||0);
+
+      const unreadTotal = d.unread_total||0;
+
+      if(!ON_MEETING_PAGE){
+        const threads=d.unread_threads||[];
+        if(_initialised){
+          for(const t of threads){
+            if((t.count||0)>(_prevCounts[t.thread_id]||0)){ playMsgTone(); showMsgToast(t); }
+          }
+        }
+        const nm={}; for(const t of threads) nm[t.thread_id]=t.count;
+        _prevCounts=nm;
+
+        // Refresh bell badge whenever meeting unread count changes (covers first load + new msgs)
+        if(unreadTotal !== _prevUnreadTotal){
+          _prevUnreadTotal = unreadTotal;
+          if(typeof window.hdecBellRefresh==='function') window.hdecBellRefresh();
+        }
+      }
+
+      const call=d.pending_call;
+      if(call&&call.status==='ringing'&&!_seenCalls.has(call.id)){
+        _seenCalls.add(call.id); _prevCallId=call.id;
+        if(ON_MEETING_PAGE){ if(typeof window.hdecMtgPlayRingtone==='function') window.hdecMtgPlayRingtone(); }
+        else showCallPopup(call);
+      } else if(!call&&_prevCallId){
+        _prevCallId=null;
+        if(!ON_MEETING_PAGE) hideCallPopup(); else stopRing();
+      }
+      _initialised=true;
+    }catch(e){}
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function _csrf(){ return document.cookie.split(';').map(p=>p.trim()).find(p=>p.startsWith('csrftoken='))?.split('=')[1]||''; }
+  function _aColor(s){ const cs=['#3b9eff','#a78bfa','#f97316','#22c55e','#ef4444','#ec4899','#f59e0b','#06b6d4']; let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))&0xffff; return cs[h%cs.length]; }
+
+  // ── Theme-dropdown z-index fix ───────────────────────────────────────────
+  // backdrop-filter on topbars creates stacking contexts that trap dropdowns.
+  // When any .theme-pick-dropdown or #tDropdown is shown, portal it to body.
+  function _fixThemeDropdowns(){
+    document.querySelectorAll('.theme-pick-btn, .theme-btn, .hdec-theme-btn').forEach(btn => {
+      if(btn.__hdecThemeFixed) return;
+      btn.__hdecThemeFixed = true;
+      const dropdown = btn.nextElementSibling || btn.parentElement?.querySelector('.theme-pick-dropdown, #tDropdown, .hdec-theme-dropdown');
+      if(!dropdown) return;
+      // Move dropdown to body with fixed positioning when visible
+      const origParent = dropdown.parentNode;
+      const origNextSib = dropdown.nextSibling;
+      const _origStyle = dropdown.getAttribute('style') || '';
+      function _showPortal(){
+        const rect = btn.getBoundingClientRect();
+        dropdown.style.cssText = `position:fixed!important;z-index:99999!important;top:${rect.bottom+4}px;right:${window.innerWidth-rect.right}px;left:auto`;
+        document.body.appendChild(dropdown);
+      }
+      function _hidePortal(){
+        dropdown.style.cssText = _origStyle;
+        if(origNextSib) origParent.insertBefore(dropdown, origNextSib);
+        else origParent.appendChild(dropdown);
+      }
+      // Observe visibility changes
+      const observer = new MutationObserver(() => {
+        const hidden = dropdown.hidden || dropdown.style.display==='none' || dropdown.hasAttribute('hidden');
+        if(!hidden && dropdown.parentNode !== document.body) _showPortal();
+        else if(hidden && dropdown.parentNode === document.body) _hidePortal();
+      });
+      observer.observe(dropdown, {attributes:true, attributeFilter:['hidden','style']});
+    });
+  }
+
+  function _closeFallbackThemeDropdown(event){
+    const dropdown = document.getElementById('hdecThemeDropdown');
+    if(!dropdown || dropdown.hidden) return;
+    if(event.target.closest('[data-hdec-theme-picker]') || event.target.closest('#hdecThemeDropdown')) return;
+    dropdown.hidden = true;
+  }
+
+  // Run after DOM is ready
+  window.addEventListener('storage', event => {
+    if(event.key !== 'hdec-theme') return;
+    _applyThemeShared(event.newValue || 'dark', false);
+  });
+  document.addEventListener('click', _closeFallbackThemeDropdown);
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{
+      _wrapThemeApply();
+      _setupBar();
+      _ensureThemePicker();
+      _syncThemeUi(_storedTheme());
+      _fixThemeDropdowns();
+    });
+  } else {
+    _wrapThemeApply();
+    _setupBar();
+    _ensureThemePicker();
+    _syncThemeUi(_storedTheme());
+    _fixThemeDropdowns();
+  }
+
+  poll();
+  setInterval(poll, 20000);
+})();
+</script>
+{% endif %}

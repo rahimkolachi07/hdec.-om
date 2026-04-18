@@ -132,5 +132,6 @@ function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}resize()
 (function draw(){c.clearRect(0,0,W,H);DOTS.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle=`rgba(59,158,255,${p.a})`;c.fill()});requestAnimationFrame(draw)})();
 function goBack(event, fallback){try{if(document.referrer){const prev=new URL(document.referrer, window.location.origin);if(prev.origin===window.location.origin){event.preventDefault();window.history.back();return false;}}}catch(_){ }return true;}
 </script>
+{% include 'core/includes/meeting_alerts_global.html' %}
 </body>
 </html>

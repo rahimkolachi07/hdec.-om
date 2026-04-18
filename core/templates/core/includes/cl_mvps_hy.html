@@ -1,0 +1,225 @@
+{# MVPS Half-Yearly Maintenance Checklist — exact replica of Google Sheet #}
+{% with cv=checklist_values %}
+<div style="font-family:Arial,sans-serif;font-size:8.5pt;color:#111;width:100%">
+
+<!-- ═══ HEADER ═══ -->
+<table style="width:100%;border-collapse:collapse;margin-bottom:0" class="cl-table">
+  <tr>
+    <td colspan="11" style="background:#1a3a5c;color:#fff;font-size:11pt;font-weight:700;text-align:center;padding:6px 4px;letter-spacing:.5px">
+      O&amp;M Maintenance Checklist
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Plant</td>
+    <td colspan="2" style="padding:3px 5px">Al-Henakiyah 1100 MW</td>
+    <td colspan="2" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Equipment</td>
+    <td colspan="4" style="padding:3px 5px">Power Station Maintenance-HY</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Block No.</td>
+    <td colspan="2"><input type="text" data-cl-field="h_block" value="{{ cv.h_block|default:'' }}" placeholder="e.g. 8" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td colspan="2" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Maint. Order No.</td>
+    <td colspan="4"><input type="text" data-cl-field="h_order" value="{{ cv.h_order|default:'' }}" placeholder="Order number" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+  <tr>
+    <td colspan="3" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Maint. Due Date</td>
+    <td colspan="2"><input type="text" data-cl-field="h_due" value="{{ cv.h_due|default:'' }}" placeholder="YYYY-MM-DD" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td colspan="2" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Maint. Done Date</td>
+    <td colspan="4"><input type="text" data-cl-field="h_done" value="{{ cv.h_done|default:'' }}" placeholder="YYYY-MM-DD" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+  <tr>
+    <td colspan="3" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Maint. Start Time</td>
+    <td colspan="2"><input type="text" data-cl-field="h_start" value="{{ cv.h_start|default:'' }}" placeholder="HH:MM" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td colspan="2" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Completion Time</td>
+    <td colspan="4"><input type="text" data-cl-field="h_end" value="{{ cv.h_end|default:'' }}" placeholder="HH:MM" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+  <tr>
+    <td colspan="3" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Frequency</td>
+    <td colspan="2" style="padding:3px 5px">Half Yearly</td>
+    <td colspan="2" style="background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Equipment ID</td>
+    <td colspan="4"><input type="text" data-cl-field="h_equip_id" value="{{ cv.h_equip_id|default:'' }}" placeholder="Equipment ID" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+</table>
+
+<!-- ═══ PERSONNEL / SIGNATURES ═══ -->
+<table style="width:100%;border-collapse:collapse;margin-bottom:0" class="cl-table">
+  <tr>
+    <td style="width:18%;background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Role</td>
+    <td style="width:35%;background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Name</td>
+    <td style="width:47%;background:#dce6f1;font-weight:700;font-size:8pt;padding:3px 5px">Signature</td>
+  </tr>
+  <tr>
+    <td style="background:#f0f4f8;font-size:8pt;padding:3px 5px">Technician 1</td>
+    <td><input type="text" data-cl-field="name_tech1" value="{{ cv.name_tech1|default:'' }}" placeholder="Name" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td style="padding:2px 4px"><div data-cl-sig="sig_tech1" style="min-height:28px;display:inline-block;vertical-align:middle">{% if cv.sig_tech1 %}<img src="{{ cv.sig_tech1 }}" style="max-height:28px">{% endif %}</div>{% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('sig_tech1')">&#9997; Sign</button>{% endif %}<input type="hidden" data-cl-field="sig_tech1" value="{{ cv.sig_tech1|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="background:#f0f4f8;font-size:8pt;padding:3px 5px">Technician 2</td>
+    <td><input type="text" data-cl-field="name_tech2" value="{{ cv.name_tech2|default:'' }}" placeholder="Name" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td style="padding:2px 4px"><div data-cl-sig="sig_tech2" style="min-height:28px;display:inline-block;vertical-align:middle">{% if cv.sig_tech2 %}<img src="{{ cv.sig_tech2 }}" style="max-height:28px">{% endif %}</div>{% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('sig_tech2')">&#9997; Sign</button>{% endif %}<input type="hidden" data-cl-field="sig_tech2" value="{{ cv.sig_tech2|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="background:#f0f4f8;font-size:8pt;padding:3px 5px">Technician 3</td>
+    <td><input type="text" data-cl-field="name_tech3" value="{{ cv.name_tech3|default:'' }}" placeholder="Name" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td style="padding:2px 4px"><div data-cl-sig="sig_tech3" style="min-height:28px;display:inline-block;vertical-align:middle">{% if cv.sig_tech3 %}<img src="{{ cv.sig_tech3 }}" style="max-height:28px">{% endif %}</div>{% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('sig_tech3')">&#9997; Sign</button>{% endif %}<input type="hidden" data-cl-field="sig_tech3" value="{{ cv.sig_tech3|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="background:#f0f4f8;font-size:8pt;padding:3px 5px">Supervisor</td>
+    <td><input type="text" data-cl-field="name_sup" value="{{ cv.name_sup|default:'' }}" placeholder="Name" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td style="padding:2px 4px"><div data-cl-sig="sig_sup" style="min-height:28px;display:inline-block;vertical-align:middle">{% if cv.sig_sup %}<img src="{{ cv.sig_sup }}" style="max-height:28px">{% endif %}</div>{% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('sig_sup')">&#9997; Sign</button>{% endif %}<input type="hidden" data-cl-field="sig_sup" value="{{ cv.sig_sup|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="background:#f0f4f8;font-size:8pt;padding:3px 5px">Engineer</td>
+    <td><input type="text" data-cl-field="name_eng" value="{{ cv.name_eng|default:'' }}" placeholder="Name" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+    <td style="padding:2px 4px"><div data-cl-sig="sig_eng" style="min-height:28px;display:inline-block;vertical-align:middle">{% if cv.sig_eng %}<img src="{{ cv.sig_eng }}" style="max-height:28px">{% endif %}</div>{% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('sig_eng')">&#9997; Sign</button>{% endif %}<input type="hidden" data-cl-field="sig_eng" value="{{ cv.sig_eng|default:'' }}"></td>
+  </tr>
+</table>
+
+<!-- ═══ CHECKLIST ITEMS ═══ -->
+<table style="width:100%;border-collapse:collapse;margin-top:4px" class="cl-table">
+  <tr style="background:#2c5282;color:#fff">
+    <th style="width:4%;padding:3px 4px;text-align:center">Sr.</th>
+    <th style="width:42%;padding:3px 5px">Check Point</th>
+    <th style="width:13%;padding:3px 4px;text-align:center">Requirement</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">D</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">W</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">M</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">Q</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">S</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">Y</th>
+    <th style="width:4%;padding:3px 2px;text-align:center">AR</th>
+    <th style="width:17%;padding:3px 5px">Observation / Measured Value</th>
+  </tr>
+
+  <!-- INVERTER -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">INVERTER</td></tr>
+  <tr><td style="text-align:center">1</td><td>Over all Visual Check of all Inverters</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i1" value="{{ cv.i1|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">2</td><td>Inverter inside temperature &amp; Status</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i2" value="{{ cv.i2|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">3</td><td>Check Ventilation equipment</td><td style="text-align:center">No degradation</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i3" value="{{ cv.i3|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">4</td><td>Check Heat Sink of inverter</td><td style="text-align:center">No degradation</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i4" value="{{ cv.i4|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">5</td><td>Check fan running status</td><td style="text-align:center">Running</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i5" value="{{ cv.i5|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">6</td><td>DC Cables condition, Internal Component, Fuses</td><td style="text-align:center">No degradation</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i6" value="{{ cv.i6|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">7</td><td>Check door screen of inverter</td><td style="text-align:center">No stains</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i7" value="{{ cv.i7|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">8</td><td>Clean the Inverter</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i8" value="{{ cv.i8|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">9</td><td>Check filter Condition. Clean if necessary</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i9" value="{{ cv.i9|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">10</td><td>Check torque marking if deviation</td><td style="text-align:center">Up to mark</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i10" value="{{ cv.i10|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">11</td><td>Check whether the sealing strip is fixed properly</td><td style="text-align:center">Fixed</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i11" value="{{ cv.i11|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">12</td><td>Check whether warning labels are clear and replace them</td><td style="text-align:center">Clear</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i12" value="{{ cv.i12|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">13</td><td>Inspection of master fuse boxes, Cabling and grounding</td><td style="text-align:center">No damage</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i13" value="{{ cv.i13|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">14</td><td>Check whether all inlet and outlet holes are sealed</td><td style="text-align:center">Sealed</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i14" value="{{ cv.i14|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">15</td><td>Check smoke indicator light is green or red</td><td style="text-align:center">Green</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i15" value="{{ cv.i15|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">16</td><td>Check whether the surface of the container has been corroded</td><td style="text-align:center">No corrosion</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i16" value="{{ cv.i16|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- EARTHING SYSTEM -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">EARTHING SYSTEM</td></tr>
+  <tr><td style="text-align:center">17</td><td>Record the Earth Resistance value for all Grounding system</td><td style="text-align:center">Recorded</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i17" value="{{ cv.i17|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">18</td><td>Check earthing pit chamber is damage free</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i18" value="{{ cv.i18|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">19</td><td>Clean inside the earthing box if any dust or sand available</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i19" value="{{ cv.i19|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- RMU -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">RMU (RING MAIN UNIT)</td></tr>
+  <tr><td style="text-align:center">20</td><td>Check whether power cables are loose</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i20" value="{{ cv.i20|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">21</td><td>Check whether control cables are damaged</td><td style="text-align:center">Intact</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i21" value="{{ cv.i21|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">22</td><td>Check whether the insulation binding tapes on the wiring</td><td style="text-align:center">OK</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i22" value="{{ cv.i22|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">23</td><td>Clean the filters</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i23" value="{{ cv.i23|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">24</td><td>Check tightness of cable clamps</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i24" value="{{ cv.i24|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">25</td><td>Check all Electrical Connections</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i25" value="{{ cv.i25|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">26</td><td>Check if the RMU has any part of the deformation</td><td style="text-align:center">OK</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i26" value="{{ cv.i26|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">27</td><td>Check whether the fan / heat exchanger produces abnormal sound</td><td style="text-align:center">Normal</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i27" value="{{ cv.i27|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">28</td><td>Check the SF6 air pressure meter</td><td style="text-align:center">Normal</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i28" value="{{ cv.i28|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">29</td><td>Check smoke indicator light is green or red</td><td style="text-align:center">Green</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i29" value="{{ cv.i29|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">30</td><td>Check for any loose connections</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i30" value="{{ cv.i30|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">31</td><td>Check all the switchgear accessories and auxiliary equipment</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i31" value="{{ cv.i31|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">32</td><td>Check no abnormal condition while operation</td><td style="text-align:center">Normal</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i32" value="{{ cv.i32|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">33</td><td>Carefully clean the switchgear, especially surface</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i33" value="{{ cv.i33|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">34</td><td>Check whether loop connection and grounding connection is firm</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i34" value="{{ cv.i34|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">35</td><td>Check the door limiter switch and function of RMU light</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i35" value="{{ cv.i35|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">36</td><td>Check whether there is condensation on the internal side panel</td><td style="text-align:center">OK</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i36" value="{{ cv.i36|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">37</td><td>Servicing of transformer including touch up paint, rust removal</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i37" value="{{ cv.i37|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- STATION CONTAINER / MV STATION -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">MV STATION / STATION CONTAINER</td></tr>
+  <tr><td style="text-align:center">38</td><td>Check all lights working status</td><td style="text-align:center">Working</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i38" value="{{ cv.i38|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">39</td><td>Check foundation of MV Station if any crack or damage</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i39" value="{{ cv.i39|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">40</td><td>Check whether loop connection and grounding connection is firm</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i40" value="{{ cv.i40|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">41</td><td>Check if any soil erosion near to MV station</td><td style="text-align:center">OK</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i41" value="{{ cv.i41|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- TRANSFORMER -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">TRANSFORMER</td></tr>
+  <tr><td style="text-align:center">42</td><td>Check the oil level meter indication of the transformer</td><td style="text-align:center">Normal</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i42" value="{{ cv.i42|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">43</td><td>Servicing of transformer including touch up paint, rust removal</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i43" value="{{ cv.i43|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">44</td><td>Check Winding temperature of transformer</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i44" value="{{ cv.i44|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">45</td><td>Check whether there is oil leakage around the pressure release</td><td style="text-align:center">No leakage</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i45" value="{{ cv.i45|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">46</td><td>Check whether there is oil leakage on the phase bushings</td><td style="text-align:center">No leakage</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i46" value="{{ cv.i46|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">47</td><td>Check whether there is oil leakage on the joint between</td><td style="text-align:center">No leakage</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i47" value="{{ cv.i47|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">48</td><td>Check for any corrosion on transformer body</td><td style="text-align:center">OK</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i48" value="{{ cv.i48|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">49</td><td>Check the short circuit through installation</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i49" value="{{ cv.i49|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">50</td><td>Check the status of PRD and Buchholz Relay</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i50" value="{{ cv.i50|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">51</td><td>Check whether the sound of the transformer is normal</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i51" value="{{ cv.i51|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">52</td><td>Check silica gel and oil level in breather or Replace</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i52" value="{{ cv.i52|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">53</td><td>Check whether there is condensation on the internal side panel</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i53" value="{{ cv.i53|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">54</td><td>Clean the transformer yard carefully</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i54" value="{{ cv.i54|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- PD PANEL / AUX TRANSFORMER -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">PD PANEL / AUX TRANSFORMER</td></tr>
+  <tr><td style="text-align:center">55</td><td>Check all the terminals and MCCB Connected to Aux Transformer</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i55" value="{{ cv.i55|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">56</td><td>Cleaning of filter and Fan</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i56" value="{{ cv.i56|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">57</td><td>Check condition of Aux Transformer</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i57" value="{{ cv.i57|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">58</td><td>Clean the Aux Transformer</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i58" value="{{ cv.i58|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- FIRE FIGHTING / PANEL -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">FIRE FIGHTING / PANEL</td></tr>
+  <tr><td style="text-align:center">59</td><td>Check Fire extinguisher Status</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i59" value="{{ cv.i59|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">60</td><td>Check condition of Panel</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i60" value="{{ cv.i60|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">61</td><td>Cleaning of Panel</td><td style="text-align:center">Done</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i61" value="{{ cv.i61|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+
+  <!-- UPS -->
+  <tr><td colspan="11" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">UPS (UNINTERRUPTIBLE POWER SUPPLY)</td></tr>
+  <tr><td style="text-align:center">62</td><td>Check all control and power cable termination are tightened</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i62" value="{{ cv.i62|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">63</td><td>Check overall condition of UPS Visually</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i63" value="{{ cv.i63|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">64</td><td>Clean UPS, Batteries and Filter of UPS</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i64" value="{{ cv.i64|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">65</td><td>Check batteries with battery tester</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i65" value="{{ cv.i65|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">66</td><td>Check any damage in UPS Foundation or in Cover</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i66" value="{{ cv.i66|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+  <tr><td style="text-align:center">67</td><td>Check fan of UPS is debris free</td><td style="text-align:center">Checked</td><td></td><td></td><td></td><td></td><td style="text-align:center">x</td><td></td><td></td><td><input type="text" data-cl-field="i67" value="{{ cv.i67|default:'' }}" style="width:100%;border:none;font-size:8pt"></td></tr>
+</table>
+
+<!-- ═══ TIGHTENING TORQUE REFERENCE ═══ -->
+<table style="width:100%;border-collapse:collapse;margin-top:4px" class="cl-table">
+  <tr><td colspan="3" style="background:#4a5568;color:#fff;font-weight:700;padding:3px 5px;font-size:8pt">TIGHTENING TORQUE REFERENCE (Bolt Tightening Values)</td></tr>
+  <tr style="background:#dce6f1;font-weight:700;font-size:8pt">
+    <th style="padding:3px 5px;width:33%">Bolt Size</th>
+    <th style="padding:3px 5px;width:33%">Torque (Nm)</th>
+    <th style="padding:3px 5px;width:34%">Remarks</th>
+  </tr>
+  <tr><td style="padding:2px 5px">M3</td><td style="padding:2px 5px">0.5 – 0.8 Nm</td><td style="padding:2px 5px">Small terminals</td></tr>
+  <tr><td style="padding:2px 5px">M4</td><td style="padding:2px 5px">1.2 – 1.8 Nm</td><td style="padding:2px 5px">Control wiring</td></tr>
+  <tr><td style="padding:2px 5px">M6</td><td style="padding:2px 5px">4 – 6 Nm</td><td style="padding:2px 5px">Bus bars</td></tr>
+  <tr><td style="padding:2px 5px">M8</td><td style="padding:2px 5px">10 – 14 Nm</td><td style="padding:2px 5px">Cable lugs</td></tr>
+  <tr><td style="padding:2px 5px">M10</td><td style="padding:2px 5px">20 – 28 Nm</td><td style="padding:2px 5px">Power connections</td></tr>
+  <tr><td style="padding:2px 5px">M12</td><td style="padding:2px 5px">35 – 50 Nm</td><td style="padding:2px 5px">MV connections</td></tr>
+  <tr><td style="padding:2px 5px">M14</td><td style="padding:2px 5px">55 – 75 Nm</td><td style="padding:2px 5px">HV connections</td></tr>
+  <tr><td style="padding:2px 5px">M16</td><td style="padding:2px 5px">80 – 110 Nm</td><td style="padding:2px 5px">Structural bolts</td></tr>
+</table>
+
+<!-- ═══ REMARKS ═══ -->
+<table style="width:100%;border-collapse:collapse;margin-top:4px" class="cl-table">
+  <tr><td colspan="2" style="background:#dce6f1;font-weight:700;padding:3px 5px;font-size:8pt">REMARKS / OBSERVATIONS</td></tr>
+  <tr>
+    <td style="width:5%;text-align:center;padding:2px 4px">1</td>
+    <td><input type="text" data-cl-field="rem1" value="{{ cv.rem1|default:'' }}" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+  <tr>
+    <td style="width:5%;text-align:center;padding:2px 4px">2</td>
+    <td><input type="text" data-cl-field="rem2" value="{{ cv.rem2|default:'' }}" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+  <tr>
+    <td style="width:5%;text-align:center;padding:2px 4px">3</td>
+    <td><input type="text" data-cl-field="rem3" value="{{ cv.rem3|default:'' }}" style="width:100%;border:none;font-size:8.5pt;padding:2px 4px"></td>
+  </tr>
+</table>
+
+<div style="font-size:7pt;margin-top:5px;color:#555">
+  <strong>Freq. Key:</strong> D=Daily &nbsp;|&nbsp; W=Weekly &nbsp;|&nbsp; M=Monthly &nbsp;|&nbsp; Q=Quarterly &nbsp;|&nbsp; S=Half-Yearly &nbsp;|&nbsp; Y=Yearly &nbsp;|&nbsp; AR=As Recommended by OEM
+</div>
+</div>
+{% endwith %}

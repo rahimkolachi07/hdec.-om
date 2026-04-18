@@ -1,3 +1,5 @@
+import json as _json
+import os
 import socket
 from pathlib import Path
 
@@ -17,6 +19,41 @@ def _discover_local_hosts():
     return sorted(hosts)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_project_env():
+    env_file = BASE_DIR / '.env'
+    if env_file.exists():
+        for raw_line in env_file.read_text(encoding='utf-8-sig').splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                os.environ.setdefault(key, value)
+
+    openai_cfg_file = BASE_DIR / 'openai_config.json'
+    if openai_cfg_file.exists():
+        try:
+            cfg = _json.loads(openai_cfg_file.read_text(encoding='utf-8-sig'))
+        except Exception:
+            cfg = {}
+        if isinstance(cfg, dict):
+            mapping = {
+                'api_key': 'OPENAI_API_KEY',
+                'realtime_model': 'OPENAI_REALTIME_MODEL',
+                'realtime_voice': 'OPENAI_REALTIME_VOICE',
+            }
+            for src_key, env_key in mapping.items():
+                value = str(cfg.get(src_key, '')).strip()
+                if value:
+                    os.environ.setdefault(env_key, value)
+
+
+_load_project_env()
+
 SECRET_KEY = 'hdec-1100mw-alhenakiya-secret-2025-xK9p'
 DEBUG = False
 LOCAL_HOSTS = _discover_local_hosts()
@@ -88,7 +125,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ── EMAIL CONFIGURATION ─────────────────────────────────────────────────────
 # Loads SMTP settings from cmms_email_config.json if it exists (set via admin panel).
 # Falls back to console backend when not configured.
-import json as _json
 _email_cfg_file = BASE_DIR / 'cmms_email_config.json'
 if _email_cfg_file.exists():
     try:

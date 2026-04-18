@@ -19,6 +19,7 @@ from .project_utils import (
     MODULE_META, ALL_MODULE_IDS,
     CATEGORY_META, ALL_CATEGORY_IDS,
     get_project_categories, get_all_modules_flat,
+    get_category_order, reorder_categories, reorder_modules,
 )
 
 # ── HELPERS ────────────────────────────────────────────────────────────────
@@ -194,6 +195,9 @@ def admin_panel(request):
         'modules_json': json.dumps(MODULES),
         'defaults_json': json.dumps(DEFAULT_PERMISSIONS),
         'countries_json': json.dumps(countries_ctx),
+        'admin_template_mode': 'control',
+        'admin_api_base': '/api/admin',
+        'module_access_level': 'edit',
     })
 
 
@@ -468,7 +472,7 @@ def country_view(request, country_id):
         })
 
     all_modules_json = json.dumps([
-        {'id': mid, 'label': meta['label'], 'icon': meta['icon']}
+        {'id': mid, 'label': meta['label'], 'icon': meta['icon'], 'category': meta.get('category', 'maintenance')}
         for mid, meta in MODULE_META.items()
     ])
     all_categories_json = json.dumps([
@@ -497,8 +501,10 @@ def project_hub_view(request, country_id, project_id):
 
     cats = get_project_categories(project)
     category_cards = []
-    for cid in ALL_CATEGORY_IDS:
-        meta = CATEGORY_META[cid]
+    for cid in get_category_order(project):
+        meta = CATEGORY_META.get(cid)
+        if not meta:
+            continue
         mods = cats.get(cid, {}).get('modules', [])
         preview_icons = [MODULE_META[m]['icon'] for m in mods if m in MODULE_META][:5]
         category_cards.append({
@@ -532,6 +538,10 @@ def category_hub_view(request, country_id, project_id, category):
         return redirect('/')
     if category not in CATEGORY_META:
         return redirect(f'/p/{country_id}/{project_id}/')
+
+    # Meeting Room has its own dedicated SPA — redirect directly
+    if category == 'meeting_room':
+        return redirect(f'/p/{country_id}/{project_id}/meeting-room/')
 
     permissions = user.get('permissions', {}) if user else {}
 
@@ -2122,3 +2132,124 @@ def hse_sjn_portal(request):
         'page_title': 'SJN Portal',
         'category_color': '#22c55e',
     }))
+
+
+# ── ADMIN MANAGEMENT MODULES API ──────────────────────────────────────────────
+
+from .admin_modules_data import (
+    list_vehicles, get_vehicle, create_vehicle, update_vehicle, delete_vehicle,
+    list_residences, get_residence, create_residence, update_residence, delete_residence,
+    list_workforce, get_workforce, create_workforce, update_workforce, delete_workforce,
+    list_gatepasses, get_gatepass, create_gatepass, update_gatepass, delete_gatepass,
+    list_equipment, get_equipment, create_equipment, update_equipment, delete_equipment,
+    list_trainings, get_training, create_training, update_training, delete_training,
+)
+
+def _admin_only(request):
+    u = get_user(request)
+    if not u or u.get('role') != 'admin':
+        return None, JsonResponse({'error': 'Forbidden'}, status=403)
+    return u, None
+
+def _module_api(request, list_fn, get_fn, create_fn, update_fn, delete_fn):
+    _, err = _admin_only(request)
+    if err: return err
+    if request.method == 'GET':
+        return JsonResponse({'records': list_fn()})
+    try:
+        data = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    if request.method == 'POST':
+        return JsonResponse({'record': create_fn(data)}, status=201)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def _module_detail_api(request, rid, get_fn, update_fn, delete_fn):
+    _, err = _admin_only(request)
+    if err: return err
+    if request.method == 'GET':
+        r = get_fn(rid)
+        return JsonResponse({'record': r}) if r else JsonResponse({'error': 'Not found'}, status=404)
+    try:
+        data = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    if request.method == 'PATCH':
+        r = update_fn(rid, data)
+        return JsonResponse({'record': r}) if r else JsonResponse({'error': 'Not found'}, status=404)
+    if request.method == 'DELETE':
+        ok = delete_fn(rid)
+        return JsonResponse({'ok': ok}) if ok else JsonResponse({'error': 'Not found'}, status=404)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def admin_vehicles_api(request):
+    return _module_api(request, list_vehicles, get_vehicle, create_vehicle, update_vehicle, delete_vehicle)
+
+@csrf_exempt
+def admin_vehicle_api(request, rid):
+    return _module_detail_api(request, rid, get_vehicle, update_vehicle, delete_vehicle)
+
+@csrf_exempt
+def admin_residences_api(request):
+    return _module_api(request, list_residences, get_residence, create_residence, update_residence, delete_residence)
+
+@csrf_exempt
+def admin_residence_api(request, rid):
+    return _module_detail_api(request, rid, get_residence, update_residence, delete_residence)
+
+@csrf_exempt
+def admin_workforce_api(request):
+    return _module_api(request, list_workforce, get_workforce, create_workforce, update_workforce, delete_workforce)
+
+@csrf_exempt
+def admin_workforce_member_api(request, rid):
+    return _module_detail_api(request, rid, get_workforce, update_workforce, delete_workforce)
+
+@csrf_exempt
+def admin_gatepasses_api(request):
+    return _module_api(request, list_gatepasses, get_gatepass, create_gatepass, update_gatepass, delete_gatepass)
+
+@csrf_exempt
+def admin_gatepass_api(request, rid):
+    return _module_detail_api(request, rid, get_gatepass, update_gatepass, delete_gatepass)
+
+@csrf_exempt
+def admin_equipment_api(request):
+    return _module_api(request, list_equipment, get_equipment, create_equipment, update_equipment, delete_equipment)
+
+@csrf_exempt
+def admin_equipment_item_api(request, rid):
+    return _module_detail_api(request, rid, get_equipment, update_equipment, delete_equipment)
+
+@csrf_exempt
+def admin_trainings_api(request):
+    return _module_api(request, list_trainings, get_training, create_training, update_training, delete_training)
+
+@csrf_exempt
+def admin_training_api(request, rid):
+    return _module_detail_api(request, rid, get_training, update_training, delete_training)
+
+
+@csrf_exempt
+def projects_reorder_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    u = get_user(request)
+    if not u:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    try:
+        data = json.loads(request.body or '{}')
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    country_id = data.get('country_id', '')
+    project_id = data.get('project_id', '')
+    kind = data.get('type', '')
+    order = data.get('order', [])
+    if kind == 'categories':
+        ok = reorder_categories(country_id, project_id, order)
+    elif kind == 'modules':
+        ok = reorder_modules(country_id, project_id, data.get('category', ''), order)
+    else:
+        return JsonResponse({'error': 'Invalid type'}, status=400)
+    return JsonResponse({'ok': ok})

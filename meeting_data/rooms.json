@@ -1,0 +1,17 @@
+[
+  {
+    "id": "95ae349b-7313-4da5-a5ef-a164e0d14493",
+    "name": "testing",
+    "title": "",
+    "host": "admin",
+    "description": "",
+    "is_private": false,
+    "password": "",
+    "participants": [
+      "admin",
+      "raheem2"
+    ],
+    "created_at": "2026-04-18T11:21:14.324888+00:00",
+    "status": "active"
+  }
+]

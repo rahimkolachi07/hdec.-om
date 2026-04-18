@@ -1,0 +1,31 @@
+[
+  {
+    "vehicle_name": "Maintenance 1",
+    "plate": "2652",
+    "type": "Pickup",
+    "fuel": "Diesel",
+    "make": "",
+    "model": "",
+    "year": "",
+    "odometer_km": "",
+    "service_due_km": "",
+    "tank_capacity_l": "",
+    "assigned_to": "",
+    "dept": "",
+    "status": "Available",
+    "base_location": "",
+    "next_service": "",
+    "insurance_expiry": "",
+    "registration_expiry": "",
+    "notes": "",
+    "fuel_logs": [],
+    "service_logs": [],
+    "issues": [],
+    "id": "5314a1e9-3ac0-40fc-a738-f194997e575f",
+    "created_at": "2026-04-18T16:46:57.470133+00:00",
+    "updated_at": "2026-04-18T16:46:57.470133+00:00",
+    "country_id": "saudi_arabia",
+    "project_id": "henakiya_1",
+    "project_key": "saudi_arabia/henakiya_1"
+  }
+]

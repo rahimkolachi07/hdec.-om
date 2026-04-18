@@ -1,0 +1,559 @@
+{#
+  cmms_permit_form.html — Hardcoded Electrical Work Permit (MP-10 Form 3)
+  Context variables expected:
+    permit             – annotated permit dict (with document_values, signature_url fields)
+    permit_form_print  – True → static PDF rendering  |  False / missing → interactive
+    sig_inline         – dict of field → base64 PNG for PDF signatures
+    can_edit_application / can_issue_permit / can_hse_approve
+    can_close_receiver / can_close_issuer / can_close_hse
+#}
+{% with dv=permit.document_values %}
+
+{# ══════════════════════════════════════════════
+   1. PERMIT HEADER
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <colgroup><col style="width:16%"><col style="width:62%"><col style="width:22%"></colgroup>
+  <tr>
+    <td class="perm-logo" rowspan="2">
+      <div class="perm-logo-wordmark">HDEC</div>
+      <div class="perm-logo-sub">Engineering &amp; Construction</div>
+    </td>
+    <td class="perm-main-title">ELECTRICAL-PERMIT TO WORK</td>
+    <td class="perm-form-no" rowspan="2">
+      <strong>MP-10 FORM 3</strong><br>Electrical Work Permit
+    </td>
+  </tr>
+  <tr>
+    <td class="perm-project-name">
+      1100MW Al Henakiyah Solar Photovoltaic Independent Power Plant
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   2. ADMINISTRATIVE FIELDS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <colgroup>
+    <col style="width:17%"><col style="width:21%">
+    <col style="width:7%"><col style="width:20%">
+    <col style="width:14%"><col style="width:21%">
+  </colgroup>
+  <tr>
+    <td class="perm-lbl">PTW Ref. No.</td>
+    <td class="perm-val">{% if permit_form_print %}{{ permit.permit_number|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r1_c2" value="{{ permit.permit_number|default:'' }}" placeholder="PTW Ref. No.">{% endif %}</td>
+    <td class="perm-lbl perm-ctr">Date</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t2_r1_c9|default:permit.scheduled_date|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r1_c9" value="{{ dv.t2_r1_c9|default:permit.scheduled_date|default:'' }}" placeholder="DD-MM-YYYY">{% endif %}</td>
+    <td class="perm-lbl perm-ctr">Time</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t2_r1_c17|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r1_c17" value="{{ dv.t2_r1_c17|default:'' }}" placeholder="HH:MM">{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl">Company Name</td>
+    <td class="perm-val" colspan="3">{% if permit_form_print %}{{ dv.t2_r2_c2|default:"HDEC" }}{% else %}<input class="perm-input" data-doc-field="t2_r2_c2" value="{{ dv.t2_r2_c2|default:'HDEC' }}" placeholder="Company name">{% endif %}</td>
+    <td class="perm-lbl perm-ctr" style="font-size:7.5pt">Expected Duration &amp; Time</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t2_r2_c9|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r2_c9" value="{{ dv.t2_r2_c9|default:'' }}" placeholder="e.g. 1 Shift / 8 hrs">{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl" style="font-size:7.5pt">Isolation Certificate No.</td>
+    <td class="perm-val" colspan="3">{% if permit_form_print %}{{ permit.isolation_cert_number|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r3_c2" value="{{ permit.isolation_cert_number|default:'' }}" placeholder="Isolation certificate number">{% endif %}</td>
+    <td class="perm-lbl perm-ctr" style="font-size:7.5pt">No. of Employees</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t2_r3_c9|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r3_c9" value="{{ dv.t2_r3_c9|default:'' }}" placeholder="Count">{% endif %}</td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   3. EQUIPMENT (ENERGIZED / DE-ENERGIZED)
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <colgroup><col style="width:9%"><col style="width:41%"><col style="width:9%"><col style="width:41%"></colgroup>
+  <tr>
+    <td class="perm-equip-lbl perm-energized">⚡<br><small>Energized Lines<br>/ Equipment</small></td>
+    <td class="perm-val" style="vertical-align:top;min-height:38px">
+      {% if permit_form_print %}{{ dv.t2_r4_c1|default:""|linebreaksbr }}{% else %}<textarea class="perm-ta" data-doc-field="t2_r4_c1" rows="2" placeholder="List energized lines or equipment">{{ dv.t2_r4_c1|default:"" }}</textarea>{% endif %}
+    </td>
+    <td class="perm-equip-lbl perm-deenergized">🔌<br><small>De-Energized Lines<br>/ Equipment</small></td>
+    <td class="perm-val" style="vertical-align:top;min-height:38px">
+      {% if permit_form_print %}{{ dv.t2_r4_c9|default:""|linebreaksbr }}{% else %}<textarea class="perm-ta" data-doc-field="t2_r4_c9" rows="2" placeholder="List de-energized lines or equipment">{{ dv.t2_r4_c9|default:"" }}</textarea>{% endif %}
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   4. DESCRIPTION / LOCATION / TOOLS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <colgroup><col style="width:20%"><col style="width:80%"></colgroup>
+  <tr>
+    <td class="perm-lbl" style="vertical-align:top">Description of Work</td>
+    <td class="perm-val" style="min-height:42px;vertical-align:top">
+      {% if permit_form_print %}{{ dv.t2_r5_c1|default:""|linebreaksbr }}{% else %}<textarea class="perm-ta" data-doc-field="t2_r5_c1" rows="3" placeholder="Describe the work to be performed in detail">{{ dv.t2_r5_c1|default:"" }}</textarea>{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="perm-lbl">Job Location</td>
+    <td class="perm-val">
+      {% if permit_form_print %}{{ dv.t2_r6_c1|default:"" }}{% else %}<input class="perm-input" data-doc-field="t2_r6_c1" value="{{ dv.t2_r6_c1|default:'' }}" placeholder="Site / Zone / Area / Equipment ID">{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="perm-lbl" style="vertical-align:top">Tools / Equipment<br>to be used</td>
+    <td class="perm-val" style="vertical-align:top;min-height:28px">
+      {% if permit_form_print %}{{ dv.t2_r7_c1|default:""|linebreaksbr }}{% else %}<textarea class="perm-ta" data-doc-field="t2_r7_c1" rows="2" placeholder="List tools and equipment to be used">{{ dv.t2_r7_c1|default:"" }}</textarea>{% endif %}
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   5. IDENTIFIED HAZARDS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <tr><td class="perm-sec-hdr" colspan="4">IDENTIFIED HAZARDS</td></tr>
+  <tr>
+    <td class="perm-hazard">☑ Electrocution</td>
+    <td class="perm-hazard">☑ Arc Flash</td>
+    <td class="perm-hazard">☑ Flying Particles</td>
+    <td class="perm-hazard">☑ Noise Exposure</td>
+  </tr>
+  <tr>
+    <td class="perm-hazard">☑ Falling Objects</td>
+    <td class="perm-hazard">☑ Protruding Objects / Parts</td>
+    <td class="perm-hazard">☑ Tripping / Slipping Hazards</td>
+    <td class="perm-hazard">☑ Electric Shock</td>
+  </tr>
+  <tr>
+    <td class="perm-hazard">☑ Fire Risk</td>
+    <td class="perm-hazard">☑ Manual Handling Injuries</td>
+    <td class="perm-hazard">☑ Electric Burn</td>
+    <td class="perm-hazard">☑ Proximity to Overhead Lines</td>
+  </tr>
+  <tr>
+    <td colspan="4" class="perm-val" style="vertical-align:middle">
+      {% if permit_form_print %}
+        {% if dv.t_haz_other_chk == "1" %}☑{% else %}☐{% endif %} Other: {{ dv.t_haz_other|default:"" }}
+      {% else %}
+        <label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_haz_other_chk" {% if dv.t_haz_other_chk == "1" %}checked{% endif %}> Other:</label>&nbsp;
+        <input class="perm-input" data-doc-field="t_haz_other" value="{{ dv.t_haz_other|default:'' }}" placeholder="Specify other hazard" style="width:75%;display:inline-block;vertical-align:middle">
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   6. SUPPORTING DOCUMENTS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <tr><td class="perm-sec-hdr" colspan="3">SUPPORTING DOCUMENTS REQUIRED TO BE ATTACHED</td></tr>
+  <tr>
+    <td class="perm-val" style="width:34%">
+      {% if permit_form_print %}{% if dv.t_doc_method == "1" %}☑{% else %}☐{% endif %} Method Statement
+      {% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_doc_method" {% if dv.t_doc_method == "1" %}checked{% endif %}> Method Statement</label>{% endif %}
+    </td>
+    <td class="perm-val" style="width:33%">
+      {% if permit_form_print %}{% if dv.t_doc_risk == "1" %}☑{% else %}☐{% endif %} Risk Assessment
+      {% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_doc_risk" {% if dv.t_doc_risk == "1" %}checked{% endif %}> Risk Assessment</label>{% endif %}
+    </td>
+    <td class="perm-val" style="width:33%">
+      {% if permit_form_print %}{% if dv.t_doc_other == "1" %}☑{% else %}☐{% endif %} Other: {{ dv.t_doc_other_txt|default:"" }}
+      {% else %}
+        <label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_doc_other" {% if dv.t_doc_other == "1" %}checked{% endif %}> Other:</label>&nbsp;
+        <input class="perm-input" data-doc-field="t_doc_other_txt" value="{{ dv.t_doc_other_txt|default:'' }}" placeholder="Specify" style="width:58%;display:inline-block">
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   7. SAFETY PRECAUTIONS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <colgroup>
+    <col style="width:5%"><col style="width:52%">
+    <col style="width:9%"><col style="width:9%"><col style="width:25%">
+  </colgroup>
+  <tr>
+    <td class="perm-sec-hdr" colspan="3">SAFETY PRECAUTIONS</td>
+    <td class="perm-sec-hdr perm-ctr">YES</td>
+    <td class="perm-sec-hdr perm-ctr">NO / N/A</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">1</td>
+    <td class="perm-val">Is a safe distance maintained from energized parts?
+      <span style="font-size:8pt">&nbsp;Voltage:&nbsp;{% if permit_form_print %}{{ dv.t_sp1_voltage|default:"_____" }}{% else %}<input class="perm-input" data-doc-field="t_sp1_voltage" value="{{ dv.t_sp1_voltage|default:'' }}" placeholder="kV" style="width:38px;display:inline-block">{% endif %}
+      &nbsp;Distance:&nbsp;{% if permit_form_print %}{{ dv.t_sp1_dist|default:"_____" }}{% else %}<input class="perm-input" data-doc-field="t_sp1_dist" value="{{ dv.t_sp1_dist|default:'' }}" placeholder="m" style="width:38px;display:inline-block">{% endif %}</span>
+    </td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_sp1_yes == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp1_yes" {% if dv.t_sp1_yes == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr" colspan="2">{% if permit_form_print %}{% if dv.t_sp1_no == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp1_no" {% if dv.t_sp1_no == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">2</td>
+    <td class="perm-val">Is LOTO required? If yes, is the Lockout Certificate attached?</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_sp2_yes == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp2_yes" {% if dv.t_sp2_yes == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr" colspan="2">{% if permit_form_print %}{% if dv.t_sp2_no == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp2_no" {% if dv.t_sp2_no == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">3</td>
+    <td class="perm-val">Is Confined Space Entry Permit required?</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_sp3_yes == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp3_yes" {% if dv.t_sp3_yes == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr" colspan="2">{% if permit_form_print %}{% if dv.t_sp3_no == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp3_no" {% if dv.t_sp3_no == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">4</td>
+    <td class="perm-val">Is there complete isolation of all electrical power sources? Are they properly tagged?</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_sp4_yes == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp4_yes" {% if dv.t_sp4_yes == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr" colspan="2">{% if permit_form_print %}{% if dv.t_sp4_no == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp4_no" {% if dv.t_sp4_no == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">5</td>
+    <td class="perm-val" colspan="4">
+      Isolation Method:&nbsp;
+      {% if permit_form_print %}
+        {% if dv.t_sp5_sw == "1" %}☑{% else %}☐{% endif %} Switch Out&nbsp;&nbsp;&nbsp;
+        {% if dv.t_sp5_loto == "1" %}☑{% else %}☐{% endif %} Lockout / Tagout&nbsp;&nbsp;&nbsp;
+        No. of Locks: {{ dv.t_sp5_locks|default:"——" }}
+      {% else %}
+        <label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_sp5_sw" {% if dv.t_sp5_sw == "1" %}checked{% endif %}> Switch Out</label>&emsp;
+        <label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_sp5_loto" {% if dv.t_sp5_loto == "1" %}checked{% endif %}> Lockout / Tagout</label>&emsp;
+        No. of Locks:&nbsp;<input class="perm-input" data-doc-field="t_sp5_locks" value="{{ dv.t_sp5_locks|default:'' }}" placeholder="0" style="width:36px;display:inline-block">
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">6</td>
+    <td class="perm-val">Has de-energization been confirmed through proper testing / testing device?</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_sp6_yes == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp6_yes" {% if dv.t_sp6_yes == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr" colspan="2">{% if permit_form_print %}{% if dv.t_sp6_no == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp6_no" {% if dv.t_sp6_no == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">7</td>
+    <td class="perm-val">Have all tools and devices been inspected and properly adjusted for the job?</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_sp7_yes == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp7_yes" {% if dv.t_sp7_yes == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr" colspan="2">{% if permit_form_print %}{% if dv.t_sp7_no == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input perm-yn-cb" data-doc-field="t_sp7_no" {% if dv.t_sp7_no == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   8. SITE INSPECTION
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <colgroup><col style="width:55%"><col style="width:22.5%"><col style="width:22.5%"></colgroup>
+  <tr>
+    <td class="perm-sec-hdr">SITE INSPECTION ITEMS</td>
+    <td class="perm-sec-hdr perm-ctr" style="font-size:8pt">ISSUED BY<br>(Lead Shift Eng.)</td>
+    <td class="perm-sec-hdr perm-ctr" style="font-size:8pt">RECEIVED BY<br>(Work Supervisor)</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Fire Extinguishers&nbsp;&nbsp;
+      Type:{% if permit_form_print %}&nbsp;{{ dv.t_si_fe_type|default:"___" }}{% else %}&nbsp;<input class="perm-input" data-doc-field="t_si_fe_type" value="{{ dv.t_si_fe_type|default:'' }}" placeholder="Type" style="width:36px;display:inline-block">{% endif %}&nbsp;
+      Qty:{% if permit_form_print %}&nbsp;{{ dv.t_si_fe_qty|default:"__" }}{% else %}&nbsp;<input class="perm-input" data-doc-field="t_si_fe_qty" value="{{ dv.t_si_fe_qty|default:'' }}" placeholder="Qty" style="width:28px;display:inline-block">{% endif %}&nbsp;
+      Size:{% if permit_form_print %}&nbsp;{{ dv.t_si_fe_sz|default:"__" }}{% else %}&nbsp;<input class="perm-input" data-doc-field="t_si_fe_sz" value="{{ dv.t_si_fe_sz|default:'' }}" placeholder="kg" style="width:30px;display:inline-block">{% endif %}
+    </td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si1_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si1_i" {% if dv.t_si1_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si1_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si1_r" {% if dv.t_si1_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Access / Escape Routes</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si2_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si2_i" {% if dv.t_si2_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si2_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si2_r" {% if dv.t_si2_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Danger / Warning Signs</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si3_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si3_i" {% if dv.t_si3_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si3_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si3_r" {% if dv.t_si3_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Lighting (Adequate)</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si4_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si4_i" {% if dv.t_si4_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si4_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si4_r" {% if dv.t_si4_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Safety Barriers</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si5_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si5_i" {% if dv.t_si5_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si5_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si5_r" {% if dv.t_si5_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Safety Stick (PPE Ground)</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si6_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si6_i" {% if dv.t_si6_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si6_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si6_r" {% if dv.t_si6_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">Portable Radio</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si7_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si7_i" {% if dv.t_si7_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si7_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si7_r" {% if dv.t_si7_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">
+      Other:&nbsp;{% if permit_form_print %}{{ dv.t_si_other|default:"" }}{% else %}<input class="perm-input" data-doc-field="t_si_other" value="{{ dv.t_si_other|default:'' }}" placeholder="Specify">{% endif %}
+    </td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si8_i == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si8_i" {% if dv.t_si8_i == "1" %}checked{% endif %}>{% endif %}</td>
+    <td class="perm-val perm-ctr">{% if permit_form_print %}{% if dv.t_si8_r == "1" %}☑{% else %}☐{% endif %}{% else %}<input type="checkbox" class="perm-cb-input" data-doc-field="t_si8_r" {% if dv.t_si8_r == "1" %}checked{% endif %}>{% endif %}</td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   9. PPE REQUIREMENTS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <tr><td class="perm-sec-hdr" colspan="2">PERSONAL PROTECTIVE EQUIPMENT (PPE) REQUIREMENTS</td></tr>
+  <tr>
+    <td class="perm-val" style="width:50%">{% if permit_form_print %}{% if dv.t_ppe_helm == "1" %}☑{% else %}☐{% endif %} Helmet{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_helm" {% if dv.t_ppe_helm == "1" %}checked{% endif %}> Helmet</label>{% endif %}</td>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_shoes == "1" %}☑{% else %}☐{% endif %} Safety Shoes{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_shoes" {% if dv.t_ppe_shoes == "1" %}checked{% endif %}> Safety Shoes</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">
+      {% if permit_form_print %}{% if dv.t_ppe_gloves == "1" %}☑{% else %}☐{% endif %} Electrical Gloves&nbsp;&nbsp;Rating:&nbsp;{{ dv.t_ppe_gloves_r|default:"" }}
+      {% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_gloves" {% if dv.t_ppe_gloves == "1" %}checked{% endif %}> Electrical Gloves</label>&nbsp;Rating:&nbsp;<input class="perm-input" data-doc-field="t_ppe_gloves_r" value="{{ dv.t_ppe_gloves_r|default:'' }}" placeholder="Class" style="width:48px;display:inline-block">{% endif %}
+    </td>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_mask == "1" %}☑{% else %}☐{% endif %} Half Mask (Respirator){% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_mask" {% if dv.t_ppe_mask == "1" %}checked{% endif %}> Half Mask (Respirator)</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_gogg == "1" %}☑{% else %}☐{% endif %} Safety Goggles{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_gogg" {% if dv.t_ppe_gogg == "1" %}checked{% endif %}> Safety Goggles</label>{% endif %}</td>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_vest == "1" %}☑{% else %}☐{% endif %} Reflective Vest{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_vest" {% if dv.t_ppe_vest == "1" %}checked{% endif %}> Reflective Vest</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_dust == "1" %}☑{% else %}☐{% endif %} Dust Mask{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_dust" {% if dv.t_ppe_dust == "1" %}checked{% endif %}> Dust Mask</label>{% endif %}</td>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_cloth == "1" %}☑{% else %}☐{% endif %} Safety Clothes (Fire Retardant){% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_cloth" {% if dv.t_ppe_cloth == "1" %}checked{% endif %}> Safety Clothes (Fire Retardant)</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_face == "1" %}☑{% else %}☐{% endif %} Face Shield{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_face" {% if dv.t_ppe_face == "1" %}checked{% endif %}> Face Shield</label>{% endif %}</td>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_arc == "1" %}☑{% else %}☐{% endif %} Arc Flash PPE{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_arc" {% if dv.t_ppe_arc == "1" %}checked{% endif %}> Arc Flash PPE</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_ear == "1" %}☑{% else %}☐{% endif %} Safety Ear Plugs / Muff{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_ear" {% if dv.t_ppe_ear == "1" %}checked{% endif %}> Safety Ear Plugs / Muff</label>{% endif %}</td>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_ppe_other == "1" %}☑{% else %}☐{% endif %} Other: {{ dv.t_ppe_other_txt|default:"" }}{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_ppe_other" {% if dv.t_ppe_other == "1" %}checked{% endif %}> Other:</label>&nbsp;<input class="perm-input" data-doc-field="t_ppe_other_txt" value="{{ dv.t_ppe_other_txt|default:'' }}" placeholder="Specify" style="width:58%;display:inline-block">{% endif %}</td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   10. ADDITIONAL PRECAUTIONS
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <tr><td class="perm-sec-hdr" colspan="2">ADDITIONAL PRECAUTIONS</td></tr>
+  <tr>
+    <td class="perm-lbl perm-ctr" style="width:6%">1</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t_ap1|default:"" }}{% else %}<input class="perm-input" data-doc-field="t_ap1" value="{{ dv.t_ap1|default:'' }}" placeholder="Additional precaution 1">{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">2</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t_ap2|default:"" }}{% else %}<input class="perm-input" data-doc-field="t_ap2" value="{{ dv.t_ap2|default:'' }}" placeholder="Additional precaution 2">{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl perm-ctr">3</td>
+    <td class="perm-val">{% if permit_form_print %}{{ dv.t_ap3|default:"" }}{% else %}<input class="perm-input" data-doc-field="t_ap3" value="{{ dv.t_ap3|default:'' }}" placeholder="Additional precaution 3">{% endif %}</td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   11. AUTHORIZATION — RECEIVER
+══════════════════════════════════════════════ #}
+<table class="perm-table perm-auth-table">
+  <tr><td class="perm-auth-hdr" colspan="3">PERMIT RECEIVER ACCEPTANCE</td></tr>
+  <tr>
+    <td colspan="3" class="perm-auth-stmt">
+      I certify that I have read and verified this work permit and checklist. I have been informed about the risk assessment
+      results. I am aware of the risks that I can be exposed to. I commit that I will be in line with all the safety rules
+      mentioned in the work permit checklist and will not deflect any of them.
+    </td>
+  </tr>
+  <tr>
+    <td class="perm-auth-field" style="width:34%">
+      <div class="perm-auth-lbl">Permit Receiver Name</div>
+      <div class="perm-auth-val">{{ permit.receiver_name|default:"" }}</div>
+    </td>
+    <td class="perm-auth-field perm-sig-cell" style="width:36%">
+      <div class="perm-auth-lbl">Signature</div>
+      {% if permit_form_print %}
+        {% if sig_inline.receiver_signature %}<img class="perm-sig-img" src="{{ sig_inline.receiver_signature }}" alt="Receiver Signature">{% else %}<div class="perm-sig-blank"></div>{% endif %}
+      {% else %}
+        {% if permit.receiver_signature_url %}<img class="perm-sig-img is-visible" src="{{ permit.receiver_signature_url }}" id="sig-preview-receiver_signature" alt="Receiver Signature">{% else %}<img class="perm-sig-img" id="sig-preview-receiver_signature" style="display:none" alt="">{% endif %}
+        {% if can_edit_application %}<button class="perm-sign-btn" type="button" onclick="openSigPad('receiver_signature')">✍ {% if permit.receiver_signature_url %}Re-sign{% else %}Sign{% endif %}</button>{% endif %}
+      {% endif %}
+    </td>
+    <td class="perm-auth-field" style="width:30%">
+      <div class="perm-auth-lbl">Date</div>
+      <div class="perm-auth-val">{{ permit.submitted_at|slice:":10"|default:"" }}</div>
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   12. AUTHORIZATION — ISSUER
+══════════════════════════════════════════════ #}
+<table class="perm-table perm-auth-table">
+  <tr><td class="perm-auth-hdr" colspan="3">PERMIT ISSUER AUTHORIZATION <span style="font-size:8pt;font-weight:400">(Lead Shift Engineer)</span></td></tr>
+  <tr>
+    <td colspan="3" class="perm-auth-stmt">
+      I reviewed the work permission checklist and checked the working conditions. I have reviewed all aspects of the
+      task / activity and am satisfied with the arrangements as detailed in the risk assessment have been put in place and
+      certify that the activity detailed above is authorized to proceed.
+    </td>
+  </tr>
+  <tr>
+    <td class="perm-auth-field" style="width:34%">
+      <div class="perm-auth-lbl">Permit Issuer Name</div>
+      <div class="perm-auth-val">{{ permit.issuer_name|default:"" }}</div>
+    </td>
+    <td class="perm-auth-field perm-sig-cell" style="width:36%">
+      <div class="perm-auth-lbl">Signature</div>
+      {% if permit_form_print %}
+        {% if sig_inline.issuer_signature %}<img class="perm-sig-img" src="{{ sig_inline.issuer_signature }}" alt="Issuer Signature">{% else %}<div class="perm-sig-blank"></div>{% endif %}
+      {% else %}
+        {% if permit.issuer_signature_url %}<img class="perm-sig-img is-visible" src="{{ permit.issuer_signature_url }}" id="sig-preview-issuer_signature" alt="Issuer Signature">{% else %}<img class="perm-sig-img" id="sig-preview-issuer_signature" style="display:none" alt="">{% endif %}
+        {% if can_issue_permit %}<button class="perm-sign-btn" type="button" onclick="openSigPad('issuer_signature')">✍ {% if permit.issuer_signature_url %}Re-sign{% else %}Sign{% endif %}</button>{% endif %}
+      {% endif %}
+    </td>
+    <td class="perm-auth-field" style="width:30%">
+      <div class="perm-auth-lbl">Date</div>
+      <div class="perm-auth-val">{{ permit.issued_at|slice:":10"|default:"" }}</div>
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   13. AUTHORIZATION — HSE
+══════════════════════════════════════════════ #}
+<table class="perm-table perm-auth-table">
+  <tr><td class="perm-auth-hdr" colspan="3">HSE PRACTITIONER ENDORSEMENT <span style="font-size:8pt;font-weight:400">(O&amp;M / EPC / Sub-Contractor)</span></td></tr>
+  <tr>
+    <td class="perm-auth-field" style="width:34%">
+      <div class="perm-auth-lbl">HSE Name</div>
+      <div class="perm-auth-val">{{ permit.hse_name|default:"" }}</div>
+    </td>
+    <td class="perm-auth-field perm-sig-cell" style="width:36%">
+      <div class="perm-auth-lbl">Signature</div>
+      {% if permit_form_print %}
+        {% if sig_inline.hse_signature %}<img class="perm-sig-img" src="{{ sig_inline.hse_signature }}" alt="HSE Signature">{% else %}<div class="perm-sig-blank"></div>{% endif %}
+      {% else %}
+        {% if permit.hse_signature_url %}<img class="perm-sig-img is-visible" src="{{ permit.hse_signature_url }}" id="sig-preview-hse_signature" alt="HSE Signature">{% else %}<img class="perm-sig-img" id="sig-preview-hse_signature" style="display:none" alt="">{% endif %}
+        {% if can_hse_approve %}<button class="perm-sign-btn" type="button" onclick="openSigPad('hse_signature')">✍ {% if permit.hse_signature_url %}Re-sign{% else %}Sign{% endif %}</button>{% endif %}
+      {% endif %}
+    </td>
+    <td class="perm-auth-field" style="width:30%">
+      <div class="perm-auth-lbl">PTW Ref. No. / Date</div>
+      <div class="perm-auth-val">{{ permit.permit_number|default:"" }}{% if permit.hse_signed_at %}&nbsp;&nbsp;{{ permit.hse_signed_at|slice:":10" }}{% endif %}</div>
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   14. VALIDITY STATEMENT
+══════════════════════════════════════════════ #}
+<table class="perm-table">
+  <tr>
+    <td class="perm-validity">
+      ⏱&nbsp;<strong>This permit is valid for one day (one shift) from the date of issue.</strong>
+      &emsp;Valid From:&nbsp;<strong>{{ permit.valid_from|slice:":16"|default:"———" }}</strong>
+      &emsp;Valid Until:&nbsp;<strong>{{ permit.valid_until|slice:":16"|default:"———" }}</strong>
+    </td>
+  </tr>
+</table>
+
+{# ══════════════════════════════════════════════
+   15. WORKER ROSTER
+══════════════════════════════════════════════ #}
+<div class="perm-roster-wrap">
+  <table class="perm-table perm-roster-tbl">
+    <tr><td class="perm-sec-hdr" colspan="3">WORKER ROSTER (1 – 10)</td></tr>
+    <tr>
+      <td class="perm-lbl perm-ctr" style="width:8%">Sr.</td>
+      <td class="perm-lbl" style="width:54%">Full Name</td>
+      <td class="perm-lbl" style="width:38%">Iqama / ID No.</td>
+    </tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">1</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w1_name" value="{{ dv.t_w1_name|default:'' }}">{% else %}{{ dv.t_w1_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w1_id" value="{{ dv.t_w1_id|default:'' }}">{% else %}{{ dv.t_w1_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">2</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w2_name" value="{{ dv.t_w2_name|default:'' }}">{% else %}{{ dv.t_w2_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w2_id" value="{{ dv.t_w2_id|default:'' }}">{% else %}{{ dv.t_w2_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">3</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w3_name" value="{{ dv.t_w3_name|default:'' }}">{% else %}{{ dv.t_w3_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w3_id" value="{{ dv.t_w3_id|default:'' }}">{% else %}{{ dv.t_w3_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">4</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w4_name" value="{{ dv.t_w4_name|default:'' }}">{% else %}{{ dv.t_w4_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w4_id" value="{{ dv.t_w4_id|default:'' }}">{% else %}{{ dv.t_w4_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">5</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w5_name" value="{{ dv.t_w5_name|default:'' }}">{% else %}{{ dv.t_w5_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w5_id" value="{{ dv.t_w5_id|default:'' }}">{% else %}{{ dv.t_w5_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">6</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w6_name" value="{{ dv.t_w6_name|default:'' }}">{% else %}{{ dv.t_w6_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w6_id" value="{{ dv.t_w6_id|default:'' }}">{% else %}{{ dv.t_w6_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">7</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w7_name" value="{{ dv.t_w7_name|default:'' }}">{% else %}{{ dv.t_w7_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w7_id" value="{{ dv.t_w7_id|default:'' }}">{% else %}{{ dv.t_w7_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">8</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w8_name" value="{{ dv.t_w8_name|default:'' }}">{% else %}{{ dv.t_w8_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w8_id" value="{{ dv.t_w8_id|default:'' }}">{% else %}{{ dv.t_w8_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">9</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w9_name" value="{{ dv.t_w9_name|default:'' }}">{% else %}{{ dv.t_w9_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w9_id" value="{{ dv.t_w9_id|default:'' }}">{% else %}{{ dv.t_w9_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">10</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w10_name" value="{{ dv.t_w10_name|default:'' }}">{% else %}{{ dv.t_w10_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w10_id" value="{{ dv.t_w10_id|default:'' }}">{% else %}{{ dv.t_w10_id|default:"" }}{% endif %}</td></tr>
+  </table>
+  <table class="perm-table perm-roster-tbl">
+    <tr><td class="perm-sec-hdr" colspan="3">WORKER ROSTER (11 – 20)</td></tr>
+    <tr>
+      <td class="perm-lbl perm-ctr" style="width:8%">Sr.</td>
+      <td class="perm-lbl" style="width:54%">Full Name</td>
+      <td class="perm-lbl" style="width:38%">Iqama / ID No.</td>
+    </tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">11</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w11_name" value="{{ dv.t_w11_name|default:'' }}">{% else %}{{ dv.t_w11_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w11_id" value="{{ dv.t_w11_id|default:'' }}">{% else %}{{ dv.t_w11_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">12</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w12_name" value="{{ dv.t_w12_name|default:'' }}">{% else %}{{ dv.t_w12_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w12_id" value="{{ dv.t_w12_id|default:'' }}">{% else %}{{ dv.t_w12_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">13</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w13_name" value="{{ dv.t_w13_name|default:'' }}">{% else %}{{ dv.t_w13_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w13_id" value="{{ dv.t_w13_id|default:'' }}">{% else %}{{ dv.t_w13_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">14</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w14_name" value="{{ dv.t_w14_name|default:'' }}">{% else %}{{ dv.t_w14_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w14_id" value="{{ dv.t_w14_id|default:'' }}">{% else %}{{ dv.t_w14_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">15</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w15_name" value="{{ dv.t_w15_name|default:'' }}">{% else %}{{ dv.t_w15_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w15_id" value="{{ dv.t_w15_id|default:'' }}">{% else %}{{ dv.t_w15_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">16</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w16_name" value="{{ dv.t_w16_name|default:'' }}">{% else %}{{ dv.t_w16_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w16_id" value="{{ dv.t_w16_id|default:'' }}">{% else %}{{ dv.t_w16_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">17</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w17_name" value="{{ dv.t_w17_name|default:'' }}">{% else %}{{ dv.t_w17_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w17_id" value="{{ dv.t_w17_id|default:'' }}">{% else %}{{ dv.t_w17_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">18</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w18_name" value="{{ dv.t_w18_name|default:'' }}">{% else %}{{ dv.t_w18_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w18_id" value="{{ dv.t_w18_id|default:'' }}">{% else %}{{ dv.t_w18_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">19</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w19_name" value="{{ dv.t_w19_name|default:'' }}">{% else %}{{ dv.t_w19_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w19_id" value="{{ dv.t_w19_id|default:'' }}">{% else %}{{ dv.t_w19_id|default:"" }}{% endif %}</td></tr>
+    <tr style="height:17px"><td class="perm-lbl perm-ctr" style="font-size:8pt">20</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w20_name" value="{{ dv.t_w20_name|default:'' }}">{% else %}{{ dv.t_w20_name|default:"" }}{% endif %}</td><td class="perm-val" style="padding:1px 3px">{% if not permit_form_print %}<input class="perm-input" data-doc-field="t_w20_id" value="{{ dv.t_w20_id|default:'' }}">{% else %}{{ dv.t_w20_id|default:"" }}{% endif %}</td></tr>
+  </table>
+</div>
+
+{# ══════════════════════════════════════════════
+   16. CLOSURE / CANCELLATION
+══════════════════════════════════════════════ #}
+<table class="perm-table perm-closure-tbl">
+  <tr><td class="perm-cls-hdr" colspan="4">PERMIT CLOSURE / CANCELLATION</td></tr>
+  <tr>
+    <td class="perm-val" style="width:25%">{% if permit_form_print %}{% if dv.t_cls_done == "1" %}☑{% else %}☐{% endif %} Work Completed{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_cls_done" {% if dv.t_cls_done == "1" %}checked{% endif %}> Work Completed</label>{% endif %}</td>
+    <td class="perm-val" style="width:25%">{% if permit_form_print %}{% if dv.t_cls_incomplete == "1" %}☑{% else %}☐{% endif %} Work Incomplete{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_cls_incomplete" {% if dv.t_cls_incomplete == "1" %}checked{% endif %}> Work Incomplete</label>{% endif %}</td>
+    <td class="perm-val" style="width:25%">{% if permit_form_print %}{% if dv.t_cls_tools == "1" %}☑{% else %}☐{% endif %} Tools &amp; Equipment Removed{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_cls_tools" {% if dv.t_cls_tools == "1" %}checked{% endif %}> Tools &amp; Equipment Removed</label>{% endif %}</td>
+    <td class="perm-val" style="width:25%">{% if permit_form_print %}{% if dv.t_cls_loto == "1" %}☑{% else %}☐{% endif %} LOTO / ICC Closed{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_cls_loto" {% if dv.t_cls_loto == "1" %}checked{% endif %}> LOTO / ICC Closed</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-val">{% if permit_form_print %}{% if dv.t_cls_suspended == "1" %}☑{% else %}☐{% endif %} Permit Suspended{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_cls_suspended" {% if dv.t_cls_suspended == "1" %}checked{% endif %}> Permit Suspended</label>{% endif %}</td>
+    <td class="perm-val" colspan="3">{% if permit_form_print %}{% if dv.t_cls_housekeep == "1" %}☑{% else %}☐{% endif %} Housekeeping Done{% else %}<label class="perm-cb-lbl"><input type="checkbox" class="perm-cb-input" data-doc-field="t_cls_housekeep" {% if dv.t_cls_housekeep == "1" %}checked{% endif %}> Housekeeping Done</label>{% endif %}</td>
+  </tr>
+  <tr>
+    <td class="perm-lbl" style="vertical-align:top">Closure Notes</td>
+    <td class="perm-val" colspan="3" style="vertical-align:top;min-height:30px">
+      {% if permit_form_print %}{{ permit.closure_status_text|default:""|linebreaksbr }}{% else %}<textarea class="perm-ta" data-closure-status-field="true" rows="3" placeholder="Describe closure status, observations, and any outstanding items">{{ permit.closure_status_text|default:"" }}</textarea>{% endif %}
+    </td>
+  </tr>
+</table>
+
+{# ── Closure Signatures ── #}
+<table class="perm-table perm-auth-table">
+  <tr><td class="perm-auth-hdr" colspan="3">CLOSURE SIGN-OFF</td></tr>
+  <tr>
+    {# Closure Receiver #}
+    <td class="perm-auth-field perm-sig-cell">
+      <div class="perm-auth-lbl">Permit Receiver</div>
+      <div class="perm-auth-val" style="font-size:8.5pt">{{ permit.closure_receiver_name|default:permit.receiver_name|default:"" }}</div>
+      {% if permit_form_print %}
+        {% if sig_inline.closure_receiver_signature %}<img class="perm-sig-img" src="{{ sig_inline.closure_receiver_signature }}" alt="">{% else %}<div class="perm-sig-blank"></div>{% endif %}
+      {% else %}
+        {% if permit.closure_receiver_signature_url %}<img class="perm-sig-img is-visible" src="{{ permit.closure_receiver_signature_url }}" id="sig-preview-closure_receiver_signature" alt="">{% else %}<img class="perm-sig-img" id="sig-preview-closure_receiver_signature" style="display:none" alt="">{% endif %}
+        {% if can_close_receiver %}<button class="perm-sign-btn" type="button" onclick="openSigPad('closure_receiver_signature')">✍ {% if permit.closure_receiver_signature_url %}Re-sign{% else %}Sign{% endif %}</button>{% endif %}
+      {% endif %}
+      <div class="perm-auth-lbl" style="margin-top:3px">Date: {{ permit.closure_receiver_signed_at|slice:":10"|default:"" }}</div>
+    </td>
+    {# Closure Issuer #}
+    <td class="perm-auth-field perm-sig-cell">
+      <div class="perm-auth-lbl">Permit Issuer</div>
+      <div class="perm-auth-val" style="font-size:8.5pt">{{ permit.closure_issuer_name|default:permit.issuer_name|default:"" }}</div>
+      {% if permit_form_print %}
+        {% if sig_inline.closure_issuer_signature %}<img class="perm-sig-img" src="{{ sig_inline.closure_issuer_signature }}" alt="">{% else %}<div class="perm-sig-blank"></div>{% endif %}
+      {% else %}
+        {% if permit.closure_issuer_signature_url %}<img class="perm-sig-img is-visible" src="{{ permit.closure_issuer_signature_url }}" id="sig-preview-closure_issuer_signature" alt="">{% else %}<img class="perm-sig-img" id="sig-preview-closure_issuer_signature" style="display:none" alt="">{% endif %}
+        {% if can_close_issuer %}<button class="perm-sign-btn" type="button" onclick="openSigPad('closure_issuer_signature')">✍ {% if permit.closure_issuer_signature_url %}Re-sign{% else %}Sign{% endif %}</button>{% endif %}
+      {% endif %}
+      <div class="perm-auth-lbl" style="margin-top:3px">Date: {{ permit.closure_issuer_signed_at|slice:":10"|default:"" }}</div>
+    </td>
+    {# Closure HSE #}
+    <td class="perm-auth-field perm-sig-cell">
+      <div class="perm-auth-lbl">HSE Practitioner</div>
+      <div class="perm-auth-val" style="font-size:8.5pt">{{ permit.closure_hse_name|default:permit.hse_name|default:"" }}</div>
+      {% if permit_form_print %}
+        {% if sig_inline.closure_hse_signature %}<img class="perm-sig-img" src="{{ sig_inline.closure_hse_signature }}" alt="">{% else %}<div class="perm-sig-blank"></div>{% endif %}
+      {% else %}
+        {% if permit.closure_hse_signature_url %}<img class="perm-sig-img is-visible" src="{{ permit.closure_hse_signature_url }}" id="sig-preview-closure_hse_signature" alt="">{% else %}<img class="perm-sig-img" id="sig-preview-closure_hse_signature" style="display:none" alt="">{% endif %}
+        {% if can_close_hse %}<button class="perm-sign-btn" type="button" onclick="openSigPad('closure_hse_signature')">✍ {% if permit.closure_hse_signature_url %}Re-sign{% else %}Sign{% endif %}</button>{% endif %}
+      {% endif %}
+      <div class="perm-auth-lbl" style="margin-top:3px">Date: {{ permit.closure_hse_signed_at|slice:":10"|default:"" }}</div>
+    </td>
+  </tr>
+</table>
+
+{% endwith %}{# /dv #}

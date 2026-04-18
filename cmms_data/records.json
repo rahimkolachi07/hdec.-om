@@ -45,7 +45,8 @@
     "before_photos": [],
     "after_photos": [],
     "completed": false,
-    "completed_at": null
+    "completed_at": null,
+    "checklist_values": {}
   },
   {
     "id": "fc81ff87-8029-40c4-9b27-0c153b7d396a",
@@ -353,11 +354,11 @@
     "completed_at": null
   },
   {
-    "id": "c8e4eb30-3cc0-4b77-91ba-3d1b1e53f581",
-    "activity_id": "7e396b7e-8db5-4ed1-992e-af32fee7b2d9",
+    "id": "b720c9a6-18bb-400b-97cf-e45375d82609",
+    "activity_id": "8604f24b-a70a-4a5e-965c-74dca15a95fb",
     "activity_name": "Daily Inspection",
-    "date": "2026-04-15",
-    "started_at": "2026-04-15T01:21:22.710888",
+    "date": "2026-04-18",
+    "started_at": "2026-04-18T13:16:31.495414",
     "started_by": "admin",
     "started_name": "Administrator",
     "excel_values": {},
@@ -367,209 +368,11 @@
     "completed_at": null
   },
   {
-    "id": "efdc390d-c5e5-430a-bc27-726b21f009c5",
-    "activity_id": "1ffd9ab4-560f-4c85-9a4b-3663535c2a94",
-    "activity_name": "Daily Inspection",
-    "date": "2026-04-01",
-    "started_at": "2026-04-15T02:07:59.173115",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "2a897958-1a1e-4f21-a668-3802338e1f62",
-    "activity_id": "1ffd9ab4-560f-4c85-9a4b-3663535c2a94",
-    "activity_name": "Daily Inspection",
-    "date": "2026-04-15",
-    "started_at": "2026-04-15T22:34:16.777786",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "4f18fafe-4e7b-4038-a842-0705e54f5f50",
-    "activity_id": "3d7846a3-8c33-438f-b336-362efa267a96",
-    "activity_name": "Daily Inspection",
-    "date": "2026-04-15",
-    "started_at": "2026-04-15T22:36:58.638519",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "f0be0700-5ba7-4a8f-8e31-79c4d2242c72",
-    "activity_id": "24bf3413-4b26-4b69-88ec-bae31e4076f4",
+    "id": "7e487f2e-a6eb-4630-bd6f-86f7bd953382",
+    "activity_id": "d71e4418-4376-4524-aebd-5ceba1e4dbfe",
     "activity_name": "wms daily cleaning",
-    "date": "2026-04-15",
-    "started_at": "2026-04-15T22:48:31.603056",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "d0e3e100-9454-4893-a4c0-876c465ac18b",
-    "activity_id": "1ffd9ab4-560f-4c85-9a4b-3663535c2a94",
-    "activity_name": "Daily Inspection",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T00:53:20.725568",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "54113d79-826f-4ee4-a931-066abda95ffc",
-    "activity_id": "24bf3413-4b26-4b69-88ec-bae31e4076f4",
-    "activity_name": "wms daily cleaning",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T00:54:24.185244",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {
-      "Cleaning ": {
-        "mode": "generic",
-        "cells": {
-          "AA28": "✔",
-          "H26": "GFI",
-          "E13": "Name: Zubair,Rehan"
-        }
-      }
-    },
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "36cc9d72-79cb-4e28-b34b-b068b6860225",
-    "activity_id": "631fba80-9176-49eb-9647-f8954584ef3f",
-    "activity_name": "MVPS HY",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T01:13:14.405508",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {
-      "PV Inspection": {
-        "mode": "generic",
-        "cells": {
-          "A139": "Verified By: Muhammad Adnan"
-        }
-      }
-    },
-    "before_photos": [],
-    "after_photos": [],
-    "completed": true,
-    "completed_at": "2026-04-16T01:58:31.230293"
-  },
-  {
-    "id": "fc2517f7-4d52-44b4-ab8a-1c096d5f7a06",
-    "activity_id": "a7293db5-7b43-4853-811e-477837dbfef1",
-    "activity_name": "Daily Inspection",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T01:24:21.014245",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "977b84bf-3b93-44fd-b2db-e6305e19afb6",
-    "activity_id": "dc934543-f7d6-4fdc-8e33-5dd922178991",
-    "activity_name": "mvps dsd",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T01:34:18.512970",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "98d0ebcb-5002-4388-876b-b18f948e7b58",
-    "activity_id": "0f8af289-df8a-4d92-8ad8-30e5d2a2d634",
-    "activity_name": "Daily Inspection",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T01:45:28.019978",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "31005bc7-bc9d-44ec-ab11-247ed1602c49",
-    "activity_id": "664cb50a-177b-4068-8bd2-0ddc6d682890",
-    "activity_name": "mvps rectification",
-    "date": "2026-05-13",
-    "started_at": "2026-04-16T02:12:44.761904",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "e3921d39-f37e-44ad-ad0e-4b965582744c",
-    "activity_id": "acb2ee34-eb13-4c68-b25b-3cec72a0d023",
-    "activity_name": "wms daily cleaning",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T12:55:32.984886",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "d0ed8c3b-19ca-4ea4-9130-73b7aeccb915",
-    "activity_id": "66e01a1b-8527-456e-b1d7-f5f0380d8bab",
-    "activity_name": "Fence and Road",
-    "date": "2026-04-16",
-    "started_at": "2026-04-16T13:50:55.150978",
-    "started_by": "admin",
-    "started_name": "Administrator",
-    "excel_values": {},
-    "before_photos": [],
-    "after_photos": [],
-    "completed": false,
-    "completed_at": null
-  },
-  {
-    "id": "bb3ec798-8083-42f5-9e95-55ad476318a1",
-    "activity_id": "343045b4-244a-4076-8bb6-83a9a28c9c63",
-    "activity_name": "mvpsssad",
-    "date": "2026-04-17",
-    "started_at": "2026-04-16T13:56:02.736750",
+    "date": "2026-04-18",
+    "started_at": "2026-04-18T23:09:43.967938",
     "started_by": "admin",
     "started_name": "Administrator",
     "excel_values": {},

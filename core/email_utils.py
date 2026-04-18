@@ -435,6 +435,42 @@ def notify_permit_closed(permit: dict, to_emails: list):
     _send(to_emails, subject, text, _html_wrap('Permit Closed', html_body, '#16a34a'))
 
 
+def notify_permit_time_completed(permit: dict, to_emails: list):
+    """Notify the receiver that the PTW validity time has completed."""
+    activity = _activity_details(permit)
+    permit_url = _permit_portal_url(permit)
+    valid_until = _safe((permit.get('valid_until', '') or '').replace('T', ' '), 'N/A')
+    subject = f"[HDEC CMMS] Permit Time Completed - {_permit_subject_target(permit)}"
+    text = (
+        "Permit Time Completed\n\n"
+        f"Activity: {_safe(activity.get('name'), 'N/A')}\n"
+        f"Description: {_safe(activity.get('description'), 'N/A')}\n"
+        f"Permit No.: {_safe(permit.get('permit_number'), 'N/A')}\n"
+        f"Receiver: {_safe(permit.get('receiver_name'), 'N/A')}\n"
+        f"Valid Until: {valid_until}\n"
+        f"Portal: {permit_url}\n\n"
+        "The permit validity time has completed. Please review the PTW in HDEC CMMS and proceed with closure if the work is finished."
+    )
+    html_body = f"""
+<p>The <strong>permit validity time has completed</strong> for this PTW.</p>
+{_permit_info_table(permit)}
+<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:13px">
+  <tr style="background:#fef2f2">
+    <td style="padding:10px 14px;font-weight:700;width:34%;color:#991b1b">Valid Until</td>
+    <td style="padding:10px 14px;font-weight:700;color:#991b1b">{escape(valid_until)}</td>
+  </tr>
+  <tr style="background:#ffffff">
+    <td style="padding:10px 14px;font-weight:600;color:#334155">Permit Number</td>
+    <td style="padding:10px 14px;color:#0f172a">{escape(_safe(permit.get('permit_number'), 'N/A'))}</td>
+  </tr>
+</table>
+{_action_panel(permit, 'Open PTW In HDEC CMMS')}
+<p style="background:#fef2f2;border-left:4px solid #dc2626;padding:12px 16px;border-radius:6px;font-size:13px;margin-top:16px">
+  <strong>Action Required:</strong> The permit time is completed. Review the PTW and close it if the work is done.
+</p>"""
+    _send(to_emails, subject, text, _html_wrap('Permit Time Completed', html_body, '#b91c1c'))
+
+
 def notify_activity_assigned(activity: dict, engineer_email: str, date: str = None):
     """Notify an engineer that a maintenance activity has been assigned to them."""
     if not engineer_email:
@@ -597,3 +633,55 @@ def send_daily_activity_digest(
 </div>"""
 
     _send(recipient_emails, subject, text, _html_wrap('Daily Maintenance Digest', html_body, '#1a3a6b'))
+
+
+# ── MEETING ROOM NOTIFICATIONS ────────────────────────────────────────────────
+
+def notify_meeting_message(recipient_email: str, sender_name: str, thread_name: str, message_preview: str):
+    """Email a user when they receive a meeting room message while offline."""
+    subject = f"💬 New message from {sender_name} — HDEC Meeting Room"
+    meeting_url = escape(f"{PORTAL_BASE_URL}/meeting-room/")
+    preview_safe = escape(str(message_preview or '')[:200])
+    thread_safe = escape(str(thread_name or sender_name))
+    sender_safe = escape(str(sender_name or ''))
+    body = f"""
+<p style="font-size:14px;margin:0 0 16px">You have a new message in the <strong>HDEC Meeting Room</strong>.</p>
+<div style="margin:0 0 20px;padding:16px 18px;background:#f0f6ff;border-left:4px solid #1a3a6b;border-radius:0 10px 10px 0">
+  <div style="font-size:12px;font-weight:700;color:#1a3a6b;margin-bottom:4px">{thread_safe}</div>
+  <div style="font-size:13px;color:#334155">{preview_safe}</div>
+</div>
+<div style="margin:20px 0">
+  <a href="{meeting_url}" style="display:inline-block;background:#1a3a6b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700">Open Meeting Room →</a>
+</div>
+<p style="font-size:12px;color:#64748b;margin:16px 0 0">From: {sender_safe}</p>
+"""
+    text = (
+        f"New message from {sender_name} in {thread_name}:\n{message_preview[:200]}\n\n"
+        f"Open meeting room: {PORTAL_BASE_URL}/meeting-room/"
+    )
+    _send([recipient_email], subject, text, _html_wrap(f"New message from {sender_name}", body, '#1a3a6b'))
+
+
+def notify_meeting_call(recipient_email: str, caller_name: str, call_type: str):
+    """Email a user when they receive a call while offline."""
+    type_label = 'Video Call' if call_type == 'video' else 'Audio Call'
+    subject = f"📞 Incoming {type_label} from {caller_name} — HDEC Meeting Room"
+    meeting_url = escape(f"{PORTAL_BASE_URL}/meeting-room/")
+    caller_safe = escape(str(caller_name or ''))
+    body = f"""
+<p style="font-size:14px;margin:0 0 16px">
+  <strong>{caller_safe}</strong> tried to reach you with a <strong>{escape(type_label)}</strong>
+  in the HDEC Meeting Room.
+</p>
+<p style="font-size:13px;color:#475569;margin:0 0 20px">
+  Open the meeting room to connect with them.
+</p>
+<div style="margin:20px 0">
+  <a href="{meeting_url}" style="display:inline-block;background:#15803d;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:700">📞 Open Meeting Room →</a>
+</div>
+"""
+    text = (
+        f"Incoming {type_label} from {caller_name}.\n\n"
+        f"Open meeting room: {PORTAL_BASE_URL}/meeting-room/"
+    )
+    _send([recipient_email], subject, text, _html_wrap(f"Incoming {type_label} from {caller_name}", body, '#15803d'))

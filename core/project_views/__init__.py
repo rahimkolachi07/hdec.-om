@@ -20,6 +20,11 @@ from .handover import (
     project_cmms_handover_detail,
     project_cmms_handover_api,
 )
+from .administration import (
+    project_administration_module,
+    project_administration_api,
+    project_administration_detail_api,
+)
 
 __all__ = [
     'project_manpower', 'project_manpower_api',
@@ -33,4 +38,7 @@ __all__ = [
     'project_cmms_handover_new',
     'project_cmms_handover_detail',
     'project_cmms_handover_api',
+    'project_administration_module',
+    'project_administration_api',
+    'project_administration_detail_api',
 ]

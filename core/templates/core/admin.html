@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- /* THEME-SYSTEM-APPLIED */ -->
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin Panel — HDEC</title>
+  <title>{% if admin_template_mode == 'module' %}{{ module_meta.label }} · {{ project.name }} · HDEC{% else %}Control Panel · HDEC{% endif %}</title>
   <script>(function(){var t=localStorage.getItem('hdec-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -31,6 +32,17 @@
     /* GRID */
     .top-grid{display:grid;grid-template-columns:520px 1fr;gap:24px;margin-bottom:28px}
     @media(max-width:900px){.top-grid{grid-template-columns:1fr}}
+    body.control-only #adminModulesArea{display:none}
+    body.module-only #adminControlArea{display:none}
+    body.module-only #adminModulesArea{margin-top:0!important}
+    body.module-only #modTabs{display:none}
+    body.module-only .mod-panel{display:none!important}
+    body.module-only .mod-panel.module-target{display:block!important}
+    body.module-only .main{max-width:1320px}
+    body.module-only .page-title{max-width:calc(100vw - 320px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    body.module-readonly #adminModulesArea .mod-head .btn{display:none}
+    body.module-readonly #adminModulesArea .mod-table .btn-danger{display:none}
+    body.module-readonly .mod-save-btn{display:none}
 
     /* CARD */
     .card{background:var(--s);border:1px solid var(--border);border-radius:20px;overflow:hidden}
@@ -142,35 +154,310 @@
     html[data-theme="light"] .check-item{border-bottom-color:rgba(0,0,0,.05)}
     html[data-theme="light"] .back{color:rgba(13,23,40,.55);border-color:rgba(0,0,0,.1);background:rgba(0,0,0,.03)}
     html[data-theme="light"] .user-badge{background:rgba(162,89,255,.08);border-color:rgba(162,89,255,.2);color:#7c3aed}
-    .theme-toggle{display:flex;align-items:center;gap:8px;background:none;border:none;cursor:pointer;padding:4px 2px}
-    .tt-label{font-size:10.5px;font-weight:700;color:var(--tm);letter-spacing:.7px;text-transform:uppercase;transition:color .3s;user-select:none}
-    .theme-toggle:hover .tt-label{color:var(--text)}
-    .tt-track{width:48px;height:26px;border-radius:13px;position:relative;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .4s,border-color .4s;flex-shrink:0}
-    html[data-theme="light"] .tt-track{background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));border-color:rgba(251,191,36,.5)}
-    .tt-thumb{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#3b9eff,#00e5c8);box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;transition:transform .38s cubic-bezier(.34,1.56,.64,1),background .38s,box-shadow .38s}
-    html[data-theme="light"] .tt-thumb{transform:translateX(22px);background:linear-gradient(135deg,#fbbf24,#fb923c);box-shadow:0 2px 8px rgba(251,191,36,.5)}
-  </style>
+    
+    
+    .theme-toggle:hover 
+    
+    html[data-theme="light"] 
+    
+    html[data-theme="light"] 
+  
+
+/* ═══ MULTI-THEME SYSTEM ═══════════════════════════════════════════ */
+@keyframes auroraIn{from{opacity:0;transform:scale(.93) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes forgeIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes waveIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes termIn{from{opacity:0}to{opacity:1}}
+@keyframes execIn{from{opacity:0}to{opacity:1}}
+html[data-theme=aurora]{--bg:#08061a;--surface:rgba(139,92,246,.07);--surface2:rgba(139,92,246,.14);--border:rgba(167,139,250,.2);--text:#ede8ff;--tm:rgba(237,232,255,.6);--td:rgba(237,232,255,.32);--a1:#a78bfa;--a2:#34d399;--ao:#fb7185;--r:20px;--rs:14px}
+html[data-theme=forge]{--bg:#0b0905;--surface:rgba(249,115,22,.06);--surface2:rgba(249,115,22,.11);--border:rgba(249,115,22,.22);--text:#fff2e8;--tm:rgba(255,242,232,.6);--td:rgba(255,242,232,.32);--a1:#f97316;--a2:#fbbf24;--ao:#ef4444;--r:6px;--rs:4px}
+html[data-theme=ocean]{--bg:#e0f2fe;--surface:rgba(255,255,255,.9);--surface2:#fff;--border:rgba(14,165,233,.3);--text:#0c4a6e;--tm:rgba(12,74,110,.72);--td:rgba(12,74,110,.5);--a1:#0ea5e9;--a2:#06b6d4;--ao:#f97316;--r:22px;--rs:16px}
+html[data-theme=terminal]{--bg:#000;--surface:rgba(0,255,65,.03);--surface2:rgba(0,255,65,.07);--border:rgba(0,255,65,.28);--text:#00ff41;--tm:rgba(0,255,65,.68);--td:rgba(0,255,65,.42);--a1:#00ff41;--a2:#00ffff;--ao:#ffff00;--r:2px;--rs:2px}
+html[data-theme=executive]{--bg:#faf6f0;--surface:rgba(0,0,0,.04);--surface2:#fff;--border:rgba(0,0,0,.12);--text:#2a1a08;--tm:rgba(42,26,8,.7);--td:rgba(42,26,8,.48);--a1:#b45309;--a2:#059669;--ao:#dc2626;--r:8px;--rs:6px}
+html[data-theme=aurora] .topbar{background:rgba(8,6,26,.96)!important}
+html[data-theme=aurora] body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+html[data-theme=forge] .topbar{background:rgba(11,9,5,.96)!important}
+html[data-theme=ocean] .topbar{background:rgba(224,242,254,.97)!important}
+html[data-theme=terminal] .topbar{background:#000!important;border-bottom:1px solid #00ff41!important}
+html[data-theme=terminal] body,html[data-theme=terminal] input,html[data-theme=terminal] button,html[data-theme=terminal] select{font-family:'Courier New',Courier,monospace!important}
+html[data-theme=executive] .topbar{background:rgba(250,246,240,.98)!important}
+html[data-theme=executive] body,html[data-theme=executive] input,html[data-theme=executive] button{font-family:Georgia,'Times New Roman',serif!important}
+html[data-theme=aurora] .act-card,html[data-theme=aurora] .card{animation:auroraIn .4s cubic-bezier(.34,1.56,.64,1) both}
+html[data-theme=forge] .act-card,html[data-theme=forge] .card{animation:forgeIn .15s ease-out both;border-left:3px solid var(--a1)!important}
+html[data-theme=ocean] .act-card,html[data-theme=ocean] .card{animation:waveIn .35s cubic-bezier(.4,0,.2,1) both}
+html[data-theme=terminal] .act-card,html[data-theme=terminal] .card{animation:termIn .06s steps(2) both}
+html[data-theme=executive] .act-card,html[data-theme=executive] .card{animation:execIn .55s ease-in-out both}
+html[data-theme=aurora] .cal-day,html[data-theme=aurora] .btn,html[data-theme=aurora] .act-card,html[data-theme=aurora] .card{transition:all .3s cubic-bezier(.34,1.56,.64,1)!important}
+html[data-theme=forge] .cal-day,html[data-theme=forge] .btn,html[data-theme=forge] .act-card,html[data-theme=forge] .card{transition:all .1s ease-out!important}
+html[data-theme=ocean] .cal-day,html[data-theme=ocean] .btn,html[data-theme=ocean] .act-card,html[data-theme=ocean] .card{transition:all .35s cubic-bezier(.4,0,.2,1)!important}
+html[data-theme=terminal] .cal-day,html[data-theme=terminal] .btn,html[data-theme=terminal] .act-card,html[data-theme=terminal] .card,html[data-theme=terminal] *{transition:none!important}
+html[data-theme=executive] .cal-day,html[data-theme=executive] .btn,html[data-theme=executive] .act-card,html[data-theme=executive] .card{transition:all .45s ease-in-out!important}
+html[data-theme=aurora] .cal-day:hover{transform:translateY(-4px) scale(1.015)!important;box-shadow:0 20px 40px rgba(139,92,246,.2)!important}
+html[data-theme=forge] .cal-day:hover{transform:none!important;box-shadow:0 0 0 1px var(--a1)!important}
+html[data-theme=ocean] .cal-day{background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(240,249,255,.96))!important;box-shadow:0 4px 14px rgba(14,165,233,.1)!important}
+html[data-theme=terminal] .cal-day,html[data-theme=terminal] .cal-day:hover{background:#000!important;transform:none!important;box-shadow:none!important}
+html[data-theme=executive] .cal-day{background:linear-gradient(180deg,#fff,rgba(250,246,240,.95))!important;box-shadow:0 2px 10px rgba(42,26,8,.08)!important}
+html[data-theme=executive] .cal-day:hover{transform:translateY(-2px)!important;box-shadow:0 12px 28px rgba(42,26,8,.12)!important}
+html[data-theme=ocean] .modal,html[data-theme=executive] .modal,html[data-theme=ocean] .card,html[data-theme=executive] .card{background:var(--surface2)}
+/* ─── 5 NEW THEMES ──────────────────────────────────────────── */
+@keyframes ivoryIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mintIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+@keyframes roseIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes crimsonIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes duskIn{from{opacity:0;transform:scale(.96) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+html[data-theme=ivory]{--bg:#ffffff;--surface:rgba(0,0,0,.04);--surface2:rgba(0,0,0,.07);--border:rgba(0,0,0,.12);--text:#1e1b4b;--tm:rgba(30,27,75,.68);--td:rgba(30,27,75,.45);--a1:#6366f1;--a2:#8b5cf6;--ao:#f59e0b;--r:12px;--rs:8px}
+html[data-theme=mint]{--bg:#f0fdf4;--surface:rgba(0,0,0,.04);--surface2:#fff;--border:rgba(0,0,0,.12);--text:#064e3b;--tm:rgba(6,78,59,.7);--td:rgba(6,78,59,.48);--a1:#10b981;--a2:#06b6d4;--ao:#f59e0b;--r:16px;--rs:12px}
+html[data-theme=rose]{--bg:#fff1f2;--surface:rgba(0,0,0,.04);--surface2:#fff;--border:rgba(0,0,0,.12);--text:#4c0519;--tm:rgba(76,5,25,.68);--td:rgba(76,5,25,.45);--a1:#f43f5e;--a2:#ec4899;--ao:#f97316;--r:18px;--rs:12px}
+html[data-theme=crimson]{--bg:#0c0508;--surface:rgba(239,68,68,.06);--surface2:rgba(239,68,68,.1);--border:rgba(239,68,68,.2);--text:#ffe4e6;--tm:rgba(255,228,230,.58);--td:rgba(255,228,230,.32);--a1:#f87171;--a2:#fb923c;--ao:#facc15;--r:10px;--rs:8px}
+html[data-theme=dusk]{--bg:#1a1625;--surface:rgba(148,163,184,.06);--surface2:rgba(148,163,184,.1);--border:rgba(148,163,184,.16);--text:#e2e8f0;--tm:rgba(226,232,240,.58);--td:rgba(226,232,240,.32);--a1:#818cf8;--a2:#38bdf8;--ao:#fb923c;--r:14px;--rs:10px}
+
+html[data-theme=ivory] .topbar{background:rgba(255,255,255,.98)!important}
+html[data-theme=mint] .topbar{background:rgba(240,253,244,.97)!important}
+html[data-theme=rose] .topbar{background:rgba(255,241,242,.98)!important}
+html[data-theme=crimson] .topbar{background:rgba(12,5,8,.96)!important}
+html[data-theme=dusk] .topbar{background:rgba(26,22,37,.96)!important}
+
+html[data-theme=ivory] .act-card,html[data-theme=ivory] .card{animation:ivoryIn .25s ease both}
+html[data-theme=mint] .act-card,html[data-theme=mint] .card{animation:mintIn .3s ease both}
+html[data-theme=rose] .act-card,html[data-theme=rose] .card{animation:roseIn .28s ease both}
+html[data-theme=crimson] .act-card,html[data-theme=crimson] .card{animation:crimsonIn .2s ease-out both}
+html[data-theme=dusk] .act-card,html[data-theme=dusk] .card{animation:duskIn .35s ease both}
+
+html[data-theme=ivory] .cal-day,html[data-theme=ivory] .btn,html[data-theme=ivory] .act-card{transition:all .22s ease!important}
+html[data-theme=mint] .cal-day,html[data-theme=mint] .btn,html[data-theme=mint] .act-card{transition:all .3s ease!important}
+html[data-theme=rose] .cal-day,html[data-theme=rose] .btn,html[data-theme=rose] .act-card{transition:all .25s ease!important}
+html[data-theme=crimson] .cal-day,html[data-theme=crimson] .btn,html[data-theme=crimson] .act-card{transition:all .18s ease-out!important}
+html[data-theme=dusk] .cal-day,html[data-theme=dusk] .btn,html[data-theme=dusk] .act-card{transition:all .3s ease!important}
+
+html[data-theme=ivory] .cal-day{background:#fff!important;box-shadow:0 2px 12px rgba(99,102,241,.08)!important}
+html[data-theme=mint] .cal-day{background:linear-gradient(180deg,#fff,rgba(240,253,244,.9))!important;box-shadow:0 4px 14px rgba(16,185,129,.1)!important}
+html[data-theme=rose] .cal-day{background:linear-gradient(180deg,#fff,rgba(255,241,242,.9))!important;box-shadow:0 4px 14px rgba(244,63,94,.08)!important}
+html[data-theme=crimson] .cal-day{background:rgba(239,68,68,.04)!important;box-shadow:none!important}
+html[data-theme=dusk] .cal-day{background:linear-gradient(180deg,rgba(30,27,46,.9),rgba(26,22,37,.8))!important}
+
+/* ─── LIGHT THEME UNIVERSAL VISIBILITY FIXES ─────────────────── */
+html[data-theme=ocean] .day-act-chip.status-planned,html[data-theme=executive] .day-act-chip.status-planned,html[data-theme=ivory] .day-act-chip.status-planned,html[data-theme=mint] .day-act-chip.status-planned,html[data-theme=rose] .day-act-chip.status-planned{background:rgba(29,78,216,.12)!important;border-color:rgba(29,78,216,.22)!important;color:#1e3a5f!important}
+html[data-theme=ocean] .day-act-chip.status-in_progress,html[data-theme=executive] .day-act-chip.status-in_progress,html[data-theme=ivory] .day-act-chip.status-in_progress,html[data-theme=mint] .day-act-chip.status-in_progress,html[data-theme=rose] .day-act-chip.status-in_progress{background:rgba(146,64,14,.1)!important;border-color:rgba(146,64,14,.18)!important;color:#78350f!important}
+html[data-theme=ocean] .day-act-chip.status-completed,html[data-theme=executive] .day-act-chip.status-completed,html[data-theme=ivory] .day-act-chip.status-completed,html[data-theme=mint] .day-act-chip.status-completed,html[data-theme=rose] .day-act-chip.status-completed{background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.18)!important;color:#064e3b!important}
+html[data-theme=ocean] .day-act-chip[class*=type-cm],html[data-theme=executive] .day-act-chip[class*=type-cm],html[data-theme=ivory] .day-act-chip[class*=type-cm],html[data-theme=mint] .day-act-chip[class*=type-cm],html[data-theme=rose] .day-act-chip[class*=type-cm]{color:#7c2d12!important}
+html[data-theme=ocean] .toast.success,html[data-theme=executive] .toast.success,html[data-theme=ivory] .toast.success,html[data-theme=mint] .toast.success,html[data-theme=rose] .toast.success{background:rgba(5,150,105,.1)!important;border-color:rgba(5,150,105,.3)!important;color:#065f46!important}
+html[data-theme=ocean] .toast.error,html[data-theme=executive] .toast.error,html[data-theme=ivory] .toast.error,html[data-theme=mint] .toast.error,html[data-theme=rose] .toast.error{background:rgba(185,28,28,.08)!important;border-color:rgba(185,28,28,.25)!important;color:#991b1b!important}
+html[data-theme=ocean] .act-status-planned,html[data-theme=executive] .act-status-planned,html[data-theme=ivory] .act-status-planned,html[data-theme=mint] .act-status-planned,html[data-theme=rose] .act-status-planned{color:#1d4ed8!important;background:rgba(29,78,216,.1)!important;border-color:rgba(29,78,216,.22)!important}
+html[data-theme=ocean] .act-status-progress,html[data-theme=executive] .act-status-progress,html[data-theme=ivory] .act-status-progress,html[data-theme=mint] .act-status-progress,html[data-theme=rose] .act-status-progress{color:#92400e!important;background:rgba(146,64,14,.1)!important;border-color:rgba(146,64,14,.22)!important}
+html[data-theme=ocean] .act-status-completed,html[data-theme=executive] .act-status-completed,html[data-theme=ivory] .act-status-completed,html[data-theme=mint] .act-status-completed,html[data-theme=rose] .act-status-completed{color:#065f46!important;background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.22)!important}
+html[data-theme=ocean] .act-status-permit,html[data-theme=executive] .act-status-permit,html[data-theme=ivory] .act-status-permit,html[data-theme=mint] .act-status-permit,html[data-theme=rose] .act-status-permit{color:#7c2d12!important;background:rgba(124,45,18,.1)!important;border-color:rgba(124,45,18,.22)!important}
+html[data-theme=ocean] .btn-success,html[data-theme=executive] .btn-success,html[data-theme=ivory] .btn-success,html[data-theme=mint] .btn-success,html[data-theme=rose] .btn-success{background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.28)!important;color:#065f46!important}
+html[data-theme=ocean] .btn-danger,html[data-theme=executive] .btn-danger,html[data-theme=ivory] .btn-danger,html[data-theme=mint] .btn-danger,html[data-theme=rose] .btn-danger{background:rgba(185,28,28,.08)!important;border-color:rgba(185,28,28,.24)!important;color:#991b1b!important}
+html[data-theme=ocean] .ptw-countdown,html[data-theme=executive] .ptw-countdown,html[data-theme=ivory] .ptw-countdown,html[data-theme=mint] .ptw-countdown,html[data-theme=rose] .ptw-countdown{color:#7c2d12!important}
+html[data-theme=ocean] .modal,html[data-theme=executive] .modal,html[data-theme=ivory] .modal,html[data-theme=mint] .modal,html[data-theme=rose] .modal{background:#fff!important}
+html[data-theme=ocean] .theme-pick-dropdown,html[data-theme=executive] .theme-pick-dropdown,html[data-theme=ivory] .theme-pick-dropdown,html[data-theme=mint] .theme-pick-dropdown,html[data-theme=rose] .theme-pick-dropdown{background:#fff!important;box-shadow:0 12px 40px rgba(0,0,0,.15)!important}
+html[data-theme=ocean] .form-row input,html[data-theme=executive] .form-row input,html[data-theme=ivory] .form-row input,html[data-theme=mint] .form-row input,html[data-theme=rose] .form-row input,html[data-theme=ocean] .form-row select,html[data-theme=executive] .form-row select,html[data-theme=ivory] .form-row select,html[data-theme=mint] .form-row select,html[data-theme=rose] .form-row select,html[data-theme=ocean] .form-row textarea,html[data-theme=executive] .form-row textarea,html[data-theme=ivory] .form-row textarea,html[data-theme=mint] .form-row textarea,html[data-theme=rose] .form-row textarea{background:#fff!important;color:var(--text)!important}
+html[data-theme=ocean] .act-card,html[data-theme=executive] .act-card,html[data-theme=ivory] .act-card,html[data-theme=mint] .act-card,html[data-theme=rose] .act-card{background:#fff!important}
+html[data-theme=ocean] .tab-count-pm,html[data-theme=executive] .tab-count-pm,html[data-theme=ivory] .tab-count-pm,html[data-theme=mint] .tab-count-pm,html[data-theme=rose] .tab-count-pm{color:#1d4ed8!important;background:rgba(29,78,216,.1)!important;border-color:rgba(29,78,216,.2)!important}
+html[data-theme=ocean] .tab-count-cm,html[data-theme=executive] .tab-count-cm,html[data-theme=ivory] .tab-count-cm,html[data-theme=mint] .tab-count-cm,html[data-theme=rose] .tab-count-cm{color:#92400e!important;background:rgba(146,64,14,.1)!important;border-color:rgba(146,64,14,.2)!important}
+html[data-theme=ocean] .day-num,html[data-theme=executive] .day-num,html[data-theme=ivory] .day-num,html[data-theme=mint] .day-num,html[data-theme=rose] .day-num{background:rgba(0,0,0,.04)!important;border-color:rgba(0,0,0,.08)!important;color:var(--text)!important}
+html[data-theme=ocean] .spinner,html[data-theme=executive] .spinner,html[data-theme=ivory] .spinner,html[data-theme=mint] .spinner,html[data-theme=rose] .spinner{border-color:rgba(0,0,0,.15)!important;border-top-color:var(--a1)!important}
+html[data-theme=ocean] .s-active,html[data-theme=executive] .s-active,html[data-theme=ivory] .s-active,html[data-theme=mint] .s-active,html[data-theme=rose] .s-active{color:#065f46!important;background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.25)!important}
+html[data-theme=ocean] .s-draft,html[data-theme=executive] .s-draft,html[data-theme=ivory] .s-draft,html[data-theme=mint] .s-draft,html[data-theme=rose] .s-draft,html[data-theme=ocean] .s-pending_issue,html[data-theme=executive] .s-pending_issue,html[data-theme=ivory] .s-pending_issue,html[data-theme=mint] .s-pending_issue,html[data-theme=rose] .s-pending_issue{color:#78350f!important;background:rgba(120,53,15,.1)!important;border-color:rgba(120,53,15,.22)!important}
+html[data-theme=ocean] .s-rejected_by_issuer,html[data-theme=executive] .s-rejected_by_issuer,html[data-theme=ivory] .s-rejected_by_issuer,html[data-theme=mint] .s-rejected_by_issuer,html[data-theme=rose] .s-rejected_by_issuer,html[data-theme=ocean] .s-rejected_by_hse,html[data-theme=executive] .s-rejected_by_hse,html[data-theme=ivory] .s-rejected_by_hse,html[data-theme=mint] .s-rejected_by_hse,html[data-theme=rose] .s-rejected_by_hse{color:#991b1b!important;background:rgba(153,27,27,.08)!important;border-color:rgba(153,27,27,.2)!important}
+html[data-theme=ocean] .empty-state,html[data-theme=executive] .empty-state,html[data-theme=ivory] .empty-state,html[data-theme=mint] .empty-state,html[data-theme=rose] .empty-state{color:var(--td)!important}
+/* ── PTW countdown variant overrides ── */
+html[data-theme=ocean] .ptw-countdown.is-upcoming,html[data-theme=executive] .ptw-countdown.is-upcoming,html[data-theme=ivory] .ptw-countdown.is-upcoming,html[data-theme=mint] .ptw-countdown.is-upcoming,html[data-theme=rose] .ptw-countdown.is-upcoming{color:#92400e!important;background:rgba(180,83,9,.08)!important;border-color:rgba(180,83,9,.2)!important}
+html[data-theme=ocean] .ptw-countdown.is-warning,html[data-theme=executive] .ptw-countdown.is-warning,html[data-theme=ivory] .ptw-countdown.is-warning,html[data-theme=mint] .ptw-countdown.is-warning,html[data-theme=rose] .ptw-countdown.is-warning{color:#78350f!important;background:rgba(146,64,14,.08)!important;border-color:rgba(146,64,14,.2)!important}
+html[data-theme=ocean] .ptw-countdown.is-critical,html[data-theme=executive] .ptw-countdown.is-critical,html[data-theme=ivory] .ptw-countdown.is-critical,html[data-theme=mint] .ptw-countdown.is-critical,html[data-theme=rose] .ptw-countdown.is-critical{color:#991b1b!important;background:rgba(153,27,27,.08)!important;border-color:rgba(153,27,27,.2)!important}
+html[data-theme=ocean] .ptw-countdown.is-expired,html[data-theme=executive] .ptw-countdown.is-expired,html[data-theme=ivory] .ptw-countdown.is-expired,html[data-theme=mint] .ptw-countdown.is-expired,html[data-theme=rose] .ptw-countdown.is-expired{color:#7f1d1d!important;background:rgba(127,29,29,.1)!important;border-color:rgba(127,29,29,.2)!important}
+/* ── Page-specific class fixes ── */
+html[data-theme=ocean] .status-done,html[data-theme=executive] .status-done,html[data-theme=ivory] .status-done,html[data-theme=mint] .status-done,html[data-theme=rose] .status-done{color:#065f46!important;background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.25)!important}
+html[data-theme=ocean] .status-open,html[data-theme=executive] .status-open,html[data-theme=ivory] .status-open,html[data-theme=mint] .status-open,html[data-theme=rose] .status-open{color:#1d4ed8!important;background:rgba(29,78,216,.08)!important;border-color:rgba(29,78,216,.2)!important}
+html[data-theme=ocean] .btn-green,html[data-theme=executive] .btn-green,html[data-theme=ivory] .btn-green,html[data-theme=mint] .btn-green,html[data-theme=rose] .btn-green{color:#065f46!important;background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.22)!important}
+html[data-theme=ocean] .live-badge,html[data-theme=executive] .live-badge,html[data-theme=ivory] .live-badge,html[data-theme=mint] .live-badge,html[data-theme=rose] .live-badge{color:#065f46!important;background:rgba(6,95,70,.08)!important;border-color:rgba(6,95,70,.2)!important}
+html[data-theme=ocean] .embed-badge,html[data-theme=executive] .embed-badge,html[data-theme=ivory] .embed-badge,html[data-theme=mint] .embed-badge,html[data-theme=rose] .embed-badge{color:#065f46!important;background:rgba(6,95,70,.1)!important;border-color:rgba(6,95,70,.2)!important}
+html[data-theme=ocean] .err-bar,html[data-theme=executive] .err-bar,html[data-theme=ivory] .err-bar,html[data-theme=mint] .err-bar,html[data-theme=rose] .err-bar{color:#991b1b!important;background:rgba(153,27,27,.07)!important;border-color:rgba(153,27,27,.2)!important}
+html[data-theme=ocean] .cl-save-status.err,html[data-theme=executive] .cl-save-status.err,html[data-theme=ivory] .cl-save-status.err,html[data-theme=mint] .cl-save-status.err,html[data-theme=rose] .cl-save-status.err{color:#991b1b!important}
+html[data-theme=ocean] .badge-pm,html[data-theme=executive] .badge-pm,html[data-theme=ivory] .badge-pm,html[data-theme=mint] .badge-pm,html[data-theme=rose] .badge-pm{color:#1d4ed8!important;background:rgba(29,78,216,.08)!important;border-color:rgba(29,78,216,.22)!important}
+html[data-theme=ocean] .badge-cm,html[data-theme=executive] .badge-cm,html[data-theme=ivory] .badge-cm,html[data-theme=mint] .badge-cm,html[data-theme=rose] .badge-cm{color:#92400e!important;background:rgba(146,64,14,.08)!important;border-color:rgba(146,64,14,.22)!important}
+html[data-theme=ocean] .filter.active,html[data-theme=executive] .filter.active,html[data-theme=ivory] .filter.active,html[data-theme=mint] .filter.active,html[data-theme=rose] .filter.active,html[data-theme=ocean] .filter:hover,html[data-theme=executive] .filter:hover,html[data-theme=ivory] .filter:hover,html[data-theme=mint] .filter:hover,html[data-theme=rose] .filter:hover{color:var(--text)!important;border-color:var(--a1)!important}
+/* ── Catch-all: inline style hardcoded light colors ── */
+html[data-theme=ocean] [style*="#4ade80"],html[data-theme=executive] [style*="#4ade80"],html[data-theme=ivory] [style*="#4ade80"],html[data-theme=mint] [style*="#4ade80"],html[data-theme=rose] [style*="#4ade80"]{color:#065f46!important}
+html[data-theme=ocean] [style*="#f87171"],html[data-theme=executive] [style*="#f87171"],html[data-theme=ivory] [style*="#f87171"],html[data-theme=mint] [style*="#f87171"],html[data-theme=rose] [style*="#f87171"]{color:#991b1b!important}
+html[data-theme=ocean] [style*="#fbbf24"],html[data-theme=executive] [style*="#fbbf24"],html[data-theme=ivory] [style*="#fbbf24"],html[data-theme=mint] [style*="#fbbf24"],html[data-theme=rose] [style*="#fbbf24"]{color:#78350f!important}
+html[data-theme=ocean] [style*="#ffe082"],html[data-theme=executive] [style*="#ffe082"],html[data-theme=ivory] [style*="#ffe082"],html[data-theme=mint] [style*="#ffe082"],html[data-theme=rose] [style*="#ffe082"]{color:#78350f!important}
+html[data-theme=ocean] [style*="#a8d9ff"],html[data-theme=executive] [style*="#a8d9ff"],html[data-theme=ivory] [style*="#a8d9ff"],html[data-theme=mint] [style*="#a8d9ff"],html[data-theme=rose] [style*="#a8d9ff"]{color:#1e3a5f!important}
+html[data-theme=ocean] [style*="#fca5a5"],html[data-theme=executive] [style*="#fca5a5"],html[data-theme=ivory] [style*="#fca5a5"],html[data-theme=mint] [style*="#fca5a5"],html[data-theme=rose] [style*="#fca5a5"],html[data-theme=ocean] [style*="#fecaca"],html[data-theme=executive] [style*="#fecaca"],html[data-theme=ivory] [style*="#fecaca"],html[data-theme=mint] [style*="#fecaca"],html[data-theme=rose] [style*="#fecaca"]{color:#991b1b!important}
+html[data-theme=ocean] [style*="#c084fc"],html[data-theme=executive] [style*="#c084fc"],html[data-theme=ivory] [style*="#c084fc"],html[data-theme=mint] [style*="#c084fc"],html[data-theme=rose] [style*="#c084fc"]{color:#6d28d9!important}
+html[data-theme=ocean] [style*="#e2e8f0"],html[data-theme=executive] [style*="#e2e8f0"],html[data-theme=ivory] [style*="#e2e8f0"],html[data-theme=mint] [style*="#e2e8f0"],html[data-theme=rose] [style*="#e2e8f0"]{color:var(--text)!important}
+html[data-theme=ocean] [style*="#94a3b8"],html[data-theme=executive] [style*="#94a3b8"],html[data-theme=ivory] [style*="#94a3b8"],html[data-theme=mint] [style*="#94a3b8"],html[data-theme=rose] [style*="#94a3b8"]{color:var(--tm)!important}
+/* ── Tab bar and topbar for light themes ── */
+html[data-theme=ocean] .tab-bar,html[data-theme=executive] .tab-bar,html[data-theme=ivory] .tab-bar,html[data-theme=mint] .tab-bar,html[data-theme=rose] .tab-bar{background:rgba(240,249,255,.92)!important;border-bottom-color:var(--border)!important}
+html[data-theme=executive] .tab-bar{background:rgba(250,246,240,.94)!important}
+html[data-theme=ivory] .tab-bar{background:rgba(255,255,255,.96)!important}
+html[data-theme=mint] .tab-bar{background:rgba(240,253,244,.92)!important}
+html[data-theme=rose] .tab-bar{background:rgba(255,241,242,.94)!important}
+html[data-theme=ocean] .tab-pill,html[data-theme=executive] .tab-pill,html[data-theme=ivory] .tab-pill,html[data-theme=mint] .tab-pill,html[data-theme=rose] .tab-pill{color:var(--tm)!important}
+html[data-theme=ocean] .tab-pill:hover,html[data-theme=executive] .tab-pill:hover,html[data-theme=ivory] .tab-pill:hover,html[data-theme=mint] .tab-pill:hover,html[data-theme=rose] .tab-pill:hover{color:var(--text)!important}
+html[data-theme=ocean] .cal-day-header,html[data-theme=executive] .cal-day-header,html[data-theme=ivory] .cal-day-header,html[data-theme=mint] .cal-day-header,html[data-theme=rose] .cal-day-header{color:var(--td)!important}
+html[data-theme=ocean] .back-btn,html[data-theme=executive] .back-btn,html[data-theme=ivory] .back-btn,html[data-theme=mint] .back-btn,html[data-theme=rose] .back-btn{color:var(--tm)!important;border-color:var(--border)!important}
+html[data-theme=ocean] .back-btn:hover,html[data-theme=executive] .back-btn:hover,html[data-theme=ivory] .back-btn:hover,html[data-theme=mint] .back-btn:hover,html[data-theme=rose] .back-btn:hover{color:var(--text)!important;border-color:var(--a1)!important}
+/* == LIGHT THEME: FLIP rgba(255,255,255,X) -> VISIBLE ============== */
+html[data-theme=ocean] .cal-nav,html[data-theme=executive] .cal-nav,html[data-theme=ivory] .cal-nav,html[data-theme=mint] .cal-nav,html[data-theme=rose] .cal-nav{background:#fff!important;border-color:var(--border)!important;box-shadow:0 8px 24px rgba(0,0,0,.07)!important}
+html[data-theme=ocean] .day-count,html[data-theme=executive] .day-count,html[data-theme=ivory] .day-count,html[data-theme=mint] .day-count,html[data-theme=rose] .day-count{background:rgba(0,0,0,.05)!important;border-color:rgba(0,0,0,.1)!important}
+html[data-theme=ocean] .act-panel,html[data-theme=executive] .act-panel,html[data-theme=ivory] .act-panel,html[data-theme=mint] .act-panel,html[data-theme=rose] .act-panel{background:var(--bg)!important}
+html[data-theme=ocean] .stat,html[data-theme=executive] .stat,html[data-theme=ivory] .stat,html[data-theme=mint] .stat,html[data-theme=rose] .stat{background:#fff!important;border-color:var(--border)!important}
+html[data-theme=ocean] .meta-tag,html[data-theme=executive] .meta-tag,html[data-theme=ivory] .meta-tag,html[data-theme=mint] .meta-tag,html[data-theme=rose] .meta-tag{background:rgba(0,0,0,.05)!important;border-color:rgba(0,0,0,.1)!important;color:var(--tm)!important}
+html[data-theme=ocean] .info-tag,html[data-theme=executive] .info-tag,html[data-theme=ivory] .info-tag,html[data-theme=mint] .info-tag,html[data-theme=rose] .info-tag{background:rgba(0,0,0,.05)!important;border-color:rgba(0,0,0,.09)!important;color:var(--tm)!important}
+html[data-theme=ocean] .info-chips,html[data-theme=executive] .info-chips,html[data-theme=ivory] .info-chips,html[data-theme=mint] .info-chips,html[data-theme=rose] .info-chips{background:rgba(0,0,0,.03)!important;border-bottom-color:var(--border)!important}
+html[data-theme=ocean] .topbar-meta span,html[data-theme=executive] .topbar-meta span,html[data-theme=ivory] .topbar-meta span,html[data-theme=mint] .topbar-meta span,html[data-theme=rose] .topbar-meta span{background:rgba(0,0,0,.05)!important;border-color:var(--border)!important;color:var(--tm)!important}
+html[data-theme=ocean] .topbar-title,html[data-theme=executive] .topbar-title,html[data-theme=ivory] .topbar-title,html[data-theme=mint] .topbar-title,html[data-theme=rose] .topbar-title,html[data-theme=ocean] .tb-title,html[data-theme=executive] .tb-title,html[data-theme=ivory] .tb-title,html[data-theme=mint] .tb-title,html[data-theme=rose] .tb-title{color:var(--text)!important}
+html[data-theme=ocean] .tb-logo,html[data-theme=executive] .tb-logo,html[data-theme=ivory] .tb-logo,html[data-theme=mint] .tb-logo,html[data-theme=rose] .tb-logo{color:var(--text)!important}
+html[data-theme=ocean] .tb-logo-icon,html[data-theme=executive] .tb-logo-icon,html[data-theme=ivory] .tb-logo-icon,html[data-theme=mint] .tb-logo-icon,html[data-theme=rose] .tb-logo-icon{border-color:var(--border)!important;background:rgba(0,0,0,.05)!important}
+html[data-theme=ocean] .type-switcher,html[data-theme=executive] .type-switcher,html[data-theme=ivory] .type-switcher,html[data-theme=mint] .type-switcher,html[data-theme=rose] .type-switcher{background:rgba(0,0,0,.05)!important;border-color:var(--border)!important}
+html[data-theme=ocean] .type-opt,html[data-theme=executive] .type-opt,html[data-theme=ivory] .type-opt,html[data-theme=mint] .type-opt,html[data-theme=rose] .type-opt{color:var(--tm)!important}
+html[data-theme=ocean] .btn-ghost,html[data-theme=executive] .btn-ghost,html[data-theme=ivory] .btn-ghost,html[data-theme=mint] .btn-ghost,html[data-theme=rose] .btn-ghost{background:rgba(0,0,0,.04)!important;border-color:var(--border)!important;color:var(--text)!important}
+html[data-theme=ocean] .theme-pick-btn,html[data-theme=executive] .theme-pick-btn,html[data-theme=ivory] .theme-pick-btn,html[data-theme=mint] .theme-pick-btn,html[data-theme=rose] .theme-pick-btn{border-color:var(--border)!important;background:rgba(0,0,0,.04)!important;color:var(--text)!important}
+html[data-theme=ocean] .theme-pick-dot,html[data-theme=executive] .theme-pick-dot,html[data-theme=ivory] .theme-pick-dot,html[data-theme=mint] .theme-pick-dot,html[data-theme=rose] .theme-pick-dot{box-shadow:0 0 0 2px rgba(0,0,0,.12)!important}
+html[data-theme=ocean] .theme-pick-dropdown,html[data-theme=executive] .theme-pick-dropdown,html[data-theme=ivory] .theme-pick-dropdown,html[data-theme=mint] .theme-pick-dropdown,html[data-theme=rose] .theme-pick-dropdown{background:#fff!important;border-color:var(--border)!important}
+html[data-theme=ocean] .theme-pick-item:hover,html[data-theme=executive] .theme-pick-item:hover,html[data-theme=ivory] .theme-pick-item:hover,html[data-theme=mint] .theme-pick-item:hover,html[data-theme=rose] .theme-pick-item:hover{background:rgba(0,0,0,.04)!important}
+html[data-theme=ocean] .modal-close,html[data-theme=executive] .modal-close,html[data-theme=ivory] .modal-close,html[data-theme=mint] .modal-close,html[data-theme=rose] .modal-close{color:var(--td)!important}
+html[data-theme=ocean] .modal-close:hover,html[data-theme=executive] .modal-close:hover,html[data-theme=ivory] .modal-close:hover,html[data-theme=mint] .modal-close:hover,html[data-theme=rose] .modal-close:hover{color:var(--text)!important;background:rgba(0,0,0,.06)!important}
+html[data-theme=ocean] .cal-day.today,html[data-theme=executive] .cal-day.today,html[data-theme=ivory] .cal-day.today,html[data-theme=mint] .cal-day.today,html[data-theme=rose] .cal-day.today{border-color:var(--a1)!important;background:rgba(var(--a1),0.08)!important}
+html[data-theme=ocean] .act-card-meta,html[data-theme=executive] .act-card-meta,html[data-theme=ivory] .act-card-meta,html[data-theme=mint] .act-card-meta,html[data-theme=rose] .act-card-meta{color:var(--tm)!important}
+html[data-theme=ocean] .act-panel-title,html[data-theme=executive] .act-panel-title,html[data-theme=ivory] .act-panel-title,html[data-theme=mint] .act-panel-title,html[data-theme=rose] .act-panel-title{color:var(--text)!important}
+html[data-theme=ocean] .act-panel-sub,html[data-theme=executive] .act-panel-sub,html[data-theme=ivory] .act-panel-sub,html[data-theme=mint] .act-panel-sub,html[data-theme=rose] .act-panel-sub{color:var(--tm)!important}
+html[data-theme=ocean] .modal-head h3,html[data-theme=executive] .modal-head h3,html[data-theme=ivory] .modal-head h3,html[data-theme=mint] .modal-head h3,html[data-theme=rose] .modal-head h3{color:var(--text)!important}
+html[data-theme=ocean] .form-row label,html[data-theme=executive] .form-row label,html[data-theme=ivory] .form-row label,html[data-theme=mint] .form-row label,html[data-theme=rose] .form-row label{color:var(--tm)!important}
+html[data-theme=ocean] .side-section-title,html[data-theme=executive] .side-section-title,html[data-theme=ivory] .side-section-title,html[data-theme=mint] .side-section-title,html[data-theme=rose] .side-section-title{color:var(--td)!important}
+html[data-theme=ocean] .drop-zone,html[data-theme=executive] .drop-zone,html[data-theme=ivory] .drop-zone,html[data-theme=mint] .drop-zone,html[data-theme=rose] .drop-zone{border-color:var(--border)!important;background:rgba(0,0,0,.02)!important}
+html[data-theme=ocean] .drop-label,html[data-theme=executive] .drop-label,html[data-theme=ivory] .drop-label,html[data-theme=mint] .drop-label,html[data-theme=rose] .drop-label,html[data-theme=ocean] .drop-sub,html[data-theme=executive] .drop-sub,html[data-theme=ivory] .drop-sub,html[data-theme=mint] .drop-sub,html[data-theme=rose] .drop-sub{color:var(--td)!important}
+html[data-theme=ocean] .field input,html[data-theme=executive] .field input,html[data-theme=ivory] .field input,html[data-theme=mint] .field input,html[data-theme=rose] .field input,html[data-theme=ocean] .field textarea,html[data-theme=executive] .field textarea,html[data-theme=ivory] .field textarea,html[data-theme=mint] .field textarea,html[data-theme=rose] .field textarea{background:#fff!important;border-color:var(--border)!important;color:var(--text)!important}
+html[data-theme=ocean] .ntf-btn,html[data-theme=executive] .ntf-btn,html[data-theme=ivory] .ntf-btn,html[data-theme=mint] .ntf-btn,html[data-theme=rose] .ntf-btn{border-color:rgba(0,0,0,.12)!important;background:rgba(0,0,0,.04)!important;color:var(--text)!important}
+/* Theme Picker */
+.theme-shell{position:relative;display:inline-flex;align-items:center}
+.theme-pick-btn{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:.2s;white-space:nowrap}
+.theme-pick-btn:hover{border-color:var(--a1);color:var(--a1)}
+.theme-pick-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;box-shadow:0 0 0 2px rgba(255,255,255,.15)}
+.theme-pick-caret{opacity:.55;font-size:10px;line-height:1}
+.theme-pick-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:6px;min-width:210px;z-index:9999;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+html[data-theme=ocean] .theme-pick-dropdown,html[data-theme=executive] .theme-pick-dropdown{box-shadow:0 12px 36px rgba(0,0,0,.18)}
+.theme-pick-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;cursor:pointer;transition:.15s}
+.theme-pick-item:hover{background:var(--surface2)}
+.theme-pick-item.active-theme{background:var(--surface2)}
+.tpi-swatch{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:inline-block}
+.tpi-name{font-size:12.5px;font-weight:700;line-height:1.3;color:var(--text)}
+.tpi-desc{font-size:10.5px;color:var(--tm);margin-top:2px}
+.tpi-check{margin-left:auto;font-size:11px;opacity:.7;color:var(--a1)}
+/* ── Management Modules ── */
+.mod-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;padding:4px;background:var(--s);border:1px solid var(--border);border-radius:14px;width:fit-content}
+.mod-tab{padding:8px 16px;border-radius:10px;border:none;background:transparent;color:var(--tm);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap}
+.mod-tab:hover{color:var(--text);background:var(--s2)}
+.mod-tab.active{background:var(--accent);color:#fff}
+.mod-panel{display:none;background:var(--s);border:1px solid var(--border);border-radius:0 16px 16px 16px;margin-top:-1px}
+.mod-panel.active{display:block}
+.mod-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--border)}
+.mod-title{font-family:var(--fd);font-size:15px;font-weight:800}
+.mod-sub{font-size:12px;color:var(--tm);margin-top:3px}
+.mod-table{width:100%;border-collapse:collapse;font-size:13px}
+.mod-table thead th{padding:9px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);font-weight:700;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02);white-space:nowrap}
+.mod-table tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+.mod-table tbody tr:hover{background:rgba(59,158,255,.03)}
+.mod-table td{padding:10px 14px;vertical-align:middle;white-space:nowrap}
+.mod-table td.wrap{white-space:normal;max-width:180px}
+.mod-table tbody tr:last-child{border-bottom:none}
+.mod-empty{padding:36px;text-align:center;color:var(--td);font-size:13px}
+.ms{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.ms-green{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+.ms-blue{background:rgba(59,158,255,.1);color:#60b0ff;border:1px solid rgba(59,158,255,.18)}
+.ms-yellow{background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+.ms-red{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.ms-gray{background:rgba(100,116,139,.1);color:#94a3b8;border:1px solid rgba(100,116,139,.2)}
+.mod-field-row{display:grid;gap:10px;margin-bottom:10px}
+.mod-field-row.cols2{grid-template-columns:1fr 1fr}
+.mod-field-row.cols3{grid-template-columns:1fr 1fr 1fr}
+/* nuclear-light */html[data-theme=ocean] *,html[data-theme=executive] *,html[data-theme=ivory] *,html[data-theme=mint] *,html[data-theme=rose] *{color:var(--text)!important;font-weight:600!important}html[data-theme=ocean] .btn-primary,html[data-theme=executive] .btn-primary,html[data-theme=ivory] .btn-primary,html[data-theme=mint] .btn-primary,html[data-theme=rose] .btn-primary,html[data-theme=ocean] .btn-ok,html[data-theme=executive] .btn-ok,html[data-theme=ivory] .btn-ok,html[data-theme=mint] .btn-ok,html[data-theme=rose] .btn-ok,html[data-theme=ocean] .ntf-badge,html[data-theme=executive] .ntf-badge,html[data-theme=ivory] .ntf-badge,html[data-theme=mint] .ntf-badge,html[data-theme=rose] .ntf-badge{color:#fff!important;font-weight:700!important}html[data-theme=ocean] i,html[data-theme=executive] i,html[data-theme=ivory] i,html[data-theme=mint] i,html[data-theme=rose] i{color:inherit!important}
+</style>
 </head>
-<body>
+<body class="{% if admin_template_mode == 'module' %}module-only{% else %}control-only{% endif %}{% if module_access_level != 'edit' %} module-readonly{% endif %}">
 <canvas id="cv"></canvas>
 <div class="wrap">
   <header class="topbar">
     <div class="tl">
-      <a href="/" class="back">← Dashboard</a>
-      <div class="page-title">🔐 <span>Admin Panel</span> · HDEC</div>
+      <a href="{% if admin_template_mode == 'module' %}{{ module_back_url|default:'/' }}{% else %}/{% endif %}" class="back">{% if admin_template_mode == 'module' %}← {{ module_back_label|default:'Administration' }}{% else %}← Dashboard{% endif %}</a>
+      <div class="page-title">{% if admin_template_mode == 'module' %}{{ module_meta.icon }} <span>{{ module_meta.label }}</span> · {{ project.name }}{% else %}🔐 <span>Control Panel</span> · HDEC{% endif %}</div>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-        <span class="tt-label" id="tt-label">Night</span>
-        <span class="tt-track"><span class="tt-thumb"><span id="tt-icon">🌙</span></span></span>
-      </button>
-      <div class="user-badge">👑 {{ current_user.name }}</div>
+      
+      <div class="theme-shell" id="themeShell">
+  <button class="theme-pick-btn" onclick="toggleThemePicker()" id="themePickBtn">
+    <span class="theme-pick-dot" id="themePickerDot" style="background:#3b9eff"></span>
+    <span id="themePickerLabel">Void</span>
+    <span class="theme-pick-caret">&#9662;</span>
+  </button>
+  <div class="theme-pick-dropdown" id="themeDropdown" hidden>
+    <div class="theme-pick-item" data-tid="dark" onclick="applyTheme('dark')">
+      <span class="tpi-swatch" style="background:#07090f;border:2px solid #3b9eff"></span>
+      <div><div class="tpi-name">Void</div><div class="tpi-desc">Dark space</div></div>
+      <span class="tpi-check" id="chk-dark"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="aurora" onclick="applyTheme('aurora')">
+      <span class="tpi-swatch" style="background:linear-gradient(135deg,#08061a,#2d1a60);border:2px solid #a78bfa"></span>
+      <div><div class="tpi-name">Aurora</div><div class="tpi-desc">Purple dream</div></div>
+      <span class="tpi-check" id="chk-aurora"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="forge" onclick="applyTheme('forge')">
+      <span class="tpi-swatch" style="background:#0b0905;border:2px solid #f97316"></span>
+      <div><div class="tpi-name">Forge</div><div class="tpi-desc">Industrial heat</div></div>
+      <span class="tpi-check" id="chk-forge"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="ocean" onclick="applyTheme('ocean')">
+      <span class="tpi-swatch" style="background:#e0f2fe;border:2px solid #0ea5e9"></span>
+      <div><div class="tpi-name">Ocean</div><div class="tpi-desc">Light &amp; clear</div></div>
+      <span class="tpi-check" id="chk-ocean"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="terminal" onclick="applyTheme('terminal')">
+      <span class="tpi-swatch" style="background:#000;border:2px solid #00ff41"></span>
+      <div><div class="tpi-name">Terminal</div><div class="tpi-desc">Matrix code</div></div>
+      <span class="tpi-check" id="chk-terminal"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="executive" onclick="applyTheme('executive')">
+      <span class="tpi-swatch" style="background:#faf6f0;border:2px solid #b45309"></span>
+      <div><div class="tpi-name">Executive</div><div class="tpi-desc">Warm &amp; refined</div></div>
+      <span class="tpi-check" id="chk-executive"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="ivory" onclick="applyTheme('ivory')">
+      <span class="tpi-swatch" style="background:#fff;border:2px solid #6366f1"></span>
+      <div><div class="tpi-name">Ivory</div><div class="tpi-desc">Clean minimal</div></div>
+      <span class="tpi-check" id="chk-ivory"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="mint" onclick="applyTheme('mint')">
+      <span class="tpi-swatch" style="background:#f0fdf4;border:2px solid #10b981"></span>
+      <div><div class="tpi-name">Mint</div><div class="tpi-desc">Fresh &amp; natural</div></div>
+      <span class="tpi-check" id="chk-mint"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="rose" onclick="applyTheme('rose')">
+      <span class="tpi-swatch" style="background:#fff1f2;border:2px solid #f43f5e"></span>
+      <div><div class="tpi-name">Rose</div><div class="tpi-desc">Soft &amp; elegant</div></div>
+      <span class="tpi-check" id="chk-rose"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="crimson" onclick="applyTheme('crimson')">
+      <span class="tpi-swatch" style="background:#0c0508;border:2px solid #f87171"></span>
+      <div><div class="tpi-name">Crimson</div><div class="tpi-desc">Dark red drama</div></div>
+      <span class="tpi-check" id="chk-crimson"></span>
+    </div>
+    <div class="theme-pick-item" data-tid="dusk" onclick="applyTheme('dusk')">
+      <span class="tpi-swatch" style="background:linear-gradient(135deg,#1a1625,#2d2645);border:2px solid #818cf8"></span>
+      <div><div class="tpi-name">Dusk</div><div class="tpi-desc">Twilight blue</div></div>
+      <span class="tpi-check" id="chk-dusk"></span>
+    </div>
+  </div>
+</div>
+<div class="user-badge">👑 {{ current_user.name }}</div>
     </div>
   </header>
 
   <main class="main">
     <div class="toast" id="toast"></div>
 
+    <div id="adminControlArea">
     <div class="top-grid">
       <!-- CREATE USER -->
       <div class="card">
@@ -280,7 +567,111 @@
         </table>
       </div>
     </div>
+    </div>
+
+    <!-- ═══════════════════ MANAGEMENT MODULES ═══════════════════ -->
+    <div id="adminModulesArea" style="margin-top:36px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <div style="font-family:var(--fd);font-size:20px;font-weight:800">{% if admin_template_mode == 'module' %}{{ module_meta.icon }} {{ module_meta.label }}{% else %}⚙️ Administration Modules{% endif %}</div>
+        <div style="font-size:12px;color:var(--tm);padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:var(--s)">{% if admin_template_mode == 'module' %}{% if module_access_level == 'edit' %}Edit Access{% else %}View Only{% endif %}{% else %}Project Workspace{% endif %}</div>
+      </div>
+
+      <!-- Module tabs -->
+      <div class="mod-tabs" id="modTabs">
+        <button class="mod-tab active" data-mod="vehicles" onclick="switchMod('vehicles',this)">🚗 Vehicles</button>
+        <button class="mod-tab" data-mod="residences" onclick="switchMod('residences',this)">🏠 Residences</button>
+        <button class="mod-tab" data-mod="workforce" onclick="switchMod('workforce',this)">👷 Workforce</button>
+        <button class="mod-tab" data-mod="gatepasses" onclick="switchMod('gatepasses',this)">🔑 Gate Passes</button>
+        <button class="mod-tab" data-mod="equipment" onclick="switchMod('equipment',this)">🧰 Equipment</button>
+        <button class="mod-tab" data-mod="trainings" onclick="switchMod('trainings',this)">📋 Trainings</button>
+      </div>
+
+      <!-- ── VEHICLES ── -->
+      <div class="mod-panel active{% if module_only_mod == 'vehicles' %} module-target{% endif %}" id="mod-vehicles">
+        <div class="mod-head">
+          <div><div class="mod-title">🚗 Vehicle Fleet Management</div><div class="mod-sub">Track company vehicles, drivers, status and maintenance schedules</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModModal('vehicles')">+ Add Vehicle</button>
+        </div>
+        <div style="overflow-x:auto"><table class="mod-table" id="tbl-vehicles">
+          <thead><tr><th>Plate</th><th>Type</th><th>Make / Model</th><th>Year</th><th>Assigned To</th><th>Status</th><th>Next Service</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <!-- ── RESIDENCES ── -->
+      <div class="mod-panel{% if module_only_mod == 'residences' %} module-target{% endif %}" id="mod-residences">
+        <div class="mod-head">
+          <div><div class="mod-title">🏠 Camp &amp; Residence Management</div><div class="mod-sub">Manage accommodation rooms, occupants and availability across camp blocks</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModModal('residences')">+ Add Room</button>
+        </div>
+        <div style="overflow-x:auto"><table class="mod-table" id="tbl-residences">
+          <thead><tr><th>Block / Room</th><th>Type</th><th>Occupant</th><th>Department</th><th>Check-in</th><th>Check-out</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <!-- ── WORKFORCE ── -->
+      <div class="mod-panel{% if module_only_mod == 'workforce' %} module-target{% endif %}" id="mod-workforce">
+        <div class="mod-head">
+          <div><div class="mod-title">👷 Workforce Register</div><div class="mod-sub">Employee &amp; contractor register with ID, Iqama expiry and emergency contacts</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModModal('workforce')">+ Add Person</button>
+        </div>
+        <div style="overflow-x:auto"><table class="mod-table" id="tbl-workforce">
+          <thead><tr><th>Employee ID</th><th>Name</th><th>Position</th><th>Nationality</th><th>Employer</th><th>Iqama Expiry</th><th>Medical Expiry</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <!-- ── GATE PASSES ── -->
+      <div class="mod-panel{% if module_only_mod == 'gatepasses' %} module-target{% endif %}" id="mod-gatepasses">
+        <div class="mod-head">
+          <div><div class="mod-title">🔑 Gate Pass &amp; Visitor Register</div><div class="mod-sub">Visitor log, contractor access, vehicle entry and site gate control records</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModModal('gatepasses')">+ New Pass</button>
+        </div>
+        <div style="overflow-x:auto"><table class="mod-table" id="tbl-gatepasses">
+          <thead><tr><th>Pass No.</th><th>Visitor</th><th>Company</th><th>Purpose</th><th>Host</th><th>Vehicle Plate</th><th>Entry</th><th>Exit</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <!-- ── EQUIPMENT ── -->
+      <div class="mod-panel{% if module_only_mod == 'equipment' %} module-target{% endif %}" id="mod-equipment">
+        <div class="mod-head">
+          <div><div class="mod-title">🧰 Tools &amp; Equipment Register</div><div class="mod-sub">Asset tags, calibration schedules, custody tracking and condition monitoring</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModModal('equipment')">+ Add Item</button>
+        </div>
+        <div style="overflow-x:auto"><table class="mod-table" id="tbl-equipment">
+          <thead><tr><th>Asset Tag</th><th>Description</th><th>Category</th><th>Serial No.</th><th>Assigned To</th><th>Location</th><th>Condition</th><th>Next Calibration</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+
+      <!-- ── TRAININGS ── -->
+      <div class="mod-panel{% if module_only_mod == 'trainings' %} module-target{% endif %}" id="mod-trainings">
+        <div class="mod-head">
+          <div><div class="mod-title">📋 Training &amp; Certification Register</div><div class="mod-sub">Track employee certifications, expiry dates and required refresher training</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openModModal('trainings')">+ Add Record</button>
+        </div>
+        <div style="overflow-x:auto"><table class="mod-table" id="tbl-trainings">
+          <thead><tr><th>Employee</th><th>Training Type</th><th>Certificate No.</th><th>Issued By</th><th>Issue Date</th><th>Expiry Date</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </div><!-- /management modules -->
   </main>
+
+<!-- ═══ MODULE MODAL ═══ -->
+<div class="modal-bg" id="modModal">
+  <div class="modal" style="width:600px">
+    <button class="modal-close" onclick="closeModModal()">✕</button>
+    <h3 id="modModalTitle">Add Record</h3>
+    <div id="modModalFields"></div>
+    <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">
+      <button class="btn btn-danger" onclick="closeModModal()">Cancel</button>
+      <button class="btn btn-primary mod-save-btn" onclick="saveModRecord()">Save</button>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- CHANGE PASSWORD MODAL -->
@@ -332,6 +723,13 @@
     <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="savePermissions()">Save Permissions</button>
   </div>
 </div>
+
+<script>
+window.ADMIN_TEMPLATE_MODE = '{{ admin_template_mode|default:"control"|escapejs }}';
+window.ADMIN_API_BASE = '{{ admin_api_base|default:"/api/admin"|escapejs }}';
+window.ADMIN_FIXED_MODULE = '{{ module_only_mod|default:""|escapejs }}';
+window.ADMIN_MODULE_CAN_EDIT = '{{ module_access_level|default:"edit"|escapejs }}' === 'edit';
+</script>
 
 <script>
 const canvas=document.getElementById('cv'),ctx=canvas.getContext('2d');let W,H;
@@ -842,8 +1240,1824 @@ allUsers = USERS_DATA;
 renderUsers(allUsers);
 // Init create form with default role permissions
 onRoleChange();
-function toggleTheme(){const html=document.documentElement;const next=html.getAttribute('data-theme')==='light'?'dark':'light';html.setAttribute('data-theme',next);localStorage.setItem('hdec-theme',next);document.getElementById('tt-icon').textContent=next==='light'?'☀️':'🌙';document.getElementById('tt-label').textContent=next==='light'?'Day':'Night';}
-(function(){const t=localStorage.getItem('hdec-theme')||'dark';const icon=document.getElementById('tt-icon');const lbl=document.getElementById('tt-label');if(icon)icon.textContent=t==='light'?'☀️':'🌙';if(lbl)lbl.textContent=t==='light'?'Day':'Night';})();
+
+
 </script>
+
+<script>
+// THEME SYSTEM
+const HDEC_THEMES=[
+  {id:'dark',name:'Void',accent:'#3b9eff'},
+  {id:'aurora',name:'Aurora',accent:'#a78bfa'},
+  {id:'forge',name:'Forge',accent:'#f97316'},
+  {id:'ocean',name:'Ocean',accent:'#0ea5e9'},
+  {id:'terminal',name:'Terminal',accent:'#00ff41'},
+  {id:'executive',name:'Executive',accent:'#b45309'},
+  {id:'ivory',   name:'Ivory',     accent:'#6366f1'},
+  {id:'mint',    name:'Mint',      accent:'#10b981'},
+  {id:'rose',    name:'Rose',      accent:'#f43f5e'},
+  {id:'crimson', name:'Crimson',   accent:'#f87171'},
+  {id:'dusk',    name:'Dusk',      accent:'#818cf8'},
+];
+function applyTheme(id){
+  const t=HDEC_THEMES.find(x=>x.id===id)||HDEC_THEMES[0];
+  document.documentElement.setAttribute('data-theme',t.id);
+  localStorage.setItem('hdec-theme',t.id);
+  const dot=document.getElementById('themePickerDot');
+  const lbl=document.getElementById('themePickerLabel');
+  if(dot)dot.style.background=t.accent;
+  if(lbl)lbl.textContent=t.name;
+  HDEC_THEMES.forEach(x=>{
+    const el=document.getElementById('chk-'+x.id);
+    if(el)el.textContent=x.id===t.id?'\u2713':'';
+  });
+  const d=document.getElementById('themeDropdown');
+  if(d)d.hidden=true;
+}
+function toggleThemePicker(){
+  const d=document.getElementById('themeDropdown');
+  if(d)d.hidden=!d.hidden;
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#themeShell')){
+    const d=document.getElementById('themeDropdown');
+    if(d)d.hidden=true;
+  }
+});
+(function(){const s=localStorage.getItem('hdec-theme')||'dark';applyTheme(s);})();
+</script>
+
+<script>
+/* ══════════ MANAGEMENT MODULES ══════════ */
+(function(){
+'use strict';
+
+const CSRF = ()=>document.cookie.split(';').map(p=>p.trim()).find(p=>p.startsWith('csrftoken='))?.split('=')[1]||'';
+const ESC  = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const FMT_DATE = d=>d?d.substring(0,10):'—';
+const ADMIN_TEMPLATE_MODE = window.ADMIN_TEMPLATE_MODE || 'control';
+const ADMIN_API_BASE = window.ADMIN_API_BASE || '/api/admin';
+const FIXED_MODULE = window.ADMIN_FIXED_MODULE || '';
+const MODULE_ONLY_MODE = ADMIN_TEMPLATE_MODE === 'module';
+const CONTROL_ONLY_MODE = ADMIN_TEMPLATE_MODE === 'control';
+const MODULE_CAN_EDIT = !!window.ADMIN_MODULE_CAN_EDIT;
+const adminApi = suffix => `${ADMIN_API_BASE}/${suffix}/`;
+
+// ── Status badges ──────────────────────────────────────────────────────
+const STATUS_COLORS = {
+  available:'ms-green', active:'ms-green', valid:'ms-green', 'in use':'ms-blue',
+  occupied:'ms-blue', completed:'ms-blue', maintenance:'ms-yellow', 'expiring soon':'ms-yellow',
+  vacant:'ms-gray', retired:'ms-gray', resigned:'ms-gray', expired:'ms-red',
+  'on leave':'ms-yellow', 'under repair':'ms-yellow', poor:'ms-red', fair:'ms-yellow', good:'ms-green',
+};
+function badge(val){
+  const cls = STATUS_COLORS[(val||'').toLowerCase()] || 'ms-gray';
+  return `<span class="ms ${cls}">${ESC(val||'—')}</span>`;
+}
+function expBadge(dateStr){
+  if(!dateStr) return '<span class="ms ms-gray">—</span>';
+  const d = new Date(dateStr), now = new Date(), diff = (d-now)/864e5;
+  const cls = diff<0?'ms-red':diff<30?'ms-yellow':'ms-green';
+  const label = diff<0?'Expired':diff<30?`${Math.ceil(diff)}d left`:'Valid';
+  return `<span class="ms ${cls}" title="${FMT_DATE(dateStr)}">${label}</span>`;
+}
+
+// ── Module config ─────────────────────────────────────────────────────
+const MODS = {
+  vehicles:{
+    url:adminApi('vehicles'),
+    title:'🚗 Add Vehicle',
+    fields:[
+      {label:'Plate Number',  key:'plate',       type:'text',   req:true,  span:'cols2', col:0},
+      {label:'Type',          key:'type',        type:'select', req:true,  span:'cols2', col:1,
+        opts:['Car','4x4 / SUV','Light Truck','Heavy Truck','Bus','Crane','Forklift','Ambulance','Other']},
+      {label:'Make',          key:'make',        type:'text',   req:false, span:'cols3', col:0},
+      {label:'Model',         key:'model',       type:'text',   req:false, span:'cols3', col:1},
+      {label:'Year',          key:'year',        type:'text',   req:false, span:'cols3', col:2},
+      {label:'Assigned To',   key:'assigned_to', type:'text',   req:false, span:'cols2', col:0},
+      {label:'Status',        key:'status',      type:'select', req:true,  span:'cols2', col:1,
+        opts:['Available','In Use','Maintenance','Retired']},
+      {label:'Next Service Date', key:'next_service', type:'date', req:false, span:'cols2', col:0},
+      {label:'Fuel Type',     key:'fuel',        type:'select', req:false, span:'cols2', col:1,
+        opts:['Petrol','Diesel','Electric','Hybrid']},
+      {label:'Notes',         key:'notes',       type:'textarea',req:false,span:'full'},
+    ],
+    render:r=>`<td>${ESC(r.plate)}</td><td>${ESC(r.type)}</td><td class="wrap">${ESC(r.make||'')} ${ESC(r.model||'')}</td><td>${ESC(r.year||'—')}</td><td>${ESC(r.assigned_to||'—')}</td><td>${badge(r.status)}</td><td>${FMT_DATE(r.next_service)}</td>`,
+  },
+  residences:{
+    url:adminApi('residences'),
+    title:'🏠 Add Room / Residence',
+    fields:[
+      {label:'Block',         key:'block',    type:'text',   req:true,  span:'cols2', col:0},
+      {label:'Room No.',      key:'room_no',  type:'text',   req:true,  span:'cols2', col:1},
+      {label:'Room Type',     key:'type',     type:'select', req:true,  span:'cols2', col:0,
+        opts:['Single','Double','Triple','Suite','Staff Villa','Manager Villa']},
+      {label:'Status',        key:'status',   type:'select', req:true,  span:'cols2', col:1,
+        opts:['Vacant','Occupied','Maintenance','Reserved']},
+      {label:'Occupant',      key:'occupant', type:'text',   req:false, span:'cols2', col:0},
+      {label:'Department',    key:'dept',     type:'text',   req:false, span:'cols2', col:1},
+      {label:'Check-in Date', key:'checkin',  type:'date',   req:false, span:'cols2', col:0},
+      {label:'Check-out Date',key:'checkout', type:'date',   req:false, span:'cols2', col:1},
+      {label:'Notes',         key:'notes',    type:'textarea',req:false,span:'full'},
+    ],
+    render:r=>`<td>${ESC(r.block||'—')}</td><td>${ESC(r.room_no||'—')}</td><td>${ESC(r.type)}</td><td>${ESC(r.dept||'—')}</td><td>${FMT_DATE(r.checkin)}</td><td>${FMT_DATE(r.checkout)}</td><td>${badge(r.status)}</td>`,
+    renderOccupant:r=>`<td colspan="0">${ESC(r.occupant||'—')}</td>`,
+  },
+  workforce:{
+    url:adminApi('workforce'),
+    title:'👷 Add Workforce Member',
+    fields:[
+      {label:'Employee ID',     key:'emp_id',    type:'text',   req:true,  span:'cols2', col:0},
+      {label:'Full Name',       key:'name',      type:'text',   req:true,  span:'cols2', col:1},
+      {label:'Position / Title',key:'position',  type:'text',   req:false, span:'cols2', col:0},
+      {label:'Department',      key:'dept',      type:'text',   req:false, span:'cols2', col:1},
+      {label:'Nationality',     key:'nationality',type:'text',  req:false, span:'cols2', col:0},
+      {label:'Employer Type',   key:'employer',  type:'select', req:false, span:'cols2', col:1,
+        opts:['Direct (HDEC)','Contractor','Sub-contractor','Visitor']},
+      {label:'Iqama / ID No.',  key:'iqama_no',  type:'text',   req:false, span:'cols2', col:0},
+      {label:'Iqama Expiry',    key:'iqama_exp', type:'date',   req:false, span:'cols2', col:1},
+      {label:'Medical Expiry',  key:'medical_exp',type:'date',  req:false, span:'cols2', col:0},
+      {label:'Emergency Contact',key:'emergency',type:'text',   req:false, span:'cols2', col:1},
+      {label:'Status',          key:'status',    type:'select', req:true,  span:'cols2', col:0,
+        opts:['Active','On Leave','Resigned','Terminated']},
+      {label:'Notes',           key:'notes',     type:'textarea',req:false,span:'full'},
+    ],
+    render:r=>`<td>${ESC(r.emp_id||'—')}</td><td class="wrap">${ESC(r.name)}</td><td>${ESC(r.position||'—')}</td><td>${ESC(r.nationality||'—')}</td><td>${ESC(r.employer||'—')}</td><td>${expBadge(r.iqama_exp)}</td><td>${expBadge(r.medical_exp)}</td><td>${badge(r.status)}</td>`,
+  },
+  gatepasses:{
+    url:adminApi('gate-passes'),
+    title:'🔑 New Gate Pass',
+    fields:[
+      {label:'Pass No.',      key:'pass_no',  type:'text',   req:true,  span:'cols2', col:0},
+      {label:'Visitor Name',  key:'visitor',  type:'text',   req:true,  span:'cols2', col:1},
+      {label:'Company',       key:'company',  type:'text',   req:false, span:'cols2', col:0},
+      {label:'Purpose',       key:'purpose',  type:'text',   req:false, span:'cols2', col:1},
+      {label:'Host (HDEC)',   key:'host',     type:'text',   req:false, span:'cols2', col:0},
+      {label:'Vehicle Plate', key:'vehicle',  type:'text',   req:false, span:'cols2', col:1},
+      {label:'Entry Date/Time',key:'entry',   type:'datetime-local',req:false,span:'cols2',col:0},
+      {label:'Exit Date/Time',key:'exit',     type:'datetime-local',req:false,span:'cols2',col:1},
+      {label:'Status',        key:'status',   type:'select', req:true,  span:'cols2', col:0,
+        opts:['Active','Completed','Expired','Cancelled']},
+      {label:'Notes',         key:'notes',    type:'textarea',req:false,span:'full'},
+    ],
+    render:r=>`<td>${ESC(r.pass_no)}</td><td class="wrap">${ESC(r.visitor)}</td><td>${ESC(r.company||'—')}</td><td class="wrap">${ESC(r.purpose||'—')}</td><td>${ESC(r.host||'—')}</td><td>${ESC(r.vehicle||'—')}</td><td>${r.entry?r.entry.substring(0,16).replace('T',' '):'—'}</td><td>${r.exit?r.exit.substring(0,16).replace('T',' '):'—'}</td><td>${badge(r.status)}</td>`,
+  },
+  equipment:{
+    url:adminApi('equipment'),
+    title:'🧰 Add Equipment / Tool',
+    fields:[
+      {label:'Asset Tag',      key:'asset_tag',  type:'text',   req:true,  span:'cols2', col:0},
+      {label:'Description',    key:'description',type:'text',   req:true,  span:'cols2', col:1},
+      {label:'Category',       key:'category',   type:'select', req:false, span:'cols2', col:0,
+        opts:['Hand Tool','Power Tool','Measuring Instrument','Safety Equipment','Heavy Equipment','Vehicle Accessory','IT Equipment','Communication','Other']},
+      {label:'Serial No.',     key:'serial_no',  type:'text',   req:false, span:'cols2', col:1},
+      {label:'Assigned To',    key:'assigned_to',type:'text',   req:false, span:'cols2', col:0},
+      {label:'Location',       key:'location',   type:'text',   req:false, span:'cols2', col:1},
+      {label:'Condition',      key:'condition',  type:'select', req:false, span:'cols2', col:0,
+        opts:['Good','Fair','Poor']},
+      {label:'Status',         key:'status',     type:'select', req:true,  span:'cols2', col:1,
+        opts:['Available','In Use','Under Repair','Retired']},
+      {label:'Last Calibration',key:'last_calib',type:'date',   req:false, span:'cols2', col:0},
+      {label:'Next Calibration',key:'next_calib',type:'date',   req:false, span:'cols2', col:1},
+      {label:'Notes',          key:'notes',      type:'textarea',req:false,span:'full'},
+    ],
+    render:r=>`<td>${ESC(r.asset_tag)}</td><td class="wrap">${ESC(r.description)}</td><td>${ESC(r.category||'—')}</td><td>${ESC(r.serial_no||'—')}</td><td>${ESC(r.assigned_to||'—')}</td><td>${ESC(r.location||'—')}</td><td>${badge(r.condition)}</td><td>${expBadge(r.next_calib)}</td><td>${badge(r.status)}</td>`,
+  },
+  trainings:{
+    url:adminApi('trainings'),
+    title:'📋 Add Training Record',
+    fields:[
+      {label:'Employee Name',  key:'employee',   type:'text',   req:true,  span:'cols2', col:0},
+      {label:'Training Type',  key:'training',   type:'select', req:true,  span:'cols2', col:1,
+        opts:['Safety Induction','First Aid','Fire Fighting','Confined Space','Working at Height','Electrical Safety','Crane Operation','Forklift Operation','HSE Refresher','ISO Awareness','Environmental','Quality','Leadership','Technical Skills','Other']},
+      {label:'Certificate No.',key:'cert_no',    type:'text',   req:false, span:'cols2', col:0},
+      {label:'Issued By',      key:'issued_by',  type:'text',   req:false, span:'cols2', col:1},
+      {label:'Issue Date',     key:'issue_date', type:'date',   req:false, span:'cols2', col:0},
+      {label:'Expiry Date',    key:'expiry_date',type:'date',   req:false, span:'cols2', col:1},
+      {label:'Notes',          key:'notes',      type:'textarea',req:false,span:'full'},
+    ],
+    render:r=>{
+      const now=new Date(), exp=r.expiry_date?new Date(r.expiry_date):null;
+      const diff=exp?(exp-now)/864e5:null;
+      const status=!exp?'No Expiry':diff<0?'Expired':diff<30?'Expiring Soon':'Valid';
+      return `<td class="wrap">${ESC(r.employee)}</td><td>${ESC(r.training)}</td><td>${ESC(r.cert_no||'—')}</td><td>${ESC(r.issued_by||'—')}</td><td>${FMT_DATE(r.issue_date)}</td><td>${FMT_DATE(r.expiry_date)}</td><td>${badge(status)}</td>`;
+    },
+  },
+};
+
+// ── State ──────────────────────────────────────────────────────────────
+let _curMod=null, _curRec=null;
+
+// ── Tab switch ──────────────────────────────────────────────────────────
+window.switchMod = function(mod, btn){
+  if(CONTROL_ONLY_MODE) return;
+  if(MODULE_ONLY_MODE && FIXED_MODULE) mod = FIXED_MODULE;
+  const tabBtn = btn || document.querySelector(`.mod-tab[data-mod="${mod}"]`);
+  document.querySelectorAll('.mod-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.mod-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mod-'+mod).classList.add('active');
+  if(tabBtn) tabBtn.classList.add('active');
+  if(window.history && window.history.replaceState){
+    const url = new URL(window.location.href);
+    url.searchParams.set('module', mod);
+    window.history.replaceState({}, '', `${url.pathname}${url.search}`);
+  }
+  loadMod(mod);
+};
+
+// ── Load records ───────────────────────────────────────────────────────
+async function loadMod(mod){
+  const cfg=MODS[mod]; if(!cfg) return;
+  const tbody=document.querySelector(`#tbl-${mod} tbody`); if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="20" class="mod-empty">Loading…</td></tr>';
+  try{
+    const r=await fetch(cfg.url,{headers:{'X-Requested-With':'XMLHttpRequest'}});
+    const d=await r.json();
+    const recs=d.records||[];
+    if(!recs.length){ tbody.innerHTML='<tr><td colspan="20" class="mod-empty">No records yet — add one above.</td></tr>'; return; }
+    tbody.innerHTML=recs.map(rec=>`<tr>
+      ${cfg.render(rec)}
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-perm" onclick="editModRecord('${mod}','${rec.id}')">${MODULE_CAN_EDIT ? 'Edit' : 'View'}</button>
+        ${MODULE_CAN_EDIT ? `<button class="btn btn-sm btn-danger" onclick="deleteModRecord('${mod}','${rec.id}',this)">Delete</button>` : ''}
+      </div></td>
+    </tr>`).join('');
+  }catch(e){ tbody.innerHTML='<tr><td colspan="20" class="mod-empty">Failed to load.</td></tr>'; }
+}
+
+// ── Build form fields ──────────────────────────────────────────────────
+function buildFields(mod, data){
+  const cfg=MODS[mod]; if(!cfg) return '';
+  let html='';
+  const rows=[];
+  let row2=[], row3=[];
+  for(const f of cfg.fields){
+    if(f.span==='full'){
+      if(row2.length){ html+=`<div class="mod-field-row cols2">${row2.join('')}</div>`; row2=[]; }
+      if(row3.length){ html+=`<div class="mod-field-row cols3">${row3.join('')}</div>`; row3=[]; }
+      html+=`<div class="mod-field-row"><div class="field"><label>${ESC(f.label)}</label>${buildInput(f,data)}</div></div>`;
+    } else if(f.span==='cols2'){
+      if(row3.length){ html+=`<div class="mod-field-row cols3">${row3.join('')}</div>`; row3=[]; }
+      row2.push(`<div class="field"><label>${ESC(f.label)}${f.req?' <span style="color:#ef4444">*</span>':''}</label>${buildInput(f,data)}</div>`);
+      if(row2.length===2){ html+=`<div class="mod-field-row cols2">${row2.join('')}</div>`; row2=[]; }
+    } else if(f.span==='cols3'){
+      if(row2.length){ html+=`<div class="mod-field-row cols2">${row2.join('')}</div>`; row2=[]; }
+      row3.push(`<div class="field"><label>${ESC(f.label)}${f.req?' <span style="color:#ef4444">*</span>':''}</label>${buildInput(f,data)}</div>`);
+      if(row3.length===3){ html+=`<div class="mod-field-row cols3">${row3.join('')}</div>`; row3=[]; }
+    }
+  }
+  if(row2.length) html+=`<div class="mod-field-row cols2">${row2.join('')}</div>`;
+  if(row3.length) html+=`<div class="mod-field-row cols3">${row3.join('')}</div>`;
+  return html;
+}
+
+function buildInput(f, data){
+  const val=data?.(f.key)||'';
+  if(f.type==='textarea') return `<textarea id="mf_${f.key}" rows="2" style="width:100%;padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font:inherit;font-size:13.5px;resize:vertical;outline:none">${ESC(val)}</textarea>`;
+  if(f.type==='select') return `<select id="mf_${f.key}" class="field select" style="width:100%;padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font:inherit;font-size:13.5px;outline:none">${(f.opts||[]).map(o=>`<option value="${ESC(o)}"${o===val?' selected':''}>${ESC(o)}</option>`).join('')}</select>`;
+  return `<input id="mf_${f.key}" type="${f.type}" value="${ESC(val)}" placeholder="" style="width:100%;padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font:inherit;font-size:13.5px;outline:none">`;
+}
+
+// ── Open modal ─────────────────────────────────────────────────────────
+window.openModModal = function(mod, rec){
+  _curMod=mod; _curRec=rec||null;
+  const cfg=MODS[mod];
+  document.getElementById('modModalTitle').textContent=rec?cfg.title.replace('Add','Edit').replace('New','Edit'):cfg.title;
+  const data=rec?k=>rec[k]:null;
+  document.getElementById('modModalFields').innerHTML=buildFields(mod,data);
+  document.getElementById('modModal').classList.add('open');
+};
+
+window.closeModModal = function(){
+  document.getElementById('modModal').classList.remove('open');
+  _curMod=null; _curRec=null;
+};
+
+// ── Edit ───────────────────────────────────────────────────────────────
+window.editModRecord = async function(mod, rid){
+  const cfg=MODS[mod]; if(!cfg) return;
+  try{
+    const r=await fetch(cfg.url+rid+'/',{headers:{'X-Requested-With':'XMLHttpRequest'}});
+    const d=await r.json();
+    if(d.record) openModModal(mod, d.record);
+  }catch(e){ showToast('Failed to load record','error'); }
+};
+
+// ── Save ───────────────────────────────────────────────────────────────
+window.saveModRecord = async function(){
+  const cfg=MODS[_curMod]; if(!cfg) return;
+  const data={};
+  for(const f of cfg.fields){
+    const el=document.getElementById('mf_'+f.key);
+    if(el) data[f.key]=el.value;
+  }
+  const url=_curRec?cfg.url+_curRec.id+'/':cfg.url;
+  const method=_curRec?'PATCH':'POST';
+  try{
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json','X-CSRFToken':CSRF(),'X-Requested-With':'XMLHttpRequest'},body:JSON.stringify(data)});
+    if(!r.ok){ showToast('Save failed','error'); return; }
+    closeModModal();
+    loadMod(_curMod);
+    showToast(_curRec?'Record updated':'Record added','success');
+  }catch(e){ showToast('Save failed','error'); }
+};
+
+// ── Delete ─────────────────────────────────────────────────────────────
+window.deleteModRecord = async function(mod, rid, btn){
+  if(!confirm('Delete this record? This cannot be undone.')) return;
+  const cfg=MODS[mod]; if(!cfg) return;
+  try{
+    const r=await fetch(cfg.url+rid+'/',{method:'DELETE',headers:{'X-CSRFToken':CSRF(),'X-Requested-With':'XMLHttpRequest'}});
+    if(!r.ok){ showToast('Delete failed','error'); return; }
+    const row=btn.closest('tr'); if(row) row.remove();
+    const tbody=document.querySelector(`#tbl-${mod} tbody`);
+    if(tbody&&!tbody.children.length) tbody.innerHTML='<tr><td colspan="20" class="mod-empty">No records yet.</td></tr>';
+    showToast('Record deleted','success');
+  }catch(e){ showToast('Delete failed','error'); }
+};
+
+// ── Close modal on backdrop click ──────────────────────────────────────
+document.getElementById('modModal').addEventListener('click',function(e){
+  if(e.target===this) closeModModal();
+});
+
+// ── Initial load of vehicles tab ───────────────────────────────────────
+if(!CONTROL_ONLY_MODE){
+  const requestedMod = MODULE_ONLY_MODE && FIXED_MODULE ? FIXED_MODULE : new URLSearchParams(window.location.search).get('module');
+  if(requestedMod && MODS[requestedMod]){
+    switchMod(requestedMod);
+    const modTabs = document.getElementById('modTabs');
+    if(modTabs && !MODULE_ONLY_MODE) modTabs.scrollIntoView({block:'start'});
+  }else{
+    switchMod(FIXED_MODULE || 'vehicles');
+  }
+}
+
+})();
+</script>
+
+<script>
+(function(){
+'use strict';
+
+const style = document.createElement('style');
+style.textContent = `
+.admin-enhanced-form{display:flex;flex-direction:column;gap:16px}
+.mod-section-nav{display:flex;gap:8px;flex-wrap:wrap}
+.mod-section-pill{padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--s2);color:var(--tm);font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.mod-section-pill:hover{color:var(--text);border-color:rgba(59,158,255,.28)}
+.mod-section-pill.active{background:rgba(59,158,255,.14);border-color:rgba(59,158,255,.35);color:#8cc5ff}
+.mod-workspace-shell{padding:18px 22px 8px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015)}
+.mod-workspace-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.mod-workspace-title{font-size:13px;font-weight:800}
+.mod-workspace-sub{font-size:11px;color:var(--tm);margin-top:3px;max-width:760px}
+.mod-workspace-count{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid rgba(59,158,255,.18);background:rgba(59,158,255,.08);color:#8cc5ff;font-size:11px;font-weight:700}
+.mod-search{width:280px;max-width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:var(--s2);color:var(--text);font:inherit;font-size:13px;outline:none}
+.mod-search:focus{border-color:rgba(59,158,255,.35);background:rgba(59,158,255,.04)}
+.mod-search::placeholder{color:var(--td)}
+.mod-workspace-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:12px}
+.mod-workspace-empty{padding:18px;border:1px dashed var(--border);border-radius:14px;color:var(--td);font-size:12px;text-align:center;background:rgba(255,255,255,.015)}
+.mod-record-card{border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));padding:15px;display:flex;flex-direction:column;gap:12px;min-height:220px}
+.mod-record-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mod-record-title{font-size:14px;font-weight:800;line-height:1.3}
+.mod-record-sub{font-size:12px;color:var(--tm);line-height:1.5}
+.mod-record-tags{display:flex;gap:6px;flex-wrap:wrap}
+.mod-record-tag{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);font-size:10.5px;color:var(--tm);font-weight:700}
+.mod-record-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mod-record-metric{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px 11px;background:rgba(255,255,255,.018)}
+.mod-record-metric-label{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:.45px}
+.mod-record-metric-value{font-size:15px;font-weight:800;margin-top:4px}
+.mod-record-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.mod-record-action{padding:8px 12px;border-radius:10px;border:1px solid rgba(59,158,255,.18);background:rgba(59,158,255,.08);color:#9ccfff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s}
+.mod-record-action:hover{background:rgba(59,158,255,.14);border-color:rgba(59,158,255,.32)}
+.mod-record-action.secondary{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:var(--tm)}
+.mod-record-action.secondary:hover{color:var(--text);border-color:rgba(255,255,255,.15)}
+.mod-list-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:6px 22px 14px;flex-wrap:wrap}
+.mod-list-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.55px;color:var(--tm)}
+.mod-list-sub{font-size:11px;color:var(--td);margin-top:3px}
+.mod-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mod-summary-card{border:1px solid var(--border);border-radius:14px;background:var(--s);padding:12px 14px}
+.mod-summary-label{font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px}
+.mod-summary-value{font-size:20px;font-weight:800;margin-top:4px}
+.mod-detail-section{border:1px solid var(--border);border-radius:14px;background:var(--s);overflow:hidden}
+.mod-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.mod-detail-title{font-size:13px;font-weight:800}
+.mod-detail-sub{font-size:11px;color:var(--tm);margin-top:3px}
+.mod-detail-body{padding:14px}
+.mod-detail-empty{padding:16px;border:1px dashed var(--border);border-radius:12px;color:var(--td);font-size:12px;text-align:center}
+.mod-detail-item{border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
+.mod-detail-item + .mod-detail-item{margin-top:12px}
+.mod-detail-grid{display:grid;gap:10px}
+.mod-detail-grid.cols2{grid-template-columns:1fr 1fr}
+.mod-detail-grid.cols3{grid-template-columns:repeat(3,1fr)}
+.mod-detail-actions{display:flex;justify-content:flex-end;margin-top:10px}
+.mod-link{background:none;border:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:0;text-align:left}
+.mod-link:hover{text-decoration:underline}
+.mod-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.mod-toolbar-note{font-size:12px;color:var(--tm)}
+.mod-modal-note{font-size:12px;color:var(--tm);line-height:1.5}
+@media (max-width: 760px){
+  .mod-workspace-shell,.mod-list-intro{padding-left:16px;padding-right:16px}
+  .mod-record-metrics{grid-template-columns:1fr}
+  .mod-search{width:100%}
+  .mod-detail-grid.cols2,.mod-detail-grid.cols3{grid-template-columns:1fr}
+  #modModal .modal{padding:22px 18px}
+}
+`;
+document.head.appendChild(style);
+
+const MODAL_ROOT = document.getElementById('modModal');
+const MODAL_CARD = MODAL_ROOT ? MODAL_ROOT.querySelector('.modal') : null;
+const MODAL_TITLE = document.getElementById('modModalTitle');
+const MODAL_FIELDS = document.getElementById('modModalFields');
+
+if(!MODAL_ROOT || !MODAL_CARD || !MODAL_TITLE || !MODAL_FIELDS) return;
+
+const ACTIVE = {
+  records: {},
+  mod: 'vehicles',
+  filters: {},
+  draftMod: '',
+  draftId: '',
+  draftData: null,
+  draftSection: 'all',
+};
+
+const ADMIN_TEMPLATE_MODE = window.ADMIN_TEMPLATE_MODE || 'control';
+const ADMIN_API_BASE = window.ADMIN_API_BASE || '/api/admin';
+const FIXED_MODULE = window.ADMIN_FIXED_MODULE || '';
+const MODULE_ONLY_MODE = ADMIN_TEMPLATE_MODE === 'module';
+const CONTROL_ONLY_MODE = ADMIN_TEMPLATE_MODE === 'control';
+const MODULE_CAN_EDIT = !!window.ADMIN_MODULE_CAN_EDIT;
+const adminApi = suffix => `${ADMIN_API_BASE}/${suffix}/`;
+
+const todayIso = ()=>new Date().toISOString().slice(0,10);
+const esc = value => String(value == null ? '' : value)
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;');
+const clone = value => JSON.parse(JSON.stringify(value));
+const asArray = value => Array.isArray(value) ? value : [];
+const text = value => String(value == null ? '' : value);
+const formatDate = value => value ? String(value).slice(0, 10) : '-';
+const formatDateTime = value => value ? String(value).replace('T', ' ').slice(0, 16) : '-';
+const formatNumber = value => {
+  const n = Number(value);
+  if(!Number.isFinite(n)) return '-';
+  return n.toLocaleString();
+};
+const openIssueCount = record => asArray(record.issues).filter(item => !['Resolved','Closed'].includes(text(item.status))).length;
+const statusClass = value => {
+  const v = text(value).toLowerCase();
+  if(['available','active','valid','operational','completed','good','occupied'].includes(v)) return 'ms-green';
+  if(['in use','assigned','open'].includes(v)) return 'ms-blue';
+  if(['maintenance','expiring soon','under repair','partially occupied','in progress','fair'].includes(v)) return 'ms-yellow';
+  if(['expired','retired','poor','closed','critical'].includes(v)) return 'ms-red';
+  return 'ms-gray';
+};
+const statusChip = value => `<span class="ms ${statusClass(value)}">${esc(value || '-')}</span>`;
+const numericInput = value => {
+  const s = text(value).trim();
+  return s === '' ? '' : s;
+};
+const countItems = value => asArray(value).length;
+
+function vehicleServiceSplit(items){
+  return asArray(items).reduce((acc, item) => {
+    const serviceType = text(item && item.service_type).toLowerCase();
+    if(serviceType.includes('oil') || serviceType.includes('lubric')){
+      acc.oil_changes.push({
+        date: text(item && item.date),
+        odometer_km: text(item && item.odometer_km),
+        oil_grade: text(item && (item.oil_grade || item.service_type)),
+        filter_changed: text(item && item.filter_changed),
+        vendor: text(item && item.vendor),
+        cost: text(item && item.cost),
+        next_due_km: text(item && item.next_due_km),
+        next_due_date: text(item && item.next_due_date),
+        note: text(item && item.note),
+      });
+    }else{
+      acc.repair_logs.push({
+        date: text(item && item.date),
+        odometer_km: text(item && item.odometer_km),
+        category: text(item && (item.service_type || 'Repair')),
+        vendor: text(item && item.vendor),
+        cost: text(item && item.cost),
+        status: text(item && item.status || 'Completed'),
+        note: text(item && item.note),
+      });
+    }
+    return acc;
+  }, {oil_changes: [], repair_logs: []});
+}
+
+function buildVehicleLegacyServiceLogs(record){
+  return [
+    ...asArray(record.oil_changes).map(item => ({
+      date: text(item.date),
+      odometer_km: text(item.odometer_km),
+      service_type: text(item.oil_grade || 'Oil Change'),
+      vendor: text(item.vendor),
+      cost: text(item.cost),
+      next_due_km: text(item.next_due_km),
+      next_due_date: text(item.next_due_date),
+      filter_changed: text(item.filter_changed),
+      note: text(item.note),
+    })),
+    ...asArray(record.repair_logs).map(item => ({
+      date: text(item.date),
+      odometer_km: text(item.odometer_km),
+      service_type: text(item.category || 'Repair'),
+      vendor: text(item.vendor),
+      cost: text(item.cost),
+      status: text(item.status || 'Completed'),
+      note: text(item.note),
+    })),
+  ];
+}
+
+function trainingRecordStatus(record){
+  const exp = record && record.expiry_date ? new Date(record.expiry_date) : null;
+  const diff = exp ? (exp - new Date()) / 86400000 : null;
+  return !exp ? 'No Expiry' : diff < 0 ? 'Expired' : diff < 30 ? 'Expiring Soon' : 'Valid';
+}
+
+function normalizeSectionItems(items, fields){
+  return asArray(items).map(item => {
+    const out = {};
+    fields.forEach(field => {
+      const raw = item && item[field.key] != null ? item[field.key] : '';
+      out[field.key] = text(raw);
+    });
+    return out;
+  });
+}
+
+function defaultSectionItem(section){
+  const out = {};
+  section.fields.forEach(field => {
+    if(typeof field.default === 'function') out[field.key] = text(field.default());
+    else out[field.key] = text(field.default || '');
+  });
+  return out;
+}
+
+const SECTION_ISSUES = {
+  key: 'issues',
+  label: 'Issues And Requests',
+  description: 'Track problems, complaints, maintenance needs, and follow-up actions.',
+  addLabel: 'Add Issue',
+  columns: 3,
+  fields: [
+    {key: 'title', label: 'Issue Title', type: 'text'},
+    {key: 'category', label: 'Category', type: 'select', options: ['General','Mechanical','Electrical','Fuel','Cleaning','AC','Plumbing','Security','Internet','Furniture','Other']},
+    {key: 'priority', label: 'Priority', type: 'select', options: ['Low','Medium','High','Critical']},
+    {key: 'status', label: 'Status', type: 'select', options: ['Open','In Progress','Resolved','Closed'], default: 'Open'},
+    {key: 'reported_on', label: 'Reported On', type: 'date', default: todayIso},
+    {key: 'assigned_to', label: 'Assigned To', type: 'text'},
+    {key: 'note', label: 'Notes', type: 'textarea', span: 'full'},
+  ],
+};
+
+const ADMIN_MODULES = {
+  vehicles: {
+    endpoint: adminApi('vehicles'),
+    modalWidth: '1080px',
+    panelTitle: 'Vehicle Management',
+    panelSub: 'Each vehicle works like its own mini module, with fuel, oil change, repair, and issue updates kept together.',
+    workspaceTitle: 'Vehicle Units',
+    workspaceSub: 'Open any vehicle card to update fuel, oil changes, repairs, and daily issues without hunting through unrelated forms.',
+    searchPlaceholder: 'Search by vehicle, plate, driver, or location',
+    addLabel: '+ Add Vehicle',
+    entityLabel: 'Vehicle',
+    fields: [
+      {key:'vehicle_name', label:'Vehicle Name', type:'text', req:true, span:'cols2'},
+      {key:'plate', label:'Plate Number', type:'text', req:true, span:'cols2'},
+      {key:'type', label:'Type', type:'select', req:true, span:'cols2', options:['Car','4x4 / SUV','Light Truck','Heavy Truck','Bus','Crane','Forklift','Ambulance','Pickup','Other']},
+      {key:'fuel', label:'Fuel Type', type:'select', span:'cols2', options:['Petrol','Diesel','Electric','Hybrid','Gas','Other']},
+      {key:'make', label:'Make', type:'text', span:'cols3'},
+      {key:'model', label:'Model', type:'text', span:'cols3'},
+      {key:'year', label:'Year', type:'number', span:'cols3'},
+      {key:'odometer_km', label:'Current KM', type:'number', span:'cols3'},
+      {key:'service_due_km', label:'Service Due KM', type:'number', span:'cols3'},
+      {key:'tank_capacity_l', label:'Tank Capacity (L)', type:'number', span:'cols3'},
+      {key:'assigned_to', label:'Assigned To', type:'text', span:'cols2'},
+      {key:'dept', label:'Department / Route', type:'text', span:'cols2'},
+      {key:'status', label:'Status', type:'select', req:true, span:'cols2', options:['Available','In Use','Maintenance','Retired']},
+      {key:'base_location', label:'Parking / Base', type:'text', span:'cols2'},
+      {key:'next_service', label:'Next Service Date', type:'date', span:'cols3'},
+      {key:'insurance_expiry', label:'Insurance Expiry', type:'date', span:'cols3'},
+      {key:'registration_expiry', label:'Registration Expiry', type:'date', span:'cols3'},
+      {key:'notes', label:'Notes', type:'textarea', span:'full'},
+    ],
+    sections: [
+      {
+        key: 'fuel_logs',
+        label: 'Diesel / Fuel',
+        description: 'Track every fuel refill with liters, cost, station, and kilometer reading.',
+        addLabel: 'Add Fuel Entry',
+        columns: 3,
+        fields: [
+          {key:'date', label:'Date', type:'date', default: todayIso},
+          {key:'odometer_km', label:'KM', type:'number'},
+          {key:'fuel_type', label:'Fuel Type', type:'select', options:['Petrol','Diesel','Electric','Hybrid','Gas','Other']},
+          {key:'liters', label:'Liters', type:'number'},
+          {key:'cost', label:'Cost', type:'number'},
+          {key:'station', label:'Station', type:'text'},
+          {key:'filled_by', label:'Filled By', type:'text'},
+          {key:'note', label:'Notes', type:'textarea', span:'full'},
+        ],
+      },
+      {
+        key: 'oil_changes',
+        label: 'Oil Changes',
+        description: 'Keep oil service history separate so the next due date and KM stay easy to track.',
+        columns: 3,
+        addLabel: 'Add Oil Change',
+        fields: [
+          {key:'date', label:'Oil Change Date', type:'date', default: todayIso},
+          {key:'odometer_km', label:'KM At Change', type:'number'},
+          {key:'oil_grade', label:'Oil Grade / Type', type:'text'},
+          {key:'filter_changed', label:'Filter Changed', type:'select', options:['Yes','No'], default:'Yes'},
+          {key:'vendor', label:'Vendor / Workshop', type:'text'},
+          {key:'cost', label:'Cost', type:'number'},
+          {key:'next_due_km', label:'Next Due KM', type:'number'},
+          {key:'next_due_date', label:'Next Due Date', type:'date'},
+          {key:'note', label:'Notes', type:'textarea', span:'full'},
+        ],
+      },
+      {
+        key: 'repair_logs',
+        label: 'Repairs And Work Done',
+        description: 'Store breakdowns, workshop jobs, replaced parts, and completion status for the vehicle.',
+        addLabel: 'Add Repair Record',
+        columns: 3,
+        fields: [
+          {key:'date', label:'Repair Date', type:'date', default: todayIso},
+          {key:'odometer_km', label:'KM At Repair', type:'number'},
+          {key:'category', label:'Repair Type', type:'select', options:['Engine','Electrical','Tyre','Brake','AC','Body','Battery','Suspension','General','Other'], default:'General'},
+          {key:'vendor', label:'Vendor / Workshop', type:'text'},
+          {key:'cost', label:'Cost', type:'number'},
+          {key:'status', label:'Status', type:'select', options:['Open','In Progress','Completed'], default:'Completed'},
+          {key:'note', label:'Work Done / Parts Replaced', type:'textarea', span:'full'},
+        ],
+      },
+      SECTION_ISSUES,
+    ],
+    normalize(record){
+      const legacyServices = vehicleServiceSplit(record.service_logs);
+      const oilChanges = asArray(record.oil_changes).length ? record.oil_changes : legacyServices.oil_changes;
+      const repairLogs = asArray(record.repair_logs).length ? record.repair_logs : legacyServices.repair_logs;
+      const vehicleName = text(record.vehicle_name || [record.make, record.model].filter(Boolean).join(' ') || record.plate || '');
+      return {
+        id: text(record.id),
+        vehicle_name: vehicleName,
+        plate: text(record.plate),
+        type: text(record.type || 'Car'),
+        fuel: text(record.fuel || 'Petrol'),
+        make: text(record.make),
+        model: text(record.model),
+        year: text(record.year),
+        odometer_km: numericInput(record.odometer_km),
+        service_due_km: numericInput(record.service_due_km),
+        tank_capacity_l: numericInput(record.tank_capacity_l),
+        assigned_to: text(record.assigned_to),
+        dept: text(record.dept),
+        status: text(record.status || 'Available'),
+        base_location: text(record.base_location),
+        next_service: text(record.next_service),
+        insurance_expiry: text(record.insurance_expiry),
+        registration_expiry: text(record.registration_expiry),
+        notes: text(record.notes),
+        fuel_logs: normalizeSectionItems(record.fuel_logs, this.sections[0].fields),
+        oil_changes: normalizeSectionItems(oilChanges, this.sections[1].fields),
+        repair_logs: normalizeSectionItems(repairLogs, this.sections[2].fields),
+        issues: normalizeSectionItems(record.issues, SECTION_ISSUES.fields),
+      };
+    },
+    preparePayload(record){
+      const payload = clone(record);
+      payload.service_logs = buildVehicleLegacyServiceLogs(payload);
+      return payload;
+    },
+    summary(record){
+      return [
+        {label:'Current KM', value: formatNumber(record.odometer_km)},
+        {label:'Fuel Entries', value: String(countItems(record.fuel_logs))},
+        {label:'Oil Changes', value: String(countItems(record.oil_changes))},
+        {label:'Repairs', value: String(countItems(record.repair_logs))},
+        {label:'Open Issues', value: String(openIssueCount(record))},
+        {label:'Next Service', value: formatDate(record.next_service)},
+      ];
+    },
+    cardTitle(record){
+      return record.vehicle_name || record.plate || 'Vehicle';
+    },
+    cardSubtitle(record){
+      return [record.type, record.plate].filter(Boolean).join(' - ') || 'Vehicle profile';
+    },
+    cardTags(record){
+      return [
+        record.assigned_to ? `Assigned: ${record.assigned_to}` : '',
+        record.base_location ? `Base: ${record.base_location}` : '',
+        record.fuel ? `Fuel: ${record.fuel}` : '',
+      ].filter(Boolean);
+    },
+    cardMetrics(record){
+      return [
+        {label:'Current KM', value: formatNumber(record.odometer_km)},
+        {label:'Fuel', value: String(countItems(record.fuel_logs))},
+        {label:'Oil', value: String(countItems(record.oil_changes))},
+        {label:'Repairs', value: String(countItems(record.repair_logs))},
+        {label:'Issues', value: String(openIssueCount(record))},
+      ];
+    },
+    cardActions(record){
+      return [
+        {label:'Open', section:'all', tone:'secondary'},
+        {label:'Fuel', section:'fuel_logs', addItem:true},
+        {label:'Oil Change', section:'oil_changes', addItem:true},
+        {label:'Repair', section:'repair_logs', addItem:true},
+        {label:'Issue', section:'issues', addItem:true},
+      ];
+    },
+    searchText(record){
+      return [record.vehicle_name, record.plate, record.assigned_to, record.base_location, record.dept, record.type].join(' ');
+    },
+    headers: ['Vehicle','Plate','Status','Current KM','Assigned To','Fuel','Oil','Repairs','Issues','Next Service'],
+    row(record){
+      return [
+        `<button class="mod-link" onclick="editModRecord('vehicles','${esc(record.id)}')">${esc(record.vehicle_name || record.plate || 'Vehicle')}</button>`,
+        esc(record.plate || '-'),
+        statusChip(record.status),
+        esc(formatNumber(record.odometer_km)),
+        esc(record.assigned_to || '-'),
+        esc(String(countItems(record.fuel_logs))),
+        esc(String(countItems(record.oil_changes))),
+        esc(String(countItems(record.repair_logs))),
+        esc(String(openIssueCount(record))),
+        esc(formatDate(record.next_service)),
+      ];
+    },
+  },
+  residences: {
+    endpoint: adminApi('residences'),
+    modalWidth: '980px',
+    panelTitle: 'Residence And Office Management',
+    panelSub: 'Create houses, offices, camps, or wings, then manage rooms and issues inside each one.',
+    workspaceTitle: 'Residence Units',
+    workspaceSub: 'Each card is one house, office, camp, or building. Open a card to manage rooms and issues inside that place.',
+    searchPlaceholder: 'Search property, site, supervisor, or type',
+    addLabel: '+ Add Residence',
+    entityLabel: 'Residence',
+    fields: [
+      {key:'site_name', label:'Site / Area', type:'text', req:true, span:'cols2'},
+      {key:'property_type', label:'Property Type', type:'select', req:true, span:'cols2', options:['Office','House','Camp','Villa','Apartment','Warehouse','Other']},
+      {key:'property_name', label:'Property Name', type:'text', req:true, span:'cols2'},
+      {key:'parent_property', label:'Parent Property', type:'text', span:'cols2'},
+      {key:'supervisor', label:'Responsible Person', type:'text', span:'cols2'},
+      {key:'status', label:'Status', type:'select', span:'cols2', options:['Operational','Partially Occupied','Full','Maintenance','Closed'], req:true},
+      {key:'total_capacity', label:'Planned Capacity', type:'number', span:'cols3'},
+      {key:'current_occupancy', label:'Current Occupancy', type:'number', span:'cols3'},
+      {key:'contact_phone', label:'Contact Phone', type:'text', span:'cols3'},
+      {key:'notes', label:'Notes', type:'textarea', span:'full'},
+    ],
+    sections: [
+      {
+        key: 'units',
+        label: 'Rooms / Sections',
+        description: 'Add houses, wings, rooms, offices, or beds inside this residence record.',
+        addLabel: 'Add Unit',
+        columns: 3,
+        fields: [
+          {key:'unit_name', label:'Unit Name', type:'text'},
+          {key:'unit_type', label:'Unit Type', type:'select', options:['House','Room','Office','Bed','Wing','Floor','Other'], default:'Room'},
+          {key:'capacity', label:'Capacity', type:'number'},
+          {key:'occupant', label:'Occupant / Team', type:'text'},
+          {key:'status', label:'Status', type:'select', options:['Vacant','Occupied','Reserved','Maintenance'], default:'Vacant'},
+          {key:'note', label:'Notes', type:'textarea', span:'full'},
+        ],
+      },
+      {
+        key: 'issues',
+        label: 'Residence Issues',
+        description: 'Keep maintenance issues, complaints, and action tracking inside each house or office.',
+        addLabel: 'Add Issue',
+        columns: 3,
+        fields: [
+          {key:'title', label:'Issue Title', type:'text'},
+          {key:'category', label:'Category', type:'select', options:['Plumbing','Electrical','AC','Cleaning','Internet','Furniture','Security','General','Other']},
+          {key:'priority', label:'Priority', type:'select', options:['Low','Medium','High','Critical']},
+          {key:'status', label:'Status', type:'select', options:['Open','In Progress','Resolved','Closed'], default:'Open'},
+          {key:'reported_on', label:'Reported On', type:'date', default: todayIso},
+          {key:'assigned_to', label:'Assigned To', type:'text'},
+          {key:'note', label:'Details', type:'textarea', span:'full'},
+        ],
+      },
+    ],
+    normalize(record){
+      return {
+        id: text(record.id),
+        site_name: text(record.site_name || record.block),
+        property_type: text(record.property_type || record.type || 'House'),
+        property_name: text(record.property_name || record.room_no || record.block || ''),
+        parent_property: text(record.parent_property),
+        supervisor: text(record.supervisor || record.occupant),
+        status: text(record.status || 'Operational'),
+        total_capacity: numericInput(record.total_capacity),
+        current_occupancy: numericInput(record.current_occupancy),
+        contact_phone: text(record.contact_phone),
+        notes: text(record.notes),
+        units: normalizeSectionItems(record.units, this.sections[0].fields),
+        issues: normalizeSectionItems(record.issues, this.sections[1].fields),
+      };
+    },
+    summary(record){
+      const units = asArray(record.units);
+      const occupied = units.filter(item => text(item.occupant)).length;
+      const capacity = units.reduce((sum, item) => sum + (Number(item.capacity) || 0), 0) || Number(record.total_capacity) || 0;
+      return [
+        {label:'Units', value: String(units.length)},
+        {label:'Occupied', value: `${occupied}${capacity ? ' / ' + capacity : ''}`},
+        {label:'Open Issues', value: String(openIssueCount(record))},
+        {label:'Type', value: record.property_type || '-'},
+      ];
+    },
+    cardTitle(record){
+      return record.property_name || 'Residence';
+    },
+    cardSubtitle(record){
+      return [record.property_type || 'Property', record.site_name].filter(Boolean).join(' - ');
+    },
+    cardTags(record){
+      return [
+        record.supervisor ? `Lead: ${record.supervisor}` : '',
+        record.status ? `Status: ${record.status}` : '',
+      ].filter(Boolean);
+    },
+    cardActions(record){
+      return [
+        {label:'Open', section:'all', tone:'secondary'},
+        {label:'Units', section:'units', addItem:true},
+        {label:'Issue', section:'issues', addItem:true},
+      ];
+    },
+    searchText(record){
+      return [record.property_name, record.site_name, record.supervisor, record.property_type, record.parent_property].join(' ');
+    },
+    headers: ['Residence','Type','Site / Area','Occupied','Responsible','Open Issues','Status'],
+    row(record){
+      const units = asArray(record.units);
+      const occupied = units.filter(item => text(item.occupant)).length || Number(record.current_occupancy) || 0;
+      const capacity = units.reduce((sum, item) => sum + (Number(item.capacity) || 0), 0) || Number(record.total_capacity) || 0;
+      return [
+        `<button class="mod-link" onclick="editModRecord('residences','${esc(record.id)}')">${esc(record.property_name || 'Residence')}</button>`,
+        esc(record.property_type || '-'),
+        esc(record.site_name || '-'),
+        esc(capacity ? `${occupied} / ${capacity}` : String(occupied)),
+        esc(record.supervisor || '-'),
+        esc(String(openIssueCount(record))),
+        statusChip(record.status),
+      ];
+    },
+  },
+  workforce: {
+    endpoint: adminApi('workforce'),
+    modalWidth: '960px',
+    panelTitle: 'Workforce Register',
+    panelSub: 'Store worker profiles, document expiry, and certifications in one place.',
+    workspaceTitle: 'Workforce Records',
+    workspaceSub: 'Keep each person as one clean profile card, then open it for certifications and document follow-up.',
+    searchPlaceholder: 'Search employee, ID, department, or nationality',
+    addLabel: '+ Add Person',
+    entityLabel: 'Workforce Member',
+    fields: [
+      {key:'emp_id', label:'Employee ID', type:'text', req:true, span:'cols2'},
+      {key:'name', label:'Full Name', type:'text', req:true, span:'cols2'},
+      {key:'position', label:'Position / Title', type:'text', span:'cols2'},
+      {key:'dept', label:'Department', type:'text', span:'cols2'},
+      {key:'nationality', label:'Nationality', type:'text', span:'cols2'},
+      {key:'employer', label:'Employer Type', type:'select', span:'cols2', options:['Direct (HDEC)','Contractor','Sub-contractor','Visitor']},
+      {key:'phone', label:'Phone', type:'text', span:'cols2'},
+      {key:'residence_assignment', label:'Residence / Camp', type:'text', span:'cols2'},
+      {key:'iqama_no', label:'Iqama / ID No.', type:'text', span:'cols2'},
+      {key:'iqama_exp', label:'Iqama Expiry', type:'date', span:'cols2'},
+      {key:'medical_exp', label:'Medical Expiry', type:'date', span:'cols2'},
+      {key:'status', label:'Status', type:'select', span:'cols2', options:['Active','On Leave','Resigned','Terminated'], req:true},
+      {key:'emergency', label:'Emergency Contact', type:'text', span:'full'},
+      {key:'notes', label:'Notes', type:'textarea', span:'full'},
+    ],
+    sections: [
+      {
+        key:'certifications',
+        label:'Certifications',
+        description:'Track licenses, course completions, and other compliance records.',
+        addLabel:'Add Certification',
+        columns:3,
+        fields:[
+          {key:'title', label:'Certification', type:'text'},
+          {key:'issuer', label:'Issued By', type:'text'},
+          {key:'expiry_date', label:'Expiry Date', type:'date'},
+          {key:'status', label:'Status', type:'select', options:['Valid','Expiring Soon','Expired'], default:'Valid'},
+          {key:'cert_no', label:'Certificate No.', type:'text'},
+          {key:'note', label:'Notes', type:'textarea', span:'full'},
+        ],
+      },
+    ],
+    normalize(record){
+      return {
+        id: text(record.id),
+        emp_id: text(record.emp_id),
+        name: text(record.name),
+        position: text(record.position),
+        dept: text(record.dept),
+        nationality: text(record.nationality),
+        employer: text(record.employer),
+        phone: text(record.phone),
+        residence_assignment: text(record.residence_assignment),
+        iqama_no: text(record.iqama_no),
+        iqama_exp: text(record.iqama_exp),
+        medical_exp: text(record.medical_exp),
+        emergency: text(record.emergency),
+        status: text(record.status || 'Active'),
+        notes: text(record.notes),
+        certifications: normalizeSectionItems(record.certifications, this.sections[0].fields),
+      };
+    },
+    summary(record){
+      return [
+        {label:'Certifications', value: String(asArray(record.certifications).length)},
+        {label:'Iqama Expiry', value: formatDate(record.iqama_exp)},
+        {label:'Medical Expiry', value: formatDate(record.medical_exp)},
+        {label:'Status', value: record.status || '-'},
+      ];
+    },
+    cardTitle(record){
+      return record.name || 'Workforce Member';
+    },
+    cardSubtitle(record){
+      return [record.position, record.emp_id].filter(Boolean).join(' - ');
+    },
+    cardTags(record){
+      return [
+        record.dept ? `Dept: ${record.dept}` : '',
+        record.nationality ? `Nationality: ${record.nationality}` : '',
+      ].filter(Boolean);
+    },
+    searchText(record){
+      return [record.emp_id, record.name, record.position, record.dept, record.nationality, record.residence_assignment].join(' ');
+    },
+    headers:['Employee ID','Name','Position','Nationality','Employer','Residence','Iqama Expiry','Status'],
+    row(record){
+      return [
+        esc(record.emp_id || '-'),
+        `<button class="mod-link" onclick="editModRecord('workforce','${esc(record.id)}')">${esc(record.name || '-')}</button>`,
+        esc(record.position || '-'),
+        esc(record.nationality || '-'),
+        esc(record.employer || '-'),
+        esc(record.residence_assignment || '-'),
+        esc(formatDate(record.iqama_exp)),
+        statusChip(record.status),
+      ];
+    },
+  },
+  gatepasses: {
+    endpoint:adminApi('gate-passes'),
+    modalWidth:'860px',
+    panelTitle:'Gate Pass And Visitor Register',
+    panelSub:'Control visitors, hosts, vehicles, and pass validity.',
+    workspaceTitle: 'Gate Pass Records',
+    workspaceSub: 'Use the cards for fast visitor lookup, then open one to update host, timing, gate, or status.',
+    searchPlaceholder: 'Search pass number, visitor, host, company, or vehicle',
+    addLabel:'+ New Pass',
+    entityLabel:'Gate Pass',
+    fields:[
+      {key:'pass_no', label:'Pass Number', type:'text', req:true, span:'cols2'},
+      {key:'visitor', label:'Visitor Name', type:'text', req:true, span:'cols2'},
+      {key:'company', label:'Company', type:'text', span:'cols2'},
+      {key:'purpose', label:'Purpose', type:'text', span:'cols2'},
+      {key:'host', label:'Host', type:'text', span:'cols2'},
+      {key:'vehicle', label:'Vehicle Plate', type:'text', span:'cols2'},
+      {key:'entry', label:'Entry Date / Time', type:'datetime-local', span:'cols2'},
+      {key:'exit', label:'Exit Date / Time', type:'datetime-local', span:'cols2'},
+      {key:'gate', label:'Gate', type:'text', span:'cols2'},
+      {key:'status', label:'Status', type:'select', span:'cols2', req:true, options:['Active','Completed','Expired','Cancelled']},
+      {key:'notes', label:'Notes', type:'textarea', span:'full'},
+    ],
+    sections: [],
+    normalize(record){
+      return {
+        id:text(record.id),
+        pass_no:text(record.pass_no),
+        visitor:text(record.visitor),
+        company:text(record.company),
+        purpose:text(record.purpose),
+        host:text(record.host),
+        vehicle:text(record.vehicle),
+        entry:text(record.entry),
+        exit:text(record.exit),
+        gate:text(record.gate),
+        status:text(record.status || 'Active'),
+        notes:text(record.notes),
+      };
+    },
+    summary(record){
+      return [
+        {label:'Status', value: record.status || '-'},
+        {label:'Gate', value: record.gate || '-'},
+        {label:'Entry', value: formatDateTime(record.entry)},
+        {label:'Exit', value: formatDateTime(record.exit)},
+      ];
+    },
+    cardTitle(record){
+      return record.pass_no || 'Gate Pass';
+    },
+    cardSubtitle(record){
+      return [record.visitor, record.company].filter(Boolean).join(' - ') || 'Visitor record';
+    },
+    cardTags(record){
+      return [
+        record.host ? `Host: ${record.host}` : '',
+        record.gate ? `Gate: ${record.gate}` : '',
+      ].filter(Boolean);
+    },
+    searchText(record){
+      return [record.pass_no, record.visitor, record.company, record.host, record.vehicle, record.gate].join(' ');
+    },
+    headers:['Pass No.','Visitor','Company','Purpose','Host','Vehicle','Gate','Entry','Exit','Status'],
+    row(record){
+      return [
+        `<button class="mod-link" onclick="editModRecord('gatepasses','${esc(record.id)}')">${esc(record.pass_no || '-')}</button>`,
+        esc(record.visitor || '-'),
+        esc(record.company || '-'),
+        esc(record.purpose || '-'),
+        esc(record.host || '-'),
+        esc(record.vehicle || '-'),
+        esc(record.gate || '-'),
+        esc(formatDateTime(record.entry)),
+        esc(formatDateTime(record.exit)),
+        statusChip(record.status),
+      ];
+    },
+  },
+  equipment: {
+    endpoint:adminApi('equipment'),
+    modalWidth:'980px',
+    panelTitle:'Equipment Register',
+    panelSub:'Useful for tools, calibrated devices, heavy equipment, and repair follow-up.',
+    workspaceTitle: 'Equipment Units',
+    workspaceSub: 'Each tool or asset gets its own card, with service records and issues grouped under that item.',
+    searchPlaceholder: 'Search asset tag, description, category, or location',
+    addLabel:'+ Add Item',
+    entityLabel:'Equipment Item',
+    fields:[
+      {key:'asset_tag', label:'Asset Tag', type:'text', req:true, span:'cols2'},
+      {key:'description', label:'Description', type:'text', req:true, span:'cols2'},
+      {key:'category', label:'Category', type:'select', span:'cols2', options:['Hand Tool','Power Tool','Measuring Instrument','Safety Equipment','Heavy Equipment','Vehicle Accessory','IT Equipment','Communication','Other']},
+      {key:'status', label:'Status', type:'select', span:'cols2', req:true, options:['Available','In Use','Under Repair','Retired']},
+      {key:'serial_no', label:'Serial No.', type:'text', span:'cols2'},
+      {key:'assigned_to', label:'Assigned To', type:'text', span:'cols2'},
+      {key:'location', label:'Location', type:'text', span:'cols2'},
+      {key:'condition', label:'Condition', type:'select', span:'cols2', options:['Good','Fair','Poor']},
+      {key:'purchase_date', label:'Purchase Date', type:'date', span:'cols3'},
+      {key:'last_calib', label:'Last Calibration', type:'date', span:'cols3'},
+      {key:'next_calib', label:'Next Calibration', type:'date', span:'cols3'},
+      {key:'notes', label:'Notes', type:'textarea', span:'full'},
+    ],
+    sections:[
+      {
+        key:'service_logs',
+        label:'Maintenance Log',
+        description:'Keep repairs, calibration work, and workshop actions linked to the item.',
+        addLabel:'Add Service Record',
+        columns:3,
+        fields:[
+          {key:'date', label:'Date', type:'date', default: todayIso},
+          {key:'vendor', label:'Vendor', type:'text'},
+          {key:'service_type', label:'Service Type', type:'text'},
+          {key:'cost', label:'Cost', type:'number'},
+          {key:'next_due', label:'Next Due Date', type:'date'},
+          {key:'note', label:'Notes', type:'textarea', span:'full'},
+        ],
+      },
+      SECTION_ISSUES,
+    ],
+    normalize(record){
+      return {
+        id:text(record.id),
+        asset_tag:text(record.asset_tag),
+        description:text(record.description),
+        category:text(record.category),
+        status:text(record.status || 'Available'),
+        serial_no:text(record.serial_no),
+        assigned_to:text(record.assigned_to),
+        location:text(record.location),
+        condition:text(record.condition || 'Good'),
+        purchase_date:text(record.purchase_date),
+        last_calib:text(record.last_calib),
+        next_calib:text(record.next_calib),
+        notes:text(record.notes),
+        service_logs: normalizeSectionItems(record.service_logs, this.sections[0].fields),
+        issues: normalizeSectionItems(record.issues, SECTION_ISSUES.fields),
+      };
+    },
+    summary(record){
+      return [
+        {label:'Condition', value: record.condition || '-'},
+        {label:'Open Issues', value: String(openIssueCount(record))},
+        {label:'Service Logs', value: String(asArray(record.service_logs).length)},
+        {label:'Next Calibration', value: formatDate(record.next_calib)},
+      ];
+    },
+    cardTitle(record){
+      return record.asset_tag || 'Equipment';
+    },
+    cardSubtitle(record){
+      return [record.description, record.category].filter(Boolean).join(' - ');
+    },
+    cardTags(record){
+      return [
+        record.location ? `Location: ${record.location}` : '',
+        record.assigned_to ? `Assigned: ${record.assigned_to}` : '',
+      ].filter(Boolean);
+    },
+    cardActions(record){
+      return [
+        {label:'Open', section:'all', tone:'secondary'},
+        {label:'Service', section:'service_logs', addItem:true},
+        {label:'Issue', section:'issues', addItem:true},
+      ];
+    },
+    searchText(record){
+      return [record.asset_tag, record.description, record.category, record.assigned_to, record.location, record.serial_no].join(' ');
+    },
+    headers:['Asset Tag','Description','Category','Assigned To','Location','Condition','Open Issues','Next Calibration','Status'],
+    row(record){
+      return [
+        `<button class="mod-link" onclick="editModRecord('equipment','${esc(record.id)}')">${esc(record.asset_tag || '-')}</button>`,
+        esc(record.description || '-'),
+        esc(record.category || '-'),
+        esc(record.assigned_to || '-'),
+        esc(record.location || '-'),
+        statusChip(record.condition || '-'),
+        esc(String(openIssueCount(record))),
+        esc(formatDate(record.next_calib)),
+        statusChip(record.status),
+      ];
+    },
+  },
+  trainings: {
+    endpoint:adminApi('trainings'),
+    modalWidth:'860px',
+    panelTitle:'Training And Certification Register',
+    panelSub:'Track course history, providers, expiry, and remarks per person.',
+    workspaceTitle: 'Training Records',
+    workspaceSub: 'Use one card per person and certificate so expiry follow-up stays simple and visible.',
+    searchPlaceholder: 'Search employee, training, certificate, or provider',
+    addLabel:'+ Add Record',
+    entityLabel:'Training Record',
+    fields:[
+      {key:'employee', label:'Employee Name', type:'text', req:true, span:'cols2'},
+      {key:'training', label:'Training Type', type:'select', req:true, span:'cols2', options:['Safety Induction','First Aid','Fire Fighting','Confined Space','Working at Height','Electrical Safety','Crane Operation','Forklift Operation','HSE Refresher','ISO Awareness','Environmental','Quality','Leadership','Technical Skills','Other']},
+      {key:'cert_no', label:'Certificate No.', type:'text', span:'cols2'},
+      {key:'issued_by', label:'Issued By', type:'text', span:'cols2'},
+      {key:'issue_date', label:'Issue Date', type:'date', span:'cols2'},
+      {key:'expiry_date', label:'Expiry Date', type:'date', span:'cols2'},
+      {key:'location', label:'Location', type:'text', span:'cols2'},
+      {key:'notes', label:'Notes', type:'textarea', span:'full'},
+    ],
+    sections:[],
+    normalize(record){
+      return {
+        id:text(record.id),
+        employee:text(record.employee),
+        training:text(record.training),
+        cert_no:text(record.cert_no),
+        issued_by:text(record.issued_by),
+        issue_date:text(record.issue_date),
+        expiry_date:text(record.expiry_date),
+        location:text(record.location),
+        notes:text(record.notes),
+      };
+    },
+    summary(record){
+      const status = trainingRecordStatus(record);
+      return [
+        {label:'Status', value: status},
+        {label:'Issue Date', value: formatDate(record.issue_date)},
+        {label:'Expiry Date', value: formatDate(record.expiry_date)},
+        {label:'Provider', value: record.issued_by || '-'},
+      ];
+    },
+    cardStatus(record){
+      return trainingRecordStatus(record);
+    },
+    cardTitle(record){
+      return record.employee || 'Training Record';
+    },
+    cardSubtitle(record){
+      return [record.training, record.cert_no].filter(Boolean).join(' - ');
+    },
+    cardTags(record){
+      return [
+        record.issued_by ? `Provider: ${record.issued_by}` : '',
+        record.location ? `Location: ${record.location}` : '',
+      ].filter(Boolean);
+    },
+    searchText(record){
+      return [record.employee, record.training, record.cert_no, record.issued_by, record.location].join(' ');
+    },
+    headers:['Employee','Training Type','Certificate No.','Issued By','Issue Date','Expiry Date','Status'],
+    row(record){
+      const status = trainingRecordStatus(record);
+      return [
+        `<button class="mod-link" onclick="editModRecord('trainings','${esc(record.id)}')">${esc(record.employee || '-')}</button>`,
+        esc(record.training || '-'),
+        esc(record.cert_no || '-'),
+        esc(record.issued_by || '-'),
+        esc(formatDate(record.issue_date)),
+        esc(formatDate(record.expiry_date)),
+        statusChip(status),
+      ];
+    },
+  },
+};
+
+function panelFor(mod){
+  return document.getElementById(`mod-${mod}`);
+}
+
+function workspaceFor(mod){
+  return document.getElementById(`cards-${mod}`);
+}
+
+function filteredRecords(mod){
+  const query = text(ACTIVE.filters[mod]).trim().toLowerCase();
+  const records = asArray(ACTIVE.records[mod]);
+  if(!query) return records;
+  return records.filter(record => {
+    const cfg = ADMIN_MODULES[mod];
+    const source = typeof cfg.searchText === 'function'
+      ? cfg.searchText(record)
+      : JSON.stringify(record || {});
+    return text(source).toLowerCase().includes(query);
+  });
+}
+
+function defaultCardTitle(mod, record){
+  const fallbackMap = {
+    vehicles: record.vehicle_name || record.plate,
+    residences: record.property_name,
+    workforce: record.name,
+    gatepasses: record.pass_no,
+    equipment: record.asset_tag,
+    trainings: record.employee,
+  };
+  return fallbackMap[mod] || record.name || record.title || 'Record';
+}
+
+function defaultCardSubtitle(mod, record){
+  const fallbackMap = {
+    vehicles: [record.type, record.plate].filter(Boolean).join(' - '),
+    residences: [record.property_type, record.site_name].filter(Boolean).join(' - '),
+    workforce: [record.position, record.emp_id].filter(Boolean).join(' - '),
+    gatepasses: [record.visitor, record.company].filter(Boolean).join(' - '),
+    equipment: [record.description, record.category].filter(Boolean).join(' - '),
+    trainings: [record.training, record.cert_no].filter(Boolean).join(' - '),
+  };
+  return fallbackMap[mod] || '';
+}
+
+function defaultCardActions(record){
+  return [{label:'Open', section:'all', tone:'secondary'}];
+}
+
+function renderWorkspaceAction(mod, record, action){
+  const tone = action.tone === 'secondary' ? ' secondary' : '';
+  const addFlag = action.addItem ? 'true' : 'false';
+  return `<button class="mod-record-action${tone}" type="button" onclick="openModQuickAction('${mod}','${esc(record.id)}','${esc(action.section || 'all')}',${addFlag})">${esc(action.label || 'Open')}</button>`;
+}
+
+function renderRecordCard(mod, record){
+  const cfg = ADMIN_MODULES[mod];
+  const title = typeof cfg.cardTitle === 'function' ? cfg.cardTitle(record) : defaultCardTitle(mod, record);
+  const subtitle = typeof cfg.cardSubtitle === 'function' ? cfg.cardSubtitle(record) : defaultCardSubtitle(mod, record);
+  const tags = typeof cfg.cardTags === 'function' ? cfg.cardTags(record) : [];
+  const summary = typeof cfg.cardMetrics === 'function'
+    ? cfg.cardMetrics(record)
+    : (typeof cfg.summary === 'function' ? cfg.summary(record).slice(0, 4) : []);
+  const actions = typeof cfg.cardActions === 'function' ? cfg.cardActions(record) : defaultCardActions(record);
+  const badgeValue = typeof cfg.cardStatus === 'function' ? cfg.cardStatus(record) : (record.status || record.condition || '-');
+  return `
+    <article class="mod-record-card">
+      <div class="mod-record-head">
+        <div>
+          <div class="mod-record-title">${esc(title)}</div>
+          <div class="mod-record-sub">${esc(subtitle || 'Open the record to manage details')}</div>
+        </div>
+        ${statusChip(badgeValue)}
+      </div>
+      ${tags.length ? `<div class="mod-record-tags">${tags.map(tag => `<span class="mod-record-tag">${esc(tag)}</span>`).join('')}</div>` : ''}
+      ${summary.length ? `<div class="mod-record-metrics">${summary.slice(0, 6).map(item => `
+        <div class="mod-record-metric">
+          <div class="mod-record-metric-label">${esc(item.label)}</div>
+          <div class="mod-record-metric-value">${esc(item.value || '-')}</div>
+        </div>`).join('')}</div>` : ''}
+      <div class="mod-record-actions">${actions.map(action => renderWorkspaceAction(mod, record, action)).join('')}</div>
+    </article>`;
+}
+
+function ensurePanelWorkspace(mod, cfg){
+  const panel = panelFor(mod);
+  if(!panel) return;
+  let shell = panel.querySelector('.mod-workspace-shell');
+  if(!shell){
+    shell = document.createElement('div');
+    shell.className = 'mod-workspace-shell';
+    shell.innerHTML = `
+      <div class="mod-workspace-top">
+        <div>
+          <div class="mod-workspace-title"></div>
+          <div class="mod-workspace-sub"></div>
+        </div>
+        <input class="mod-search" id="search-${mod}" type="search" placeholder="">
+      </div>
+      <div class="mod-workspace-top" style="margin-top:-2px">
+        <span class="mod-workspace-count" id="count-${mod}">0 records</span>
+      </div>
+      <div class="mod-workspace-grid" id="cards-${mod}"></div>`;
+    const head = panel.querySelector('.mod-head');
+    if(head) panel.insertBefore(shell, head.nextSibling);
+    else panel.prepend(shell);
+  }
+  const title = shell.querySelector('.mod-workspace-title');
+  const sub = shell.querySelector('.mod-workspace-sub');
+  const search = shell.querySelector('.mod-search');
+  if(title) title.textContent = cfg.workspaceTitle || `${cfg.entityLabel} Workspace`;
+  if(sub) sub.textContent = cfg.workspaceSub || 'Open a record from the cards or table below.';
+  if(search){
+    search.placeholder = cfg.searchPlaceholder || `Search ${text(cfg.entityLabel).toLowerCase()}`;
+    search.value = ACTIVE.filters[mod] || '';
+    search.oninput = event => window.setModSearch(mod, event.target.value);
+  }
+  let intro = panel.querySelector('.mod-list-intro');
+  const table = panel.querySelector('.mod-table');
+  if(table && !intro){
+    intro = document.createElement('div');
+    intro.className = 'mod-list-intro';
+    intro.innerHTML = `
+      <div>
+        <div class="mod-list-title">Full Register</div>
+        <div class="mod-list-sub">Cards are for quick work. The table below stays available for a full register view.</div>
+      </div>`;
+    panel.insertBefore(intro, table.parentElement);
+  }
+}
+
+function setPanelCopy(){
+  Object.entries(ADMIN_MODULES).forEach(([mod, cfg]) => {
+    const panel = panelFor(mod);
+    if(!panel) return;
+    const title = panel.querySelector('.mod-title');
+    const sub = panel.querySelector('.mod-sub');
+    const addBtn = panel.querySelector('.mod-head .btn');
+    if(title) title.textContent = cfg.panelTitle;
+    if(sub) sub.textContent = cfg.panelSub;
+    if(addBtn){
+      addBtn.textContent = cfg.addLabel;
+      if(!MODULE_CAN_EDIT) addBtn.style.display = 'none';
+    }
+    ensurePanelWorkspace(mod, cfg);
+  });
+}
+
+function renderWorkspace(mod){
+  const cfg = ADMIN_MODULES[mod];
+  const workspace = workspaceFor(mod);
+  if(!cfg || !workspace) return;
+  const records = filteredRecords(mod);
+  const total = asArray(ACTIVE.records[mod]).length;
+  const count = document.getElementById(`count-${mod}`);
+  if(count){
+    const suffix = total === 1 ? 'record' : 'records';
+    count.textContent = ACTIVE.filters[mod] ? `${records.length} of ${total} ${suffix}` : `${total} ${suffix}`;
+  }
+  if(!records.length){
+    const emptyText = total
+      ? 'No records match your search yet.'
+      : 'No records yet. Add the first one when you are ready.';
+    workspace.innerHTML = `<div class="mod-workspace-empty">${esc(emptyText)}</div>`;
+    return;
+  }
+  workspace.innerHTML = records.map(record => renderRecordCard(mod, record)).join('');
+}
+
+function renderTable(mod){
+  const cfg = ADMIN_MODULES[mod];
+  const table = document.getElementById(`tbl-${mod}`);
+  if(!cfg || !table) return;
+  const records = filteredRecords(mod);
+  table.querySelector('thead').innerHTML = `<tr>${cfg.headers.map(label => `<th>${esc(label)}</th>`).join('')}<th>Actions</th></tr>`;
+  const tbody = table.querySelector('tbody');
+  if(!tbody) return;
+  if(!records.length){
+    tbody.innerHTML = `<tr><td colspan="20" class="mod-empty">${esc(ACTIVE.filters[mod] ? 'No records match your search.' : 'No records yet. Add one when you are ready.')}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = records.map(record => `
+    <tr>
+      ${cfg.row(record).map(cell => `<td>${cell}</td>`).join('')}
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-perm" onclick="editModRecord('${mod}','${record.id}')">Details</button>
+          ${MODULE_CAN_EDIT ? `<button class="btn btn-sm btn-danger" onclick="deleteModRecord('${mod}','${record.id}',this)">Delete</button>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function sortRecords(mod, records){
+  const keyMap = {
+    vehicles: 'vehicle_name',
+    residences: 'property_name',
+    workforce: 'name',
+    gatepasses: 'pass_no',
+    equipment: 'asset_tag',
+    trainings: 'employee',
+  };
+  const key = keyMap[mod] || 'updated_at';
+  return records.sort((a, b) => text(a[key]).localeCompare(text(b[key])));
+}
+
+async function loadMod(mod){
+  const cfg = ADMIN_MODULES[mod];
+  const table = document.getElementById(`tbl-${mod}`);
+  if(!cfg || !table) return;
+  ACTIVE.mod = mod;
+  const tbody = table.querySelector('tbody');
+  const workspace = workspaceFor(mod);
+  if(tbody) tbody.innerHTML = '<tr><td colspan="20" class="mod-empty">Loading...</td></tr>';
+  if(workspace) workspace.innerHTML = '<div class="mod-workspace-empty">Loading...</div>';
+  try{
+    const response = await fetch(cfg.endpoint, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+    const data = await response.json();
+    const records = sortRecords(mod, asArray(data.records).map(item => cfg.normalize(item)));
+    ACTIVE.records[mod] = records;
+    renderWorkspace(mod);
+    renderTable(mod);
+  }catch(err){
+    if(workspace) workspace.innerHTML = '<div class="mod-workspace-empty">Failed to load records.</div>';
+    if(tbody) tbody.innerHTML = '<tr><td colspan="20" class="mod-empty">Failed to load records.</td></tr>';
+  }
+}
+
+function modalFieldInput(field, value, handler){
+  const val = text(value);
+  const disabled = MODULE_CAN_EDIT ? '' : ' disabled';
+  const common = `style="width:100%;padding:9px 13px;border-radius:10px;border:1px solid var(--border);background:var(--s2);color:var(--text);font:inherit;font-size:13.5px;outline:none"${disabled}`;
+  if(field.type === 'textarea'){
+    return `<textarea ${common} rows="2" oninput="${handler}(this.value)">${esc(val)}</textarea>`;
+  }
+  if(field.type === 'select'){
+    return `<select ${common} onchange="${handler}(this.value)">${asArray(field.options).map(option => `<option value="${esc(option)}"${option === val ? ' selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
+  }
+  return `<input ${common} type="${field.type || 'text'}" value="${esc(val)}" oninput="${handler}(this.value)">`;
+}
+
+function renderFieldRows(fields, data){
+  let html = '';
+  let row2 = [];
+  let row3 = [];
+  function flushRows(){
+    if(row2.length){ html += `<div class="mod-detail-grid cols2">${row2.join('')}</div>`; row2 = []; }
+    if(row3.length){ html += `<div class="mod-detail-grid cols3">${row3.join('')}</div>`; row3 = []; }
+  }
+  fields.forEach(field => {
+    const fieldHtml = `
+      <div class="field">
+        <label>${esc(field.label)}${field.req ? ' <span style="color:#ef4444">*</span>' : ''}</label>
+        ${modalFieldInput(field, data[field.key], `modDraftSetValue.bind(null,'${field.key}')`)}
+      </div>`;
+    if(field.span === 'full'){
+      flushRows();
+      html += `<div class="mod-detail-grid">${fieldHtml}</div>`;
+      return;
+    }
+    if(field.span === 'cols3'){
+      if(row2.length){ html += `<div class="mod-detail-grid cols2">${row2.join('')}</div>`; row2 = []; }
+      row3.push(fieldHtml);
+      if(row3.length === 3){ html += `<div class="mod-detail-grid cols3">${row3.join('')}</div>`; row3 = []; }
+      return;
+    }
+    if(row3.length){ html += `<div class="mod-detail-grid cols3">${row3.join('')}</div>`; row3 = []; }
+    row2.push(fieldHtml);
+    if(row2.length === 2){ html += `<div class="mod-detail-grid cols2">${row2.join('')}</div>`; row2 = []; }
+  });
+  if(row2.length) html += `<div class="mod-detail-grid cols2">${row2.join('')}</div>`;
+  if(row3.length) html += `<div class="mod-detail-grid cols3">${row3.join('')}</div>`;
+  return html;
+}
+
+function renderSummary(mod, data){
+  const cfg = ADMIN_MODULES[mod];
+  const items = typeof cfg.summary === 'function' ? cfg.summary(data) : [];
+  if(!items.length) return '';
+  return `<div class="mod-summary-grid">${items.map(item => `
+    <div class="mod-summary-card">
+      <div class="mod-summary-label">${esc(item.label)}</div>
+      <div class="mod-summary-value">${esc(item.value || '-')}</div>
+    </div>`).join('')}</div>`;
+}
+
+function renderSectionNav(cfg){
+  if(!cfg.sections.length) return '';
+  const current = ACTIVE.draftSection || 'all';
+  const tabs = [
+    {key:'all', label:'All'},
+    {key:'profile', label:'Profile'},
+    ...cfg.sections.map(section => ({key: section.key, label: section.label})),
+  ];
+  return `<div class="mod-section-nav">${tabs.map(tab => `
+    <button class="mod-section-pill${current === tab.key ? ' active' : ''}" type="button" onclick="modDraftSetView('${esc(tab.key)}')">${esc(tab.label)}</button>`).join('')}</div>`;
+}
+
+function renderSection(mod, section){
+  const items = asArray(ACTIVE.draftData[section.key]);
+  return `
+    <div class="mod-detail-section">
+      <div class="mod-detail-head">
+        <div>
+          <div class="mod-detail-title">${esc(section.label)}</div>
+          <div class="mod-detail-sub">${esc(section.description || '')}</div>
+        </div>
+        ${MODULE_CAN_EDIT ? `<button class="btn btn-primary btn-sm" type="button" onclick="modDraftAddItem('${section.key}')">${esc(section.addLabel || 'Add')}</button>` : ''}
+      </div>
+      <div class="mod-detail-body">
+        ${items.length ? items.map((item, index) => `
+          <div class="mod-detail-item">
+            ${renderSectionItem(section, item, index)}
+            ${MODULE_CAN_EDIT ? `<div class="mod-detail-actions"><button class="btn btn-danger btn-sm" type="button" onclick="modDraftRemoveItem('${section.key}', ${index})">Remove</button></div>` : ''}
+          </div>`).join('') : `<div class="mod-detail-empty">No entries yet. Add the first one when needed.</div>`}
+      </div>
+    </div>`;
+}
+
+function renderSectionItem(section, item, index){
+  const cols = section.columns === 2 ? 'cols2' : 'cols3';
+  const blocks = [];
+  let current = [];
+  const flush = () => {
+    if(current.length){
+      blocks.push(`<div class="mod-detail-grid ${cols}">${current.join('')}</div>`);
+      current = [];
+    }
+  };
+  section.fields.forEach(field => {
+    const handler = `modDraftSetSectionValue.bind(null,'${section.key}',${index},'${field.key}')`;
+    const inner = `
+      <div class="field">
+        <label>${esc(field.label)}</label>
+        ${modalFieldInput(field, item[field.key], handler)}
+      </div>`;
+    if(field.span === 'full'){
+      flush();
+      blocks.push(`<div class="mod-detail-grid">${inner}</div>`);
+    }else{
+      current.push(inner);
+      if(current.length === (section.columns === 2 ? 2 : 3)) flush();
+    }
+  });
+  flush();
+  return blocks.join('');
+}
+
+function preparePayload(mod, draft){
+  const cfg = ADMIN_MODULES[mod];
+  const payload = clone(draft);
+  if(typeof cfg.preparePayload === 'function') return cfg.preparePayload(payload);
+  return payload;
+}
+
+function renderModal(){
+  const mod = ACTIVE.draftMod;
+  const cfg = ADMIN_MODULES[mod];
+  if(!cfg || !ACTIVE.draftData) return;
+  const currentView = ACTIVE.draftSection || 'all';
+  const showProfile = currentView === 'all' || currentView === 'profile';
+  const visibleSections = cfg.sections.filter(section => currentView === 'all' || currentView === section.key);
+  MODAL_CARD.style.width = cfg.modalWidth || '920px';
+  MODAL_TITLE.textContent = ACTIVE.draftId ? `Manage ${cfg.entityLabel}` : `Add ${cfg.entityLabel}`;
+  MODAL_FIELDS.innerHTML = `
+    <div class="admin-enhanced-form">
+      ${renderSummary(mod, ACTIVE.draftData)}
+      ${renderSectionNav(cfg)}
+      ${showProfile ? `<div class="mod-detail-section">
+        <div class="mod-detail-head">
+          <div>
+            <div class="mod-detail-title">${esc(cfg.entityLabel)} Details</div>
+            <div class="mod-detail-sub">Keep the main profile accurate first, then update the focused work sections below.</div>
+          </div>
+        </div>
+        <div class="mod-detail-body">
+          ${renderFieldRows(cfg.fields, ACTIVE.draftData)}
+        </div>
+      </div>` : ''}
+      ${cfg.sections.length ? visibleSections.map(section => renderSection(mod, section)).join('') : `<div class="mod-modal-note">This module uses a simple profile. Add the main details and save.</div>`}
+    </div>`;
+}
+
+function findRecord(mod, rid){
+  return asArray(ACTIVE.records[mod]).find(item => item.id === rid) || null;
+}
+
+window.setModSearch = function(mod, value){
+  ACTIVE.filters[mod] = text(value);
+  renderWorkspace(mod);
+  renderTable(mod);
+};
+
+window.modDraftSetValue = function(key, value){
+  if(!ACTIVE.draftData) return;
+  ACTIVE.draftData[key] = text(value);
+};
+
+window.modDraftSetSectionValue = function(sectionKey, index, fieldKey, value){
+  if(!ACTIVE.draftData || !ACTIVE.draftData[sectionKey] || !ACTIVE.draftData[sectionKey][index]) return;
+  ACTIVE.draftData[sectionKey][index][fieldKey] = text(value);
+};
+
+window.modDraftSetView = function(view){
+  ACTIVE.draftSection = text(view || 'all') || 'all';
+  renderModal();
+};
+
+window.modDraftAddItem = function(sectionKey){
+  if(!MODULE_CAN_EDIT) return;
+  const cfg = ADMIN_MODULES[ACTIVE.draftMod];
+  if(!cfg) return;
+  const section = cfg.sections.find(item => item.key === sectionKey);
+  if(!section) return;
+  ACTIVE.draftData[sectionKey] = asArray(ACTIVE.draftData[sectionKey]);
+  ACTIVE.draftData[sectionKey].push(defaultSectionItem(section));
+  ACTIVE.draftSection = sectionKey;
+  renderModal();
+};
+
+window.modDraftRemoveItem = function(sectionKey, index){
+  if(!MODULE_CAN_EDIT) return;
+  ACTIVE.draftData[sectionKey] = asArray(ACTIVE.draftData[sectionKey]).filter((_, idx) => idx !== index);
+  ACTIVE.draftSection = sectionKey;
+  renderModal();
+};
+
+window.openModModal = function(mod, record, options){
+  if(!MODULE_CAN_EDIT && !record) return;
+  const cfg = ADMIN_MODULES[mod];
+  if(!cfg) return;
+  const opts = options || {};
+  const normalized = cfg.normalize(record || {});
+  ACTIVE.draftMod = mod;
+  ACTIVE.draftId = text(normalized.id);
+  ACTIVE.draftData = clone(normalized);
+  ACTIVE.draftSection = text(opts.section || 'all') || 'all';
+  if(MODULE_CAN_EDIT && opts.addItem && ACTIVE.draftSection && !['all','profile'].includes(ACTIVE.draftSection)){
+    const section = cfg.sections.find(item => item.key === ACTIVE.draftSection);
+    if(section){
+      ACTIVE.draftData[ACTIVE.draftSection] = asArray(ACTIVE.draftData[ACTIVE.draftSection]);
+      ACTIVE.draftData[ACTIVE.draftSection].push(defaultSectionItem(section));
+    }
+  }
+  renderModal();
+  MODAL_ROOT.classList.add('open');
+};
+
+window.closeModModal = function(){
+  MODAL_ROOT.classList.remove('open');
+  ACTIVE.draftMod = '';
+  ACTIVE.draftId = '';
+  ACTIVE.draftData = null;
+  ACTIVE.draftSection = 'all';
+};
+
+window.openModQuickAction = function(mod, rid, sectionKey, addItem){
+  const cfg = ADMIN_MODULES[mod];
+  if(!cfg) return;
+  const existing = findRecord(mod, rid);
+  if(existing){
+    window.openModModal(mod, existing, {section: sectionKey || 'all', addItem: !!addItem && MODULE_CAN_EDIT});
+    return;
+  }
+  fetch(`${cfg.endpoint}${rid}/`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(response => response.json())
+    .then(data => {
+      if(data.record) window.openModModal(mod, data.record, {section: sectionKey || 'all', addItem: !!addItem && MODULE_CAN_EDIT});
+      else showToast('Record not found', 'error');
+    })
+    .catch(() => showToast('Failed to load record', 'error'));
+};
+
+window.editModRecord = function(mod, rid){
+  const cfg = ADMIN_MODULES[mod];
+  if(!cfg) return;
+  const existing = findRecord(mod, rid);
+  if(existing){
+    window.openModModal(mod, existing);
+    return;
+  }
+  fetch(`${cfg.endpoint}${rid}/`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+    .then(response => response.json())
+    .then(data => {
+      if(data.record) window.openModModal(mod, data.record);
+      else showToast('Record not found', 'error');
+    })
+    .catch(() => showToast('Failed to load record', 'error'));
+};
+
+window.saveModRecord = async function(){
+  if(!MODULE_CAN_EDIT) return;
+  const mod = ACTIVE.draftMod;
+  const cfg = ADMIN_MODULES[mod];
+  if(!cfg || !ACTIVE.draftData) return;
+  const payload = preparePayload(mod, ACTIVE.draftData);
+  delete payload.id;
+  const url = ACTIVE.draftId ? `${cfg.endpoint}${ACTIVE.draftId}/` : cfg.endpoint;
+  const method = ACTIVE.draftId ? 'PATCH' : 'POST';
+  try{
+    const response = await fetch(url, {
+      method,
+      headers:{
+        'Content-Type':'application/json',
+        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+        'X-Requested-With':'XMLHttpRequest'
+      },
+      body: JSON.stringify(payload)
+    });
+    if(!response.ok){
+      showToast('Save failed', 'error');
+      return;
+    }
+    showToast(ACTIVE.draftId ? 'Record updated' : 'Record added', 'success');
+    window.closeModModal();
+    await loadMod(mod);
+  }catch(err){
+    showToast('Save failed', 'error');
+  }
+};
+
+window.deleteModRecord = async function(mod, rid){
+  if(!MODULE_CAN_EDIT) return;
+  const cfg = ADMIN_MODULES[mod];
+  if(!cfg) return;
+  if(!confirm('Delete this record? This cannot be undone.')) return;
+  try{
+    const response = await fetch(`${cfg.endpoint}${rid}/`, {
+      method:'DELETE',
+      headers:{
+        'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+        'X-Requested-With':'XMLHttpRequest'
+      }
+    });
+    if(!response.ok){
+      showToast('Delete failed', 'error');
+      return;
+    }
+    showToast('Record deleted', 'success');
+    await loadMod(mod);
+  }catch(err){
+    showToast('Delete failed', 'error');
+  }
+};
+
+window.switchMod = function(mod, btn){
+  if(CONTROL_ONLY_MODE) return;
+  if(MODULE_ONLY_MODE && FIXED_MODULE) mod = FIXED_MODULE;
+  if(!ADMIN_MODULES[mod]) return;
+  const tabBtn = btn || document.querySelector(`.mod-tab[data-mod="${mod}"]`);
+  document.querySelectorAll('.mod-panel').forEach(panel => panel.classList.remove('active'));
+  document.querySelectorAll('.mod-tab').forEach(tab => tab.classList.remove('active'));
+  const panel = panelFor(mod);
+  if(panel) panel.classList.add('active');
+  if(tabBtn) tabBtn.classList.add('active');
+  if(window.history && window.history.replaceState){
+    const url = new URL(window.location.href);
+    url.searchParams.set('module', mod);
+    window.history.replaceState({}, '', `${url.pathname}${url.search}`);
+  }
+  loadMod(mod);
+};
+
+setPanelCopy();
+
+if(!CONTROL_ONLY_MODE){
+  const requestedMod = MODULE_ONLY_MODE && FIXED_MODULE ? FIXED_MODULE : new URLSearchParams(window.location.search).get('module');
+  window.switchMod(requestedMod && ADMIN_MODULES[requestedMod] ? requestedMod : (FIXED_MODULE || 'vehicles'));
+}
+})();
+</script>
+
+{% include 'core/includes/meeting_alerts_global.html' %}
 </body>
 </html>

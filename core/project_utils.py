@@ -66,9 +66,23 @@ CATEGORY_META = {
         'color_rgb': '34,197,94',
         'desc': 'Health, Safety and Environment management, permits and KPI tracking',
     },
+    'meeting_room': {
+        'label': 'Meeting Room',
+        'icon': '🏢',
+        'color': '#8b5cf6',
+        'color_rgb': '139,92,246',
+        'desc': 'Meeting scheduling, minutes, agenda management and collaboration space',
+    },
+    'documents': {
+        'label': 'Documents',
+        'icon': '📄',
+        'color': '#38bdf8',
+        'color_rgb': '56,189,248',
+        'desc': 'Project documents, technical drawings, manuals and reference library',
+    },
 }
 
-ALL_CATEGORY_IDS = ['maintenance', 'operation', 'construction', 'hse']
+ALL_CATEGORY_IDS = ['maintenance', 'operation', 'construction', 'hse', 'meeting_room', 'documents']
 
 # ── Module metadata ────────────────────────────────────────────────────────────
 MODULE_META = {
@@ -142,7 +156,7 @@ MODULE_META = {
         'desc': 'Project documentation and technical reference library',
         'route': '/documents/',
         'hub_route': '/documents/',
-        'category': 'maintenance',
+        'category': 'documents',
     },
     'daily_report': {
         'label': 'Daily Report',
@@ -161,6 +175,15 @@ MODULE_META = {
         'route': '/hse/sjn-portal/',
         'hub_route': '/hse/sjn-portal/',
         'category': 'hse',
+    },
+    'meeting': {
+        'label': 'Meeting Room',
+        'icon': '🏢',
+        'color': '#8b5cf6',
+        'desc': 'Virtual meeting rooms, group/private chat, video calls, screen sharing and file sharing',
+        'route': None,
+        'hub_route': None,
+        'category': 'meeting_room',
     },
 }
 
@@ -215,24 +238,68 @@ def _migrate_project_categories(project: dict) -> dict:
         return project['categories']
     # Old format: all modules belong to maintenance
     return {
-        'maintenance': {'modules': project.get('modules', [])},
-        'operation':   {'modules': []},
-        'construction': {'modules': []},
-        'hse':         {'modules': []},
+        'maintenance':   {'modules': project.get('modules', [])},
+        'operation':     {'modules': []},
+        'construction':  {'modules': []},
+        'hse':           {'modules': []},
+        'meeting_room':  {'modules': []},
+        'documents':     {'modules': []},
     }
+
+
+def get_category_order(project: dict) -> list:
+    """Return category IDs in display order, respecting any saved custom order."""
+    custom = project.get('category_order', [])
+    if custom:
+        return list(custom) + [c for c in ALL_CATEGORY_IDS if c not in custom]
+    return ALL_CATEGORY_IDS
 
 
 def get_project_categories(project: dict) -> dict:
     """Return categories dict, auto-migrating from old flat modules format."""
     cats = _migrate_project_categories(project)
     normalized = {}
-    for cid in ALL_CATEGORY_IDS:
+    for cid in get_category_order(project):
+        if cid not in ALL_CATEGORY_IDS:
+            continue
         src = cats.get(cid, {})
         modules = [m for m in src.get('modules', []) if m in MODULE_META]
         if cid == 'maintenance' and 'store' not in modules:
             modules.append('store')
         normalized[cid] = {'modules': modules}
     return normalized
+
+
+def reorder_categories(country_id: str, project_id: str, new_order: list) -> bool:
+    """Persist a custom category display order for a project."""
+    data = _load()
+    for c in data['countries']:
+        if c['id'] != country_id:
+            continue
+        for p in c.get('projects', []):
+            if p['id'] == project_id:
+                p['category_order'] = [cid for cid in new_order if cid in ALL_CATEGORY_IDS]
+                _save(data)
+                return True
+    return False
+
+
+def reorder_modules(country_id: str, project_id: str, category: str, new_order: list) -> bool:
+    """Persist a custom module order for a category."""
+    data = _load()
+    for c in data['countries']:
+        if c['id'] != country_id:
+            continue
+        for p in c.get('projects', []):
+            if p['id'] == project_id:
+                cats = _migrate_project_categories(p)
+                if category in cats:
+                    existing = set(cats[category].get('modules', []))
+                    cats[category]['modules'] = [m for m in new_order if m in existing]
+                    p['categories'] = cats
+                    _save(data)
+                    return True
+    return False
 
 
 def get_category_modules(project: dict, category: str) -> list:
@@ -321,7 +388,7 @@ def create_project(country_id: str, name: str, description: str = '',
     Create a project under a country.
 
     `categories` can be:
-      - None  → all modules in maintenance (default)
+      - None  → seed modules into their default categories
       - dict  → {'maintenance': {'modules': [...]}, 'operation': {...}, ...}
 
     Returns the new project id or None if country not found.
@@ -333,7 +400,11 @@ def create_project(country_id: str, name: str, description: str = '',
         existing = [p['id'] for p in c.get('projects', [])]
         new_id = _unique_id(name, existing)
         if categories is None:
-            cats = _blank_categories('maintenance', ALL_MODULE_IDS[:])
+            maintenance_defaults = [
+                mod_id for mod_id, meta in MODULE_META.items()
+                if meta.get('category') == 'maintenance'
+            ]
+            cats = _blank_categories('maintenance', maintenance_defaults)
         else:
             # Validate module ids in each category
             cats = {}
@@ -398,6 +469,7 @@ def get_project_module_cards(project: dict, user_permissions: dict = None,
             'documents':   None,
             'daily_report': None,
             'sjn_portal':  '/hse/sjn-portal/',
+            'meeting':     f'/p/{country_id}/{project_id}/meeting-room/',
         }
         return routes.get(mod_id)
 

@@ -3,6 +3,7 @@ from . import views
 from . import project_views
 from . import hse_views
 from . import cmms_views
+from . import meeting_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -54,6 +55,32 @@ urlpatterns = [
     path('c/<str:country_id>/', views.country_view, name='country_view'),
     path('p/<str:country_id>/<str:project_id>/', views.project_hub_view, name='project_hub'),
     path('api/projects/', views.projects_api, name='projects_api'),
+    path('api/projects/reorder/', views.projects_reorder_api, name='projects_reorder_api'),
+
+    # ── Meeting Room ─────────────────────────────────────────────────────
+    # Keep these before the generic category route so "meeting-room"
+    # is treated as the dedicated module path, not as a category slug.
+    path('p/<str:country_id>/<str:project_id>/meeting-room/', meeting_views.meeting_hub, name='meeting_hub'),
+    path('meeting-room/', meeting_views.meeting_hub, name='meeting_hub_direct'),
+    path('api/meeting/poll/',                     meeting_views.meeting_api_poll,          name='meeting_api_poll'),
+    path('api/meeting/presence/',                 meeting_views.meeting_api_presence,      name='meeting_api_presence'),
+    path('api/meeting/users/',                    meeting_views.meeting_api_users,         name='meeting_api_users'),
+    path('api/meeting/rooms/',                    meeting_views.meeting_api_rooms,         name='meeting_api_rooms'),
+    path('api/meeting/rooms/<str:room_id>/',      meeting_views.meeting_api_room,          name='meeting_api_room'),
+    path('api/meeting/rooms/<str:room_id>/join/', meeting_views.meeting_api_room_join,     name='meeting_api_room_join'),
+    path('api/meeting/rooms/<str:room_id>/leave/',meeting_views.meeting_api_room_leave,    name='meeting_api_room_leave'),
+    path('api/meeting/messages/',                 meeting_views.meeting_api_messages,      name='meeting_api_messages'),
+    path('api/meeting/groups/',                   meeting_views.meeting_api_groups,        name='meeting_api_groups'),
+    path('api/meeting/groups/<str:group_id>/',    meeting_views.meeting_api_group,         name='meeting_api_group'),
+    path('api/meeting/files/',                    meeting_views.meeting_api_files,         name='meeting_api_files'),
+    path('api/meeting/files/<str:file_id>/',      meeting_views.meeting_api_file_download, name='meeting_api_file_download'),
+    path('api/meeting/calls/',                    meeting_views.meeting_api_calls,         name='meeting_api_calls'),
+    path('api/meeting/realtime/session/',         meeting_views.meeting_api_realtime_session, name='meeting_api_realtime_session'),
+    path('api/meeting/calls/<str:call_id>/',      meeting_views.meeting_api_call,          name='meeting_api_call'),
+    path('api/meeting/room-meetings/',            meeting_views.meeting_api_room_meetings, name='meeting_api_room_meetings'),
+    path('api/meeting/room-meetings/<str:meeting_id>/', meeting_views.meeting_api_room_meeting, name='meeting_api_room_meeting'),
+    path('api/meeting/room-signals/',             meeting_views.meeting_api_room_signals,  name='meeting_api_room_signals'),
+    path('api/meeting/global-alerts/',            meeting_views.meeting_api_global_alerts, name='meeting_api_global_alerts'),
 
     # ── Category Hub (Country → Project → Category → Modules) ────────────
     path('p/<str:country_id>/<str:project_id>/<str:category>/', views.category_hub_view, name='category_hub'),
@@ -99,6 +126,10 @@ urlpatterns = [
     path('api/cmms/complete/<str:record_id>/', cmms_views.cmms_api_complete, name='cmms_api_complete'),
     path('api/cmms/checklists/', cmms_views.cmms_api_checklists, name='cmms_api_checklists'),
     path('api/cmms/checklist-activities/', cmms_views.cmms_api_checklist_activities, name='cmms_api_checklist_activities'),
+    path('cmms/checklist/<str:record_id>/', cmms_views.cmms_checklist_native, name='cmms_checklist_native'),
+    path('cmms/report/<str:record_id>/', cmms_views.cmms_report_native, name='cmms_report_native'),
+    path('api/cmms/checklist/<str:record_id>/', cmms_views.cmms_api_checklist_save, name='cmms_api_checklist_save'),
+    path('api/cmms/report/<str:record_id>/', cmms_views.cmms_api_report_save, name='cmms_api_report_save'),
 
     # ── HSE ──────────────────────────────────────────────────────────────
     path('hse/sjn-portal/', views.hse_sjn_portal, name='hse_sjn_portal'),
@@ -106,4 +137,18 @@ urlpatterns = [
     path('api/hse/permits/<str:permit_id>/', hse_views.hse_api_permit_detail, name='hse_api_permit_detail'),
     path('api/hse/records/', hse_views.hse_api_records, name='hse_api_records'),
     path('api/hse/records/<str:record_id>/', hse_views.hse_api_record_detail, name='hse_api_record_detail'),
+
+    # ── Admin Management Modules ──────────────────────────────────────────────
+    path('api/admin/vehicles/', views.admin_vehicles_api, name='admin_vehicles'),
+    path('api/admin/vehicles/<str:rid>/', views.admin_vehicle_api, name='admin_vehicle'),
+    path('api/admin/residences/', views.admin_residences_api, name='admin_residences'),
+    path('api/admin/residences/<str:rid>/', views.admin_residence_api, name='admin_residence'),
+    path('api/admin/workforce/', views.admin_workforce_api, name='admin_workforce'),
+    path('api/admin/workforce/<str:rid>/', views.admin_workforce_member_api, name='admin_workforce_member'),
+    path('api/admin/gate-passes/', views.admin_gatepasses_api, name='admin_gatepasses'),
+    path('api/admin/gate-passes/<str:rid>/', views.admin_gatepass_api, name='admin_gatepass'),
+    path('api/admin/equipment/', views.admin_equipment_api, name='admin_equipment'),
+    path('api/admin/equipment/<str:rid>/', views.admin_equipment_item_api, name='admin_equipment_item'),
+    path('api/admin/trainings/', views.admin_trainings_api, name='admin_trainings'),
+    path('api/admin/trainings/<str:rid>/', views.admin_training_api, name='admin_training'),
 ]

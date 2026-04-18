@@ -1,0 +1,185 @@
+{# CM Work Order Report — rpt_work_order.html #}
+{% with rv=report_values %}
+<div style="font-family:Arial,Calibri,sans-serif;font-size:8.5pt;color:#111">
+
+<table class="cl-table" style="margin-bottom:6px">
+  <tr><th colspan="4" style="font-size:12pt;padding:8px;background:#1a3a5c;color:#fff;letter-spacing:1px">CORRECTIVE MAINTENANCE WORK ORDER REPORT</th></tr>
+  <tr><th colspan="4" style="font-size:9pt;background:#dce6f1;color:#1a3a5c;padding:4px">AHK-1 Solar PV IPP — Al-Henakiyah 1100 MW</th></tr>
+  <tr>
+    <td class="cl-lbl" style="width:15%">Work Order No.</td>
+    <td class="cl-val" style="width:35%"><input type="text" data-cl-field="wo_number" value="{{ rv.wo_number|default:'' }}" placeholder="WO-XXXX"></td>
+    <td class="cl-lbl" style="width:15%">Date</td>
+    <td class="cl-val" style="width:35%"><input type="text" data-cl-field="wo_date" value="{{ rv.wo_date|default:'' }}" placeholder="YYYY-MM-DD"></td>
+  </tr>
+  <tr>
+    <td class="cl-lbl">Location / Asset</td>
+    <td class="cl-val"><input type="text" data-cl-field="wo_location" value="{{ rv.wo_location|default:'' }}" placeholder="Block / Equipment ID"></td>
+    <td class="cl-lbl">Permit No.</td>
+    <td class="cl-val"><input type="text" data-cl-field="wo_permit" value="{{ rv.wo_permit|default:'' }}" placeholder="PTW-XXXX"></td>
+  </tr>
+  <tr>
+    <td class="cl-lbl">Reported By</td>
+    <td class="cl-val"><input type="text" data-cl-field="wo_reported_by" value="{{ rv.wo_reported_by|default:'' }}" placeholder="Name"></td>
+    <td class="cl-lbl">Priority</td>
+    <td class="cl-val">
+      <select data-cl-field="wo_priority" style="width:100%;border:none;background:transparent;font-size:8.5pt">
+        <option value="">Select...</option>
+        <option value="Critical" {% if rv.wo_priority == 'Critical' %}selected{% endif %}>Critical</option>
+        <option value="High" {% if rv.wo_priority == 'High' %}selected{% endif %}>High</option>
+        <option value="Medium" {% if rv.wo_priority == 'Medium' %}selected{% endif %}>Medium</option>
+        <option value="Low" {% if rv.wo_priority == 'Low' %}selected{% endif %}>Low</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td class="cl-lbl">Start Date/Time</td>
+    <td class="cl-val"><input type="text" data-cl-field="wo_start" value="{{ rv.wo_start|default:'' }}" placeholder="YYYY-MM-DD HH:MM"></td>
+    <td class="cl-lbl">End Date/Time</td>
+    <td class="cl-val"><input type="text" data-cl-field="wo_end" value="{{ rv.wo_end|default:'' }}" placeholder="YYYY-MM-DD HH:MM"></td>
+  </tr>
+  <tr>
+    <td class="cl-lbl">Status</td>
+    <td class="cl-val">
+      <select data-cl-field="wo_status" style="width:100%;border:none;background:transparent;font-size:8.5pt">
+        <option value="">Select...</option>
+        <option value="Open" {% if rv.wo_status == 'Open' %}selected{% endif %}>Open</option>
+        <option value="In Progress" {% if rv.wo_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+        <option value="Completed" {% if rv.wo_status == 'Completed' %}selected{% endif %}>Completed</option>
+        <option value="Closed" {% if rv.wo_status == 'Closed' %}selected{% endif %}>Closed</option>
+      </select>
+    </td>
+    <td class="cl-lbl">Technician(s)</td>
+    <td class="cl-val"><input type="text" data-cl-field="wo_tech" value="{{ rv.wo_tech|default:'' }}" placeholder="Names"></td>
+  </tr>
+</table>
+
+<!-- FAULT DESCRIPTION -->
+<table class="cl-table" style="margin-bottom:6px">
+  <tr><th colspan="2" style="text-align:left;background:#2c5282;color:#fff;padding:5px">FAULT DESCRIPTION</th></tr>
+  <tr>
+    <td class="cl-lbl" style="width:20%;vertical-align:top">Title</td>
+    <td class="cl-val"><input type="text" data-cl-field="fault_title" value="{{ rv.fault_title|default:'' }}" placeholder="Brief fault title" style="width:100%"></td>
+  </tr>
+  <tr>
+    <td class="cl-lbl" style="vertical-align:top">Description</td>
+    <td class="cl-val"><textarea data-cl-field="fault_desc" rows="3" placeholder="Detailed fault description..." style="width:100%;border:none;font-size:8.5pt;resize:vertical">{{ rv.fault_desc|default:'' }}</textarea></td>
+  </tr>
+  <tr>
+    <td class="cl-lbl" style="vertical-align:top">Root Cause</td>
+    <td class="cl-val"><textarea data-cl-field="root_cause" rows="2" placeholder="Root cause analysis..." style="width:100%;border:none;font-size:8.5pt;resize:vertical">{{ rv.root_cause|default:'' }}</textarea></td>
+  </tr>
+</table>
+
+<!-- CORRECTIVE ACTION -->
+<table class="cl-table" style="margin-bottom:6px">
+  <tr><th colspan="2" style="text-align:left;background:#2c5282;color:#fff;padding:5px">CORRECTIVE ACTION TAKEN</th></tr>
+  <tr>
+    <td class="cl-lbl" style="width:20%;vertical-align:top">Actions Taken</td>
+    <td class="cl-val"><textarea data-cl-field="action_taken" rows="3" placeholder="Describe corrective actions..." style="width:100%;border:none;font-size:8.5pt;resize:vertical">{{ rv.action_taken|default:'' }}</textarea></td>
+  </tr>
+  <tr>
+    <td class="cl-lbl" style="vertical-align:top">Preventive Measures</td>
+    <td class="cl-val"><textarea data-cl-field="preventive" rows="2" placeholder="Preventive measures recommended..." style="width:100%;border:none;font-size:8.5pt;resize:vertical">{{ rv.preventive|default:'' }}</textarea></td>
+  </tr>
+</table>
+
+<!-- SPARE PARTS -->
+<table class="cl-table" style="margin-bottom:6px">
+  <tr>
+    <th colspan="4" style="text-align:left;background:#2c5282;color:#fff;padding:5px">SPARE PARTS / MATERIALS USED</th>
+  </tr>
+  <tr>
+    <th style="width:5%">No.</th>
+    <th style="width:40%">Description</th>
+    <th style="width:20%">Part Number</th>
+    <th style="width:15%">Qty</th>
+  </tr>
+  <tr>
+    <td style="text-align:center">1</td>
+    <td class="cl-val"><input type="text" data-cl-field="sp1_desc" value="{{ rv.sp1_desc|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp1_pn" value="{{ rv.sp1_pn|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp1_qty" value="{{ rv.sp1_qty|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">2</td>
+    <td class="cl-val"><input type="text" data-cl-field="sp2_desc" value="{{ rv.sp2_desc|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp2_pn" value="{{ rv.sp2_pn|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp2_qty" value="{{ rv.sp2_qty|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">3</td>
+    <td class="cl-val"><input type="text" data-cl-field="sp3_desc" value="{{ rv.sp3_desc|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp3_pn" value="{{ rv.sp3_pn|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp3_qty" value="{{ rv.sp3_qty|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">4</td>
+    <td class="cl-val"><input type="text" data-cl-field="sp4_desc" value="{{ rv.sp4_desc|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp4_pn" value="{{ rv.sp4_pn|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp4_qty" value="{{ rv.sp4_qty|default:'' }}"></td>
+  </tr>
+  <tr>
+    <td style="text-align:center">5</td>
+    <td class="cl-val"><input type="text" data-cl-field="sp5_desc" value="{{ rv.sp5_desc|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp5_pn" value="{{ rv.sp5_pn|default:'' }}"></td>
+    <td class="cl-val"><input type="text" data-cl-field="sp5_qty" value="{{ rv.sp5_qty|default:'' }}"></td>
+  </tr>
+</table>
+
+<!-- WARRANTY -->
+<table class="cl-table" style="margin-bottom:6px">
+  <tr><th colspan="2" style="text-align:left;background:#2c5282;color:#fff;padding:5px">WARRANTY CLAIM</th></tr>
+  <tr>
+    <td class="cl-lbl" style="width:25%">Warranty Applicable?</td>
+    <td class="cl-val">
+      <label style="margin-right:12px"><input type="radio" data-cl-field="warranty" value="Yes" {% if rv.warranty == 'Yes' %}checked{% endif %}> Yes</label>
+      <label><input type="radio" data-cl-field="warranty" value="No" {% if rv.warranty == 'No' or not rv.warranty %}checked{% endif %}> No</label>
+    </td>
+  </tr>
+  <tr>
+    <td class="cl-lbl">Claim Details</td>
+    <td class="cl-val"><input type="text" data-cl-field="warranty_details" value="{{ rv.warranty_details|default:'' }}" placeholder="If yes, provide details"></td>
+  </tr>
+</table>
+
+<!-- PHOTOS NOTE -->
+<table class="cl-table" style="margin-bottom:6px">
+  <tr><th colspan="2" style="text-align:left;background:#2c5282;color:#fff;padding:5px">PHOTOS / ATTACHMENTS</th></tr>
+  <tr>
+    <td class="cl-lbl" style="width:25%">Photos Attached?</td>
+    <td class="cl-val">
+      <label style="margin-right:12px"><input type="radio" data-cl-field="photos" value="Yes" {% if rv.photos == 'Yes' %}checked{% endif %}> Yes</label>
+      <label><input type="radio" data-cl-field="photos" value="No" {% if rv.photos == 'No' or not rv.photos %}checked{% endif %}> No</label>
+    </td>
+  </tr>
+  <tr>
+    <td class="cl-lbl" style="vertical-align:top">Notes</td>
+    <td class="cl-val"><input type="text" data-cl-field="photo_notes" value="{{ rv.photo_notes|default:'' }}" placeholder="Photo reference numbers or notes"></td>
+  </tr>
+</table>
+
+<!-- SIGN-OFF -->
+<table class="cl-table">
+  <tr><th colspan="2" style="text-align:left">SIGN-OFF</th></tr>
+  <tr>
+    <td style="width:50%;vertical-align:top">
+      <div style="font-size:7.5pt;font-weight:700;margin-bottom:3px">PERFORMED BY (Technician)</div>
+      <div>{{ rv.wo_tech|default:"" }}</div>
+      <div data-cl-sig="tech_sig" style="min-height:40px">
+        {% if rv.tech_sig %}<img class="cl-sig-img" src="{{ rv.tech_sig }}">{% endif %}
+      </div>
+      {% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('tech_sig')">&#9997; Sign</button>{% endif %}
+      <input type="hidden" data-cl-field="tech_sig" value="{{ rv.tech_sig|default:'' }}">
+    </td>
+    <td style="width:50%;vertical-align:top">
+      <div style="font-size:7.5pt;font-weight:700;margin-bottom:3px">APPROVED BY (Engineer / Supervisor)</div>
+      <div data-cl-sig="eng_sig" style="min-height:40px">
+        {% if rv.eng_sig %}<img class="cl-sig-img" src="{{ rv.eng_sig }}">{% endif %}
+      </div>
+      {% if can_edit %}<button class="cl-sign-btn" type="button" onclick="openSigPad('eng_sig')">&#9997; Sign</button>{% endif %}
+      <input type="hidden" data-cl-field="eng_sig" value="{{ rv.eng_sig|default:'' }}">
+    </td>
+  </tr>
+</table>
+</div>
+{% endwith %}

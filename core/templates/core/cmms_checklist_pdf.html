@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checklist — {{ record.activity_name }}</title>
+<style>
+@page { size: A4 portrait; margin: 12mm 10mm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, Calibri, sans-serif; font-size: 8.5pt; color: #111;
+       -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+/* Force background colors to print */
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.cl-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+.cl-table th, .cl-table td { border: 1px solid #888; padding: 3px 5px; vertical-align: middle; }
+.cl-table th { background: #dce6f1; color: #1a3a5c; font-size: 8pt; }
+.cl-lbl { background: #f0f4f8; font-weight: 600; font-size: 8pt; color: #1a3a5c; }
+input[type=text], select, textarea { width: 100%; border: none; font-size: 8.5pt; background: transparent; font-family: inherit; }
+.cl-sign-btn { display: none !important; }
+.cl-sig-img { max-height: 50px; display: block; }
+/* Prevent table headers repeating on every PDF page */
+thead { display: table-row-group; }
+/* Prevent large rowspan cells bleeding black across page breaks */
+td[rowspan] { background-color: #fff8dc !important; }
+/* nuclear-light */html[data-theme=ocean] *,html[data-theme=executive] *,html[data-theme=ivory] *,html[data-theme=mint] *,html[data-theme=rose] *{color:var(--text)!important;font-weight:600!important}html[data-theme=ocean] .btn-primary,html[data-theme=executive] .btn-primary,html[data-theme=ivory] .btn-primary,html[data-theme=mint] .btn-primary,html[data-theme=rose] .btn-primary,html[data-theme=ocean] .btn-ok,html[data-theme=executive] .btn-ok,html[data-theme=ivory] .btn-ok,html[data-theme=mint] .btn-ok,html[data-theme=rose] .btn-ok,html[data-theme=ocean] .ntf-badge,html[data-theme=executive] .ntf-badge,html[data-theme=ivory] .ntf-badge,html[data-theme=mint] .ntf-badge,html[data-theme=rose] .ntf-badge{color:#fff!important;font-weight:700!important}html[data-theme=ocean] i,html[data-theme=executive] i,html[data-theme=ivory] i,html[data-theme=mint] i,html[data-theme=rose] i{color:inherit!important}
+</style>
+</head>
+<body>
+{% with checklist_values=checklist_values can_edit=False %}
+  {% if checklist_type == 'daily_inspection' %}
+    {% include 'core/includes/cl_daily_inspection.html' %}
+  {% elif checklist_type == 'road_fence' %}
+    {% include 'core/includes/cl_road_fence.html' %}
+  {% elif checklist_type == 'wms_cleaning' %}
+    {% include 'core/includes/cl_wms_cleaning.html' %}
+  {% else %}
+    {% include 'core/includes/cl_mvps_hy.html' %}
+  {% endif %}
+{% endwith %}
+</body>
+</html>

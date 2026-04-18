@@ -44,6 +44,15 @@ CMMS_CM_REPORT_TEMPLATE_URL = str(
         'https://docs.google.com/spreadsheets/d/1Cvy43EKlDkVvBrFfa0f1b5eMZv04C273GGEOU5Oo234/edit?usp=sharing',
     ) or ''
 ).strip()
+CHECKLIST_ACTIVITY_CACHE_SECONDS = max(
+    30,
+    int(getattr(settings, 'CMMS_CHECKLIST_CACHE_SECONDS', 300) or 300),
+)
+
+_CHECKLIST_ACTIVITY_CACHE: dict[str, object] = {
+    'expires_at': None,
+    'activities': None,
+}
 
 for directory in (CMMS_DATA_DIR, LOCAL_CHECKLISTS_DIR, ROOT_CHECKLISTS_DIR, MEDIA_CHECKLISTS_DIR, PHOTOS_DIR):
     directory.mkdir(parents=True, exist_ok=True)
@@ -592,6 +601,29 @@ def delete_activity(activity_id: str) -> bool:
     return True
 
 
+def delete_activities_for_month(month: str) -> int:
+    """Delete all activities whose `month` field matches YYYY-MM. Returns count deleted."""
+    activities = get_activities()
+    to_delete = [a for a in activities if a.get('month', '')[:7] == month[:7]]
+    remaining = [a for a in activities if a.get('month', '')[:7] != month[:7]]
+    _save(ACTIVITIES_FILE, remaining)
+    for activity in to_delete:
+        activity_id = activity.get('id', '')
+        records = get_records()
+        scheduled_dates = {
+            str(r.get('date', '')).strip()
+            for r in records
+            if r.get('activity_id') == activity_id and str(r.get('date', '')).strip()
+        }
+        scheduled_dates.update(_excluded_dates(activity))
+        base_date = str(activity.get('scheduled_date', '') or '').strip()
+        if base_date:
+            scheduled_dates.add(base_date)
+        for scheduled_date in sorted(scheduled_dates):
+            _delete_activity_occurrence_data(activity_id, scheduled_date)
+    return len(to_delete)
+
+
 def get_records() -> list:
     return _load(RECORDS_FILE)
 
@@ -837,10 +869,21 @@ def get_all_checklist_activities() -> list:
     Checklists/checklist_data.xlsx as a fallback when the remote source
     is unavailable.
     """
+    now = datetime.now()
+    cached_expires_at = _CHECKLIST_ACTIVITY_CACHE.get('expires_at')
+    cached_activities = _CHECKLIST_ACTIVITY_CACHE.get('activities')
+    if (
+        isinstance(cached_expires_at, datetime)
+        and cached_expires_at > now
+        and isinstance(cached_activities, list)
+    ):
+        return cached_activities
+
     remote = _remote_checklist_activities()
-    if remote is not None:
-        return remote
-    return _local_checklist_activities()
+    activities = remote if remote is not None else _local_checklist_activities()
+    _CHECKLIST_ACTIVITY_CACHE['activities'] = activities
+    _CHECKLIST_ACTIVITY_CACHE['expires_at'] = now + timedelta(seconds=CHECKLIST_ACTIVITY_CACHE_SECONDS)
+    return activities
 
 
 def _dedupe_permit_options(permits: list[dict]) -> list[dict]:
@@ -1394,9 +1437,7 @@ def generate_zip(record_id: str) -> io.BytesIO | None:
     record = get_record(record_id)
     if not record:
         return None
-    activity = get_activity(record.get('activity_id', ''))
-    if not activity:
-        return None
+    activity = get_activity(record.get('activity_id', '')) or {}
 
     folder = f"{record.get('activity_name', 'checklist')}_{record.get('date', '')}".replace(' ', '_')
     buffer = io.BytesIO()

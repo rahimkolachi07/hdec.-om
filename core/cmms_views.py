@@ -1,6 +1,7 @@
 """
 CMMS Views — monthly schedule, activity work page, and API endpoints.
 """
+import io
 import json
 import re
 from datetime import datetime
@@ -25,6 +26,7 @@ from .email_utils import (
     notify_permit_created,
     notify_permit_issued,
     notify_permit_ready_to_proceed,
+    notify_permit_time_completed,
 )
 from .notification_utils import (
     create_notifications,
@@ -37,8 +39,8 @@ from .notification_utils import (
 from .cmms_utils import (
     get_activity, get_activities_for_month,
     activity_occurs_on_date,
-    create_activity, update_activity, delete_activity, delete_activity_occurrence,
-    get_record, get_record_for_activity_date, start_record, update_record,
+    create_activity, update_activity, delete_activity, delete_activity_occurrence, delete_activities_for_month,
+    get_record, get_record_for_activity_date, get_records, start_record, update_record,
     save_photo, delete_photo,
     parse_excel_checklist, generate_zip,
     get_checklist_files, resolve_checklist_path, ensure_activity_checklist, save_checklist_file,
@@ -47,7 +49,9 @@ from .cmms_utils import (
 from .cmms_ptw_utils import (
     annotate_permit,
     application_is_active,
+    build_document_payload,
     build_permit_docx,
+    build_permit_pdf,
     can_close_hse,
     can_delete_permit,
     can_close_issuer,
@@ -64,12 +68,23 @@ from .cmms_ptw_utils import (
     is_cmms_permit,
     list_permits,
     permit_filename,
+    save_signature_image,
     update_permit,
 )
 
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
 _MAINTENANCE_PATH_RE = re.compile(r'^/p/([^/]+)/([^/]+)/maintenance/?$')
+_PERMIT_EXPIRY_CHECK_INTERVAL_SECONDS = 60
+_PERMIT_EXPIRY_OPEN_STATUSES = {
+    'pending_receiver_number',
+    'active',
+    'pending_closure_issuer',
+    'pending_closure_hse',
+    'closure_rejected_by_issuer',
+    'closure_rejected_by_hse',
+}
+_last_permit_expiry_check_at: datetime | None = None
 
 
 def _get_user(request):
@@ -195,6 +210,7 @@ def _cmms_back_url(request, user: dict | None) -> str:
 
 def _ctx(request, extra=None):
     user = _get_user(request)
+    _process_expired_permit_notifications()
     ctx = {
         'user': user,
         'csrf_token': request.META.get('CSRF_COOKIE', ''),
@@ -315,6 +331,54 @@ def _closure_notification_usernames(permit: dict | None) -> list[str]:
         permit.get('hse_username', ''),
     ])
     return _dedupe_usernames(usernames)
+
+
+def _parse_permit_datetime(value):
+    raw = str(value or '').strip()
+    if not raw:
+        return None
+    normalized = raw.replace(' ', 'T')
+    try:
+        return datetime.fromisoformat(normalized)
+    except Exception:
+        return None
+
+
+def _process_expired_permit_notifications(force: bool = False) -> int:
+    global _last_permit_expiry_check_at
+
+    now = datetime.now()
+    if (
+        not force
+        and _last_permit_expiry_check_at
+        and (now - _last_permit_expiry_check_at).total_seconds() < _PERMIT_EXPIRY_CHECK_INTERVAL_SECONDS
+    ):
+        return 0
+    _last_permit_expiry_check_at = now
+
+    sent = 0
+    for permit in list_permits():
+        if not is_cmms_permit(permit):
+            continue
+        if str(permit.get('status', '') or '').strip() not in _PERMIT_EXPIRY_OPEN_STATUSES:
+            continue
+        if str(permit.get('expiry_notified_at', '') or '').strip():
+            continue
+
+        valid_until = _parse_permit_datetime(permit.get('valid_until'))
+        if not valid_until or valid_until > now:
+            continue
+
+        receiver_email = _user_email(permit.get('receiver_username', ''))
+        if not receiver_email:
+            continue
+
+        notify_permit_time_completed(annotate_permit(permit) or permit, [receiver_email])
+        update_permit(permit.get('id', ''), {
+            'expiry_notified_at': now.isoformat(),
+        })
+        sent += 1
+    return sent
 
 
 def _ptw_link(permit_id: str, *, focus: str = '', decision: str = '') -> str:
@@ -451,22 +515,26 @@ def cmms_work(request, record_id):
     after_urls  = [f"{media_url}{p}" for p in record.get('after_photos', [])]
     checklist_path = resolve_checklist_path(activity.get('checklist_file', ''))
     activity_type = str(activity.get('type', 'PM') or 'PM').upper()
-    sheet_link = get_activity_sheet_link(activity)
-    checklist_link = sheet_link if (activity_type == 'CM' or not checklist_path) else ''
+    is_cm = activity_type == 'CM'
+    _act_name = activity.get('name', '') or record.get('activity_name', '')
+    ctype = _checklist_type(_act_name) if not is_cm else ''
     sheet_label = get_activity_sheet_label(activity)
 
     return render(request, 'core/cmms_work.html', _ctx(request, {
-        'record':          record,
-        'activity':        activity,
-        'before_urls':     before_urls,
-        'after_urls':      after_urls,
-        'has_checklist':   bool(checklist_path),
-        'checklist_link':  checklist_link or '',
-        'sheet_label':     sheet_label,
-        'media_url':       media_url,
-        'permit':          permit,
+        'record':              record,
+        'activity':            activity,
+        'before_urls':         before_urls,
+        'after_urls':          after_urls,
+        'has_checklist':       bool(checklist_path) or not is_cm,
+        'is_cm':               is_cm,
+        'checklist_type':      ctype,
+        'checklist_values':    record.get('checklist_values') or {},
+        'report_values':       record.get('report_values') or {},
+        'sheet_label':         sheet_label,
+        'media_url':           media_url,
+        'permit':              permit,
         'can_edit_activities': has_permission(user or {}, 'activities', 'edit'),
-        'can_view_permits': has_permission(user or {}, 'permits', 'view'),
+        'can_view_permits':    has_permission(user or {}, 'permits', 'view'),
     }))
 
 
@@ -518,10 +586,20 @@ def cmms_ptw_detail(request, permit_id):
     can_close_receiver_flag = can_permit_edit and can_close_receiver(permit, user)
     can_close_issuer_flag = can_permit_edit and can_close_issuer(permit, user)
     can_close_hse_flag = can_permit_edit and can_close_hse(permit, user)
-    return render(request, 'core/cmms_ptw.html', _ctx(request, {
+    document = build_document_payload(
+        permit,
+        application_editable=can_application,
+        issuer_signable=can_issuer,
+        hse_editable=can_hse,
+        closure_text_editable=can_close_receiver_flag,
+        closure_issuer_signable=can_close_issuer_flag,
+        closure_hse_signable=can_close_hse_flag,
+    )
+    return render(request, 'core/cmms_ptw_native.html', _ctx(request, {
         'permit': permit,
         'record': record,
         'activity': activity,
+        'document': document,
         'can_edit_application': can_application,
         'can_issue_permit': can_issuer,
         'can_hse_approve': can_hse,
@@ -531,6 +609,7 @@ def cmms_ptw_detail(request, permit_id):
         'can_close_hse': can_close_hse_flag,
         'show_close_mode': request.GET.get('mode', '') == 'close',
         'can_view_activities': has_permission(user or {}, 'activities', 'view'),
+        'permit_download_url': f"/cmms/ptw/{permit_id}/download/",
     }))
 
 
@@ -541,6 +620,14 @@ def cmms_ptw_download(request, permit_id):
     permit = annotate_permit(get_permit(permit_id))
     if not permit:
         raise Http404('Permit not found')
+    if request.GET.get('format', '').lower() == 'docx':
+        buffer = build_permit_docx(permit)
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{permit_filename(permit)}"'
+        return response
     if permit.get('status') == 'closed':
         permit = ensure_final_permit_pdf(permit) or permit
         final_pdf = str((permit or {}).get('final_pdf', '') or '').strip()
@@ -550,14 +637,13 @@ def cmms_ptw_download(request, permit_id):
                 response = HttpResponse(final_pdf_path.read_bytes(), content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="{final_pdf_path.name}"'
                 return response
-    if permit.get('document_link'):
-        return redirect(permit['document_link'])
-    buffer = build_permit_docx(permit)
+    filename = permit_filename(permit).replace('.docx', '.pdf')
+    buffer = build_permit_pdf(permit)
     response = HttpResponse(
         buffer.getvalue(),
-        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        content_type='application/pdf',
     )
-    response['Content-Disposition'] = f'attachment; filename="{permit_filename(permit)}"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
 
@@ -573,6 +659,41 @@ def _clean_document_values(payload) -> dict:
     return cleaned
 
 
+def _merge_document_values(permit: dict, payload) -> dict:
+    current = permit.get('document_values', {})
+    merged = dict(current if isinstance(current, dict) else {})
+    if isinstance(payload, dict):
+        merged.update(_clean_document_values(payload))
+    return merged
+
+
+def _clean_signature_payload(payload, allowed_fields: tuple[str, ...] | list[str] | set[str]) -> dict:
+    if not isinstance(payload, dict):
+        return {}
+    cleaned = {}
+    for field_name in allowed_fields:
+        raw = str(payload.get(field_name) or '').strip()
+        if raw.startswith('data:image/'):
+            cleaned[field_name] = raw
+    return cleaned
+
+
+def _document_update_payload(
+    permit_id: str,
+    permit: dict,
+    data: dict,
+    *,
+    allowed_signatures: tuple[str, ...] | list[str] | set[str] = (),
+    include_document_values: bool = True,
+) -> dict:
+    payload = {}
+    if include_document_values:
+        payload['document_values'] = _merge_document_values(permit, data.get('document_values'))
+    for field_name, data_url in _clean_signature_payload(data.get('signature_data'), allowed_signatures).items():
+        payload[field_name] = save_signature_image(permit_id, field_name, data_url)
+    return payload
+
+
 def _clean_external_link(value) -> str:
     link = str(value or '').strip()
     if not link:
@@ -580,6 +701,18 @@ def _clean_external_link(value) -> str:
     if link.startswith('http://') or link.startswith('https://'):
         return link
     return ''
+
+
+def _clean_datetime_local(value):
+    raw = str(value or '').strip()
+    if not raw:
+        return ''
+    normalized = raw.replace(' ', 'T')
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except Exception:
+        return None
+    return parsed.isoformat(timespec='minutes')
 
 
 @csrf_exempt
@@ -620,22 +753,25 @@ def cmms_api_ptw(request, permit_id):
     if action == 'save_document':
         if not can_edit_application(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(
-            data.get('document_link') or permit.get('document_link') or permit.get('template_link')
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('receiver_signature',),
         )
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
-        permit = update_permit(permit_id, {'document_link': document_link})
+        permit = update_permit(permit_id, payload)
         return JsonResponse({'ok': True, 'permit': annotate_permit(permit)})
 
     if action == 'submit_application':
         if not can_edit_application(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
-        permit = update_permit(permit_id, {
-            'document_link': document_link,
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('receiver_signature',),
+        )
+        payload.update({
             'receiver_name': user.get('name', ''),
             'receiver_username': user.get('username', ''),
             'submitted_at': now,
@@ -652,6 +788,9 @@ def cmms_api_ptw(request, permit_id):
             'receiver_confirmed_at': '',
             'active_at': '',
             'isolation_cert_number': '',
+            'valid_from': '',
+            'valid_until': '',
+            'expiry_notified_at': '',
             'rejection_stage': '',
             'rejection_reason': '',
             'rejected_at': '',
@@ -659,6 +798,7 @@ def cmms_api_ptw(request, permit_id):
             'rejected_by_username': '',
             'status': 'pending_issue',
         })
+        permit = update_permit(permit_id, payload)
         notify_permit_created(permit, _issuer_notification_users())
         _push_ptw_notifications(
             _usernames_for_users(_issuer_users()),
@@ -683,11 +823,13 @@ def cmms_api_ptw(request, permit_id):
     if action == 'issue':
         if not can_issue_permit(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
-        payload = {
-            'document_link': document_link,
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('issuer_signature',),
+        )
+        payload.update({
             'issuer_name': user.get('name', ''),
             'issuer_username': user.get('username', ''),
             'issued_at': now,
@@ -697,7 +839,7 @@ def cmms_api_ptw(request, permit_id):
             'rejected_by_name': '',
             'rejected_by_username': '',
             'status': 'pending_hse',
-        }
+        })
         permit = update_permit(permit_id, payload)
         notify_permit_issued(permit, _hse_notification_users())
         _push_ptw_notifications(
@@ -726,14 +868,17 @@ def cmms_api_ptw(request, permit_id):
         reason = str(data.get('reason', '') or '').strip()
         if not reason:
             return JsonResponse({'error': 'Rejection reason is required'}, status=400)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        payload = {
+        payload = _document_update_payload(permit_id, permit, data)
+        payload.update({
             'issuer_name': '',
             'issuer_username': '',
             'issuer_signature': '',
             'issued_at': '',
             'permit_number': '',
             'isolation_cert_number': '',
+            'valid_from': '',
+            'valid_until': '',
+            'expiry_notified_at': '',
             'hse_name': '',
             'hse_username': '',
             'hse_signature': '',
@@ -744,9 +889,7 @@ def cmms_api_ptw(request, permit_id):
             'rejected_by_name': user.get('name', ''),
             'rejected_by_username': user.get('username', ''),
             'status': 'rejected_by_issuer',
-        }
-        if document_link:
-            payload['document_link'] = document_link
+        })
         permit = update_permit(permit_id, payload)
         _push_ptw_notifications(
             _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
@@ -762,17 +905,35 @@ def cmms_api_ptw(request, permit_id):
     if action == 'hse_approve':
         if not can_hse_approve(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
         permit_number = str(data.get('permit_number', '') or '').strip()
         if not permit_number:
             return JsonResponse({'error': 'Permit number is required'}, status=400)
         isolation_number = str(data.get('isolation_cert_number', '') or '').strip()
-        permit = update_permit(permit_id, {
-            'document_link': document_link,
+        valid_from = _clean_datetime_local(data.get('valid_from'))
+        if valid_from is None:
+            return JsonResponse({'error': 'Valid from must be a valid date and time'}, status=400)
+        valid_until = _clean_datetime_local(data.get('valid_until'))
+        if valid_until is None:
+            return JsonResponse({'error': 'Valid until must be a valid date and time'}, status=400)
+        if valid_from and valid_until:
+            if datetime.fromisoformat(valid_until) < datetime.fromisoformat(valid_from):
+                return JsonResponse({'error': 'Valid until must be after valid from'}, status=400)
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('hse_signature',),
+        )
+        document_values = dict(payload.get('document_values', {}))
+        document_values['t2_r1_c2'] = permit_number
+        document_values['t2_r3_c2'] = isolation_number
+        payload.update({
+            'document_values': document_values,
             'permit_number': permit_number,
             'isolation_cert_number': isolation_number,
+            'valid_from': valid_from,
+            'valid_until': valid_until,
+            'expiry_notified_at': '',
             'hse_name': user.get('name', ''),
             'hse_username': user.get('username', ''),
             'hse_signed_at': now,
@@ -783,6 +944,7 @@ def cmms_api_ptw(request, permit_id):
             'rejected_by_username': '',
             'status': 'pending_receiver_number',
         })
+        permit = update_permit(permit_id, payload)
         notify_permit_ready_to_proceed(
             permit,
             _receiver_and_maintenance_emails(permit.get('receiver_username', '')),
@@ -808,12 +970,15 @@ def cmms_api_ptw(request, permit_id):
         reason = str(data.get('reason', '') or '').strip()
         if not reason:
             return JsonResponse({'error': 'Rejection reason is required'}, status=400)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        payload = {
+        payload = _document_update_payload(permit_id, permit, data)
+        payload.update({
             'permit_number': '',
             'receiver_confirmed_permit_number': '',
             'receiver_confirmed_at': '',
             'isolation_cert_number': '',
+            'valid_from': '',
+            'valid_until': '',
+            'expiry_notified_at': '',
             'hse_name': '',
             'hse_username': '',
             'hse_signature': '',
@@ -824,9 +989,7 @@ def cmms_api_ptw(request, permit_id):
             'rejected_by_name': user.get('name', ''),
             'rejected_by_username': user.get('username', ''),
             'status': 'rejected_by_hse',
-        }
-        if document_link:
-            payload['document_link'] = document_link
+        })
         permit = update_permit(permit_id, payload)
         _push_ptw_notifications(
             _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
@@ -872,12 +1035,14 @@ def cmms_api_ptw(request, permit_id):
     if action == 'submit_closure':
         if not can_close_receiver(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
         closure_status_text = str(data.get('closure_status_text', '') or '').strip()
-        payload = {
-            'document_link': document_link,
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('closure_receiver_signature',),
+        )
+        payload.update({
             'closure_status_text': closure_status_text,
             'closure_requested_at': now,
             'closure_receiver_name': user.get('name', ''),
@@ -894,7 +1059,7 @@ def cmms_api_ptw(request, permit_id):
             'closure_rejected_by_name': '',
             'closure_rejected_by_username': '',
             'status': 'pending_closure_issuer',
-        }
+        })
         permit = update_permit(permit_id, payload)
         issuer_email = _user_email(permit.get('issuer_username', ''))
         closure_recipients = [issuer_email] if issuer_email else [
@@ -925,11 +1090,13 @@ def cmms_api_ptw(request, permit_id):
     if action == 'issuer_close':
         if not can_close_issuer(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
-        payload = {
-            'document_link': document_link,
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('closure_issuer_signature',),
+        )
+        payload.update({
             'closure_issuer_name': user.get('name', ''),
             'closure_issuer_signed_at': now,
             'closure_rejection_stage': '',
@@ -938,7 +1105,7 @@ def cmms_api_ptw(request, permit_id):
             'closure_rejected_by_name': '',
             'closure_rejected_by_username': '',
             'status': 'pending_closure_hse',
-        }
+        })
         permit = update_permit(permit_id, payload)
         notify_permit_closure_hse_required(permit, _hse_notification_users())
         _push_ptw_notifications(
@@ -967,8 +1134,8 @@ def cmms_api_ptw(request, permit_id):
         reason = str(data.get('reason', '') or '').strip()
         if not reason:
             return JsonResponse({'error': 'Rejection reason is required'}, status=400)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        payload = {
+        payload = _document_update_payload(permit_id, permit, data)
+        payload.update({
             'closure_issuer_name': '',
             'closure_issuer_signature': '',
             'closure_issuer_signed_at': '',
@@ -981,9 +1148,7 @@ def cmms_api_ptw(request, permit_id):
             'closure_rejected_by_name': user.get('name', ''),
             'closure_rejected_by_username': user.get('username', ''),
             'status': 'closure_rejected_by_issuer',
-        }
-        if document_link:
-            payload['document_link'] = document_link
+        })
         permit = update_permit(permit_id, payload)
         _push_ptw_notifications(
             _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
@@ -999,11 +1164,13 @@ def cmms_api_ptw(request, permit_id):
     if action == 'hse_close':
         if not can_close_hse(permit, user):
             return JsonResponse({'error': 'Permission denied'}, status=403)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        if not document_link:
-            return JsonResponse({'error': 'Google Docs permit link is required'}, status=400)
-        payload = {
-            'document_link': document_link,
+        payload = _document_update_payload(
+            permit_id,
+            permit,
+            data,
+            allowed_signatures=('closure_hse_signature',),
+        )
+        payload.update({
             'closure_hse_name': user.get('name', ''),
             'closure_hse_signed_at': now,
             'closure_rejection_stage': '',
@@ -1013,7 +1180,7 @@ def cmms_api_ptw(request, permit_id):
             'closure_rejected_by_username': '',
             'closed_at': now,
             'status': 'closed',
-        }
+        })
         permit = update_permit(permit_id, payload)
         permit = ensure_final_permit_pdf(permit) or permit
         if permit.get('record_id'):
@@ -1044,8 +1211,8 @@ def cmms_api_ptw(request, permit_id):
         reason = str(data.get('reason', '') or '').strip()
         if not reason:
             return JsonResponse({'error': 'Rejection reason is required'}, status=400)
-        document_link = _clean_external_link(data.get('document_link') or permit.get('document_link'))
-        payload = {
+        payload = _document_update_payload(permit_id, permit, data)
+        payload.update({
             'closure_hse_name': '',
             'closure_hse_signature': '',
             'closure_hse_signed_at': '',
@@ -1055,9 +1222,7 @@ def cmms_api_ptw(request, permit_id):
             'closure_rejected_by_name': user.get('name', ''),
             'closure_rejected_by_username': user.get('username', ''),
             'status': 'closure_rejected_by_hse',
-        }
-        if document_link:
-            payload['document_link'] = document_link
+        })
         permit = update_permit(permit_id, payload)
         _push_ptw_notifications(
             _receiver_and_maintenance_usernames(permit.get('receiver_username', '')),
@@ -1087,11 +1252,42 @@ def cmms_api_activities(request):
 
     if request.method == 'GET':
         month = request.GET.get('month', datetime.now().strftime('%Y-%m'))
+        _process_expired_permit_notifications()
+        record_index: dict[tuple[str, str], dict] = {}
+        for record in sorted(
+            get_records(),
+            key=lambda item: (
+                bool(item.get('completed')),
+                item.get('completed_at') or '',
+                item.get('started_at') or '',
+                item.get('created_at') or '',
+                item.get('id') or '',
+            ),
+            reverse=True,
+        ):
+            key = (
+                str(record.get('activity_id', '') or '').strip(),
+                str(record.get('date', '') or '').strip(),
+            )
+            if key[0] and key[1] and key not in record_index:
+                record_index[key] = record
+
+        permit_index: dict[str, dict] = {}
+        for permit in list_permits():
+            if not is_cmms_permit(permit):
+                continue
+            record_id = str(permit.get('record_id', '') or '').strip()
+            if record_id and record_id not in permit_index:
+                permit_index[record_id] = annotate_permit(permit)
+
         activities = []
         for activity in get_activities_for_month(month):
             activity = ensure_activity_checklist(activity)
-            record = get_record_for_activity_date(activity.get('id', ''), activity.get('scheduled_date', ''))
-            permit = annotate_permit(get_permit_for_record(record.get('id', ''))) if record else None
+            record = record_index.get((
+                str(activity.get('id', '') or '').strip(),
+                str(activity.get('scheduled_date', '') or '').strip(),
+            ))
+            permit = permit_index.get(str((record or {}).get('id', '') or '').strip()) if record else None
             status = 'planned'
             if record:
                 status = 'completed' if record.get('completed') else 'in_progress'
@@ -1110,6 +1306,8 @@ def cmms_api_activities(request):
                 'permit_status': permit.get('status') if permit else '',
                 'permit_status_label': permit.get('status_label') if permit else '',
                 'permit_number': permit.get('permit_number') if permit else '',
+                'permit_valid_from': permit.get('valid_from') if permit else '',
+                'permit_valid_until': permit.get('valid_until') if permit else '',
                 'permit_required': permit_required,
                 'permit_url': f"/cmms/ptw/{permit.get('id')}/" if permit else '',
             })
@@ -1137,6 +1335,11 @@ def cmms_api_activities(request):
             data = json.loads(request.body)
         except Exception:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        # Bulk reset: delete all activities for a month
+        month = data.get('month', '')
+        if month:
+            count = delete_activities_for_month(month)
+            return JsonResponse({'ok': True, 'deleted': count})
         activity_id = data.get('id', '')
         if delete_activity(activity_id):
             return JsonResponse({'ok': True})
@@ -1347,13 +1550,70 @@ def cmms_api_complete(request, record_id):
 
 # ── Download ZIP ──────────────────────────────────────────────────────────────
 def cmms_download_zip(request, record_id):
+    import zipfile as _zf
     redir = _require_module_access(request, 'activities', 'view')
     if redir:
         return redir
+
+    record = get_record(record_id)
+    if not record:
+        raise Http404('Record not found')
+
     buf = generate_zip(record_id)
     if not buf:
-        raise Http404('Record not found or no data')
-    record = get_record(record_id)
+        # Build a minimal empty ZIP so we can still add the checklist PDF below
+        buf = io.BytesIO()
+        with _zf.ZipFile(buf, 'w', _zf.ZIP_DEFLATED):
+            pass
+        buf.seek(0)
+
+    # ── Add updated checklist / report PDF ──────────────────────────────────
+    activity = get_activity(record.get('activity_id', '')) or {}
+    act_name = activity.get('name', '') or record.get('activity_name', '')
+    activity_type = str(activity.get('type', '') or record.get('activity_type', 'PM') or 'PM').upper()
+    is_cm = activity_type == 'CM'
+    checklist_values = record.get('checklist_values') or {}
+    report_values = record.get('report_values') or {}
+    folder = f"{record.get('activity_name','checklist')}_{record.get('date','')}".replace(' ', '_')
+    rec_date = str(record.get('date', '') or '')[:10]
+
+    pdf_bytes = None
+    pdf_fname = None
+    try:
+        from django.template.loader import render_to_string
+        from core.cmms_ptw_utils import _find_pdf_browser, _render_pdf_with_browser
+        browser = _find_pdf_browser()
+        if is_cm and report_values and browser:
+            html = render_to_string('core/cmms_report_pdf.html', {
+                'record': record, 'activity': activity,
+                'report_values': report_values,
+            })
+            pdf_bytes = _render_pdf_with_browser(browser, html)
+            pdf_fname = f"report_{act_name}_{rec_date}.pdf".replace(' ', '_')
+        elif not is_cm and checklist_values and browser:
+            ctype = _checklist_type(act_name)
+            html = render_to_string('core/cmms_checklist_pdf.html', {
+                'record': record, 'activity': activity,
+                'checklist_type': ctype,
+                'checklist_values': checklist_values,
+            })
+            pdf_bytes = _render_pdf_with_browser(browser, html)
+            pdf_fname = f"checklist_{act_name}_{rec_date}.pdf".replace(' ', '_')
+    except Exception:
+        pdf_bytes = None
+
+    if pdf_bytes and pdf_fname:
+        # Re-open the existing ZIP and write a new one with the PDF added
+        old_buf = buf
+        old_buf.seek(0)
+        new_buf = io.BytesIO()
+        with _zf.ZipFile(old_buf, 'r') as existing, _zf.ZipFile(new_buf, 'w', _zf.ZIP_DEFLATED) as new_arc:
+            for item in existing.infolist():
+                new_arc.writestr(item, existing.read(item.filename))
+            new_arc.writestr(f"{folder}/{pdf_fname}", pdf_bytes)
+        new_buf.seek(0)
+        buf = new_buf
+
     fname = f"{record.get('activity_name','report')}_{record.get('date','')}.zip".replace(' ', '_')
     resp = HttpResponse(buf, content_type='application/zip')
     resp['Content-Disposition'] = f'attachment; filename="{fname}"'
@@ -1396,3 +1656,129 @@ def cmms_api_checklist_activities(request):
     return JsonResponse({'activities': get_all_checklist_activities()})
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+# ── Native checklist / report form views ─────────────────────────────────────
+
+def _checklist_type(activity_name: str) -> str:
+    n = (activity_name or '').lower()
+    if 'daily' in n or ('inspection' in n and 'daily' in n):
+        return 'daily_inspection'
+    if 'road' in n or 'fence' in n:
+        return 'road_fence'
+    if 'wms' in n or 'cleaning' in n:
+        return 'wms_cleaning'
+    return 'mvps_hy'
+
+
+def cmms_checklist_native(request, record_id):
+    redir = _require_module_access(request, 'activities', 'view')
+    if redir:
+        return redir
+    user = _get_user(request)
+    record = get_record(record_id)
+    if not record:
+        raise Http404('Record not found')
+    activity = ensure_activity_checklist(get_activity(record.get('activity_id', ''))) or {}
+    act_name = activity.get('name', '') or record.get('activity_name', '')
+    ctype = _checklist_type(act_name)
+    return render(request, 'core/cmms_checklist_native.html', _ctx(request, {
+        'record':            record,
+        'activity':          activity,
+        'checklist_type':    ctype,
+        'checklist_values':  record.get('checklist_values') or {},
+        'can_edit':          has_permission(user or {}, 'activities', 'edit'),
+        'back_url':          f"/cmms/work/{record_id}/",
+        'download_url':      f"/api/cmms/checklist/{record_id}/?download=pdf",
+    }))
+
+
+def cmms_report_native(request, record_id):
+    redir = _require_module_access(request, 'activities', 'view')
+    if redir:
+        return redir
+    user = _get_user(request)
+    record = get_record(record_id)
+    if not record:
+        raise Http404('Record not found')
+    activity = ensure_activity_checklist(get_activity(record.get('activity_id', ''))) or {}
+    return render(request, 'core/cmms_report_native.html', _ctx(request, {
+        'record':         record,
+        'activity':       activity,
+        'report_values':  record.get('report_values') or {},
+        'can_edit':       has_permission(user or {}, 'activities', 'edit'),
+        'back_url':       f"/cmms/work/{record_id}/",
+        'download_url':   f"/api/cmms/report/{record_id}/?download=pdf",
+    }))
+
+
+@csrf_exempt
+def cmms_api_checklist_save(request, record_id):
+    if request.method == 'GET' and request.GET.get('download') == 'pdf':
+        record = get_record(record_id)
+        if not record:
+            raise Http404
+        activity = get_activity(record.get('activity_id', '')) or {}
+        from django.template.loader import render_to_string
+        act_name = activity.get('name', '') or record.get('activity_name', '')
+        ctype = _checklist_type(act_name)
+        html = render_to_string('core/cmms_checklist_pdf.html', {
+            'record': record,
+            'activity': activity,
+            'checklist_type': ctype,
+            'checklist_values': record.get('checklist_values') or {},
+        })
+        from core.cmms_ptw_utils import _find_pdf_browser, _render_pdf_with_browser
+        browser = _find_pdf_browser()
+        pdf_bytes = _render_pdf_with_browser(browser, html) if browser else None
+        if not pdf_bytes:
+            return HttpResponse(html, content_type='text/html')
+        resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+        act_name = str(activity.get('name', '') or 'checklist').replace(' ', '_')
+        rec_date = str(record.get('date', '') or record_id)[:10]
+        name = f"checklist_{act_name}_{rec_date}.pdf"
+        resp['Content-Disposition'] = f'attachment; filename="{name}"'
+        return resp
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            values = {k: v for k, v in (data.get('values') or {}).items()}
+            update_record(record_id, {'checklist_values': values})
+            return JsonResponse({'ok': True})
+        except Exception as e:
+            return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+    record = get_record(record_id)
+    return JsonResponse({'ok': True, 'values': (record or {}).get('checklist_values') or {}})
+
+
+@csrf_exempt
+def cmms_api_report_save(request, record_id):
+    if request.method == 'GET' and request.GET.get('download') == 'pdf':
+        record = get_record(record_id)
+        if not record:
+            raise Http404
+        activity = get_activity(record.get('activity_id', '')) or {}
+        from django.template.loader import render_to_string
+        html = render_to_string('core/cmms_report_pdf.html', {
+            'record': record,
+            'activity': activity,
+            'report_values': record.get('report_values') or {},
+        })
+        from core.cmms_ptw_utils import _find_pdf_browser, _render_pdf_with_browser
+        browser = _find_pdf_browser()
+        pdf_bytes = _render_pdf_with_browser(browser, html) if browser else None
+        if not pdf_bytes:
+            return HttpResponse(html, content_type='text/html')
+        resp = HttpResponse(pdf_bytes, content_type='application/pdf')
+        resp['Content-Disposition'] = f'attachment; filename="report_{record_id}.pdf"'
+        return resp
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            values = {k: v for k, v in (data.get('values') or {}).items()}
+            update_record(record_id, {'report_values': values})
+            return JsonResponse({'ok': True})
+        except Exception as e:
+            return JsonResponse({'ok': False, 'error': str(e)}, status=400)
+    record = get_record(record_id)
+    return JsonResponse({'ok': True, 'values': (record or {}).get('report_values') or {}})
